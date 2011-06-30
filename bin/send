@@ -1,0 +1,19 @@
+#!/usr/bin/env ruby
+
+$:.unshift(File.dirname(__FILE__) + '/../lib')
+
+require 'smith'
+
+queue_name = ARGV[0]
+payload = ARGV[1]
+
+if queue_name.nil? && payload.nil?
+  puts "usage: #{File.basename($0)} <queue> <payload>"
+  exit 1
+end
+
+Smith.start do
+  queue = Smith::Messaging.new(queue_name)
+  queue.send_message(payload)
+  Smith.stop
+end

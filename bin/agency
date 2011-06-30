@@ -1,0 +1,16 @@
+#!/usr/bin/env ruby
+
+require 'pp'
+
+require File.expand_path(File.dirname(__FILE__) + '/../lib/smith')
+require File.expand_path(File.dirname(__FILE__) + '/../lib/smith/application/agency')
+
+logger = Logging.logger(STDOUT)
+
+Smith.logger = logger
+Smith.start do
+  agents_path = '/home/rgh/dev/ruby/smith2/agents'
+  agency = Smith::Agency.new(:agents_path => agents_path, :logger => logger)
+
+  agency.setup_queues
+end
