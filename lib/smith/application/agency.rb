@@ -41,8 +41,31 @@ module Smith
         do_keep_alive(agent_data)
       end
 
-      Smith::Messaging.new(:verbose).receive_message do |header, verbose|
-        @verbose = (verbose == "true") ? true : false
+      # TODO do this properly.
+      Smith::Messaging.new(:ageny_control).receive_message do |header, command|
+        case command
+        when 'verbose'
+          @verbose = true
+        when 'normal'
+          @verbose = false
+        when 'stop'
+          pp @agent_processes
+          running_agents = @agent_processes.select {|a| a.state == :running }
+          pp running_agents
+
+          if running_agents.empty?
+            logger.info("Agency shutting down")
+            Smith.stop
+          else
+            logger.warn("Agents are still running: #{running_agents.join(", ")}") unless running_agents.empty?
+            logger.info("Agency not shutting down. Use force_stop if you really want to shut it down.")
+          end
+        when 'force_stop'
+          logger.info("Agency shutting down with predudice")
+          Smith.stop
+        else
+          logger.warn("Agency command unknown: #{command}")
+        end
       end
 
       Smith::Messaging.new(:state).receive_message do |header, agent_name|
