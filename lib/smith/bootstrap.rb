@@ -69,8 +69,13 @@ agent = AgentBootstrap.new(path, agent_name, logger)
 if agent.write_pid_file
   agent.load_agent
 
-  # Make sure the pid file is removed
-  at_exit { agent.unlink_pid_file }
+  %w{TERM INT QUIT}.each do |sig|
+    trap sig, proc {
+      logger.debug("Running signal handler for #{agent_name}")
+      Smith.stop
+      agent.unlink_pid_file
+    }
+  end
 
   Smith.start {
     agent.run
