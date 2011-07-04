@@ -10,7 +10,6 @@ require 'smith/cache'
 require 'smith/agent_state'
 require 'smith/agent_details'
 require 'smith/messaging'
-require 'smith/persistor'
 require 'daemons/pidfile_mp'
 
 module Smith
