@@ -38,7 +38,7 @@ module Smith
 
     def keepalive
       EventMachine::add_periodic_timer(1) do
-        queues(:keep_alive).send_message(self.class.to_s, message_opts(:durable => false))
+        queues(:keep_alive).send_message({:name => self.class.to_s, :time => Time.now.utc}, message_opts(:durable => false))
       end
     end
 

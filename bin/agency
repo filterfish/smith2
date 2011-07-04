@@ -12,5 +12,8 @@ Smith.start do
   agents_path = '/home/rgh/dev/ruby/smith2/agents'
   agency = Smith::Agency.new(:agents_path => agents_path, :logger => logger)
 
+  logger.info("Starting #{File.basename($0)}")
   agency.setup_queues
+  agency.setup_monitoring
+  agency.setup_agent_restart
 end

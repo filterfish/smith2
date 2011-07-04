@@ -7,18 +7,23 @@ class AgentState
 
   include DataMapper::Resource
 
-  property :id,         Serial
-  property :name,       String, :required => true
-  property :state,      String, :required => true
-  property :pid,        Integer
-  property :name,       String
-  property :started_at, Time
-  property :restart,    Boolean
-  property :singleton,  Boolean
+  property :id,               Serial
+  property :name,             String, :required => true
+  property :state,            String, :required => true
+  property :pid,              Integer
+  property :name,             String
+  property :started_at,       Time
+  property :last_keep_alive,  Time
+  property :restart,          Boolean
+  property :singleton,        Boolean
 
-  state_machine :initial => :stopped do
+  state_machine :initial => :null do
+    event :instantiate do
+      transition [:null] => :stopped
+    end
+
     event :start do
-      transition [:stopped] => :starting
+      transition [:null, :stopped, :dead] => :starting
     end
 
     event :acknowledge_start do
@@ -38,13 +43,7 @@ class AgentState
     end
 
     event :no_process_running do
-      transition [:running] => :dead
-    end
-
-    state :starting do
-      def bar
-        puts :starting
-      end
+      transition [:starting, :running, :stopping] => :dead
     end
   end
 end
