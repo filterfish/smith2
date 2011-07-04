@@ -16,10 +16,20 @@ module Smith
       end
     end
 
+    def invalidate(name)
+      @cache.delete(name)
+    end
+
+    def select
+      @cache.select { |k,v| yield v }
+    end
+
+    def map
+      @cache.map { |k,v| yield v }
+    end
+
     def each
-      @cache.each do |k,v|
-        yield v
-      end
+      @cache.each { |k,v| yield v }
     end
   end
 end
