@@ -15,5 +15,11 @@ module Smith
         @cache[name] = @operator.call(name)
       end
     end
+
+    def each
+      @cache.each do |k,v|
+        yield v
+      end
+    end
   end
 end
