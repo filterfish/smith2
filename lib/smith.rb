@@ -8,6 +8,7 @@ require 'smith/logger'
 require 'smith/cache'
 require 'smith/agent'
 require 'smith/agent_process'
+require 'smith/agent_monitoring'
 require 'smith/messaging'
 require 'daemons/pidfile_mp'
 

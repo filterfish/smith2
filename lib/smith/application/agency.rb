@@ -16,6 +16,9 @@ module Smith
       @verbose = false
 
       DataMapper.setup(:default, "yaml:///var/tmp/smith")
+
+      @agent_monitor = AgentMonitoring.new(@agent_processes)
+      @agent_monitor.start_monitoring
     end
 
     def setup_queues
@@ -44,6 +47,7 @@ module Smith
         case command
         when 'verbose'
           @verbose = true
+          @agent_monitor.verbose = true
         when 'normal'
           @verbose = false
         when 'stop'
@@ -67,38 +71,7 @@ module Smith
       end
 
       Smith::Messaging.new(:state).receive_message do |header, agent_name|
-        logger.info("Agent state for #{agent_name}: #{agent_process(agent_name).state}")
-      end
-    end
-
-    def setup_monitoring
-      EventMachine::add_periodic_timer(1) do
-        agent_states.each do |agent_state|
-          if agent_state.running?
-            if agent_state.last_keep_alive
-              if (Time.now.utc - agent_state.last_keep_alive) > 10
-                logger.warn("#{agent_state.name} is not responding")
-                logger.info("Agent dead: #{agent_state.name}")
-                agent_state.no_process_running
-              else
-                logger.debug("#{agent_state.name} responding") if @verbose
-              end
-            else
-              logger.debug("no keep alive from #{agent_state.name}")
-            end
-          end
-        end
-      end
-    end
-
-    def setup_agent_restart
-      EventMachine::add_periodic_timer(1) do
-        agent_states.each do |agent_state|
-          if agent_state.dead?
-            logger.info("Restarting agent: #{agent_state.name}")
-            Smith::Messaging.new(:start).send_message(agent_state.name)
-          end
-        end
+        Logger.info("Agent state for #{agent_name}: #{agent_process(agent_name).state}")
       end
     end
 
