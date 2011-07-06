@@ -4,7 +4,7 @@ require 'pp'
 require 'amqp'
 require 'tmpdir'
 require 'extlib/inflection'
-require 'logging'
+require 'smith/logger'
 require 'smith/cache'
 require 'smith/agent'
 require 'smith/agent_process'
@@ -16,6 +16,7 @@ module Smith
     attr_accessor :logger
 
     def start(opts={}, &block)
+
       EM.epoll
       EM.set_descriptor_table_size(opts[:fdsize] || 1024)
 

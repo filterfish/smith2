@@ -22,11 +22,12 @@ module Smith
     state_machine :initial => :null do
 
       before_transition do |transition|
-        logger.debug("Tranisiton [#{name}]: :#{transition.from} -> :#{transition.to}")
+        Logger.debug("Tranistion [#{name}]: :#{transition.from} -> :#{transition.to}")
       end
 
       after_failure do |transition|
-        logger.warn("Illegal state change [#{name}]: :#{transition.from} -> :#{transition.to}")
+        Logger.debug(transition.inspect)
+        Logger.warn("Illegal state change [#{name}]: :#{transition.from} -> :#{transition.event}")
       end
 
       after_transition :on => :start, :do => :do_start
@@ -65,17 +66,7 @@ module Smith
 
     private
 
-    attr_accessor :agent_name, :logger
-
-    def initialize(args, opts={})
-      @logger = Logging.logger(STDOUT)
-      @base_path = '/home/rgh/dev/ruby/smith2/agents'
-      #@base_path = opts[:agents_path] or raise ArgumentError, "no agents path supplied"
-      @bootstraper = File.expand_path(File.join(File.dirname(__FILE__), 'bootstrap.rb'))
-      @logging_path = opts[:logging] || ''
-
-      super(args)
-    end
+    attr_accessor :agent_name
 
     def do_start
       start_agent
@@ -108,10 +99,13 @@ module Smith
         # Sort out the remaining file descriptors. Don't do anything with
         # stdout (and by extension stderr) as want the agency to manage it.
         STDIN.reopen("/dev/null")
-        STDERR.reopen("/dev/null")
-        #STDERR.reopen(STDOUT)
+        #STDERR.reopen("/dev/null")
+        STDERR.reopen(STDOUT)
 
-        exec('ruby', @bootstraper, @base_path, name, @logging_path)
+        base_path = '/home/rgh/dev/ruby/smith2/agents'
+        bootstraper = File.expand_path(File.join(File.dirname(__FILE__), 'bootstrap.rb'))
+
+        exec('ruby', bootstraper, base_path, name)
       end
 
       # We don't want any zombies.

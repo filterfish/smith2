@@ -5,7 +5,6 @@ module Smith
     def initialize(options={})
       Smith.on_error = proc {|e| pp e}
 
-      @logger = Logging.logger(STDOUT)
       @queues = Cache.new
       @queues.operator ->(name){Messaging.new(name)}
 
@@ -23,8 +22,6 @@ module Smith
     end
 
     private
-
-    attr_accessor :logger
 
     def acknowledge_start
       agent_data = {:pid => $$, :name => self.class.to_s, :started_at => Time.now.utc}
@@ -44,14 +41,14 @@ module Smith
 
     def agent_queue
       queue_name = "agent.#{self.class.to_s.snake_case}"
-      logger.debug("Setting up agent queue: #{queue_name}")
+      Logger.debug("Setting up agent queue: #{queue_name}")
       queues(queue_name).receive_message do |header, message|
         case message
         when 'stop'
           acknowledge_stop
           Smith.stop
         else
-          logger.warn("Unkown message: #{message}")
+          Logger.warn("Unkown message: #{message}")
         end
       end
     end
