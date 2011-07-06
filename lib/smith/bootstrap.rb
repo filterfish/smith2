@@ -6,80 +6,71 @@ $: << File.dirname(__FILE__) + '/..'
 require 'extlib'
 require 'smith'
 
-class AgentBootstrap
+module Smith
+  class AgentBootstrap
 
-  def initialize(path, agent_name, logger)
-    @logger = logger
-
-    @agent_name = agent_name
-    @agent_filename = File.expand_path(File.join(path, "#{agent_name.snake_case}.rb"))
-  end
-
-  def load_agent
-    load @agent_filename
-  end
-
-  def run
-    begin
-      agent_instance = Kernel.const_get(@agent_name).new(:logger => @logger)
-      agent_instance.run
-    rescue => e
-      @logger.error("Failed to run agent: #{@agent_name}: #{e}")
-      @logger.error(e)
+    def initialize(path, agent_name)
+      @agent_name = agent_name
+      @agent_filename = File.expand_path(File.join(path, "#{agent_name.snake_case}.rb"))
     end
-  end
 
-  def write_pid_file
-    @pid = Daemons::PidFile.new(Daemons::Pid.dir(:normal, Dir::tmpdir, nil), ".rubymas-#{@agent_name.snake_case}")
-    if @pid.exist?
-      if @pid.running?
-        false
+    def load_agent
+      load @agent_filename
+    end
+
+    def run
+      begin
+        agent_instance = Kernel.const_get(@agent_name).new
+        agent_instance.run
+      rescue => e
+        Logger.error("Failed to run agent: #{@agent_name}: #{e}")
+        Logger.error(e)
+      end
+    end
+
+    def write_pid_file
+      @pid = Daemons::PidFile.new(Daemons::Pid.dir(:normal, Dir::tmpdir, nil), ".rubymas-#{@agent_name.snake_case}")
+      if @pid.exist?
+        if @pid.running?
+          false
+        else
+          @pid.pid = Process.pid
+        end
       else
         @pid.pid = Process.pid
       end
-    else
-      @pid.pid = Process.pid
+    end
+
+    def unlink_pid_file
+      @pid.cleanup
     end
   end
 
-  def unlink_pid_file
-    @pid.cleanup
-  end
-end
+  path = ARGV[0]
+  agent_name = ARGV[1]
 
-path = ARGV[0]
-agent_name = ARGV[1]
-logging_config = ARGV[2]
+  exit 1 if agent_name.nil? || path.nil?
 
-exit 1 if agent_name.nil? || path.nil?
+  # Set the running instance name to the name of the agent.
+  $0 = "#{agent_name}"
 
-# Create a stdout logger if a logger is not supplied
-if logging_config.nil? || logging_config.empty?
-  logger = Logging.logger(STDOUT)
-else
-  Logging.configure(logging_config)
-  logger = Logging::Logger['audit']
-end
+  agent = AgentBootstrap.new(path, agent_name)
 
-# Set the running instance name to the name of the agent.
-$0 = "#{agent_name}"
+  if agent.write_pid_file
+    agent.load_agent
 
-agent = AgentBootstrap.new(path, agent_name, logger)
+    %w{TERM INT QUIT}.each do |sig|
+      trap sig, proc {
+        Logger.debug("Running signal handler for #{agent_name}")
+        Smith.stop
+        agent.unlink_pid_file
+      }
+    end
 
-if agent.write_pid_file
-  agent.load_agent
-
-  %w{TERM INT QUIT}.each do |sig|
-    trap sig, proc {
-      logger.debug("Running signal handler for #{agent_name}")
-      Smith.stop
-      agent.unlink_pid_file
+    Smith.start {
+      agent.run
     }
+  else
+    Logger.error("Another instance of #{agent_name} is already running")
   end
-
-  Smith.start {
-    agent.run
-  }
-else
-  logger.error("Another instance of #{agent_name} is already running")
 end
