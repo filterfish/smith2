@@ -69,6 +69,7 @@ module Smith
     attr_accessor :agent_name
 
     def do_start
+      self.started_at = Time.now.utc
       start_agent
     end
 
