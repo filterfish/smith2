@@ -3,6 +3,7 @@ require 'json'
 module Smith
   class Messaging
     def initialize(queue_name, options={})
+      @queue_name = queue_name
       @channel = AMQP::Channel.new(Smith.connection)
       @exchange = @channel.direct(queue_name.to_s, options)
       @queue = @channel.queue(queue_name.to_s, options).bind(@exchange)
@@ -27,5 +28,31 @@ module Smith
         end
       end
     end
+
+    def number_of_messages
+      @queue.status do |num_messages, num_consumers|
+        yield num_messages
+      end
+    end
+
+    def number_of_consumers
+      @queue.status do |num_messages, num_consumers|
+        yield num_consumers
+      end
+    end
+
+    def consumers?
+      number_of_consumers do |n|
+        if n > 0
+          yield self
+        else
+          Logger.debug("Nothing listening on #{queue_name}")
+        end
+      end
+    end
+
+    private
+
+    attr_reader :queue_name
   end
 end
