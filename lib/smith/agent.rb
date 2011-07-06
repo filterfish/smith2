@@ -12,7 +12,7 @@ module Smith
 
       agent_queue
       acknowledge_start
-      keepalive
+      start_keep_alive
     end
 
     def get_message(queue, options={}, &block)
@@ -33,9 +33,10 @@ module Smith
       Smith::Messaging.new(:acknowledge_stop).send_message(agent_data, message_opts)
     end
 
-    def keepalive
+    def start_keep_alive
+      send_keep_alive(queues(:keep_alive))
       EventMachine::add_periodic_timer(1) do
-        queues(:keep_alive).send_message({:name => self.class.to_s, :time => Time.now.utc}, message_opts(:durable => false))
+        send_keep_alive(queues(:keep_alive))
       end
     end
 
@@ -59,6 +60,12 @@ module Smith
 
     def queues(queue_name)
       @queues.entry(queue_name)
+    end
+
+    def send_keep_alive(queue)
+      queue.consumers? do |queue|
+        queue.send_message({:name => self.class.to_s, :time => Time.now.utc}, message_opts(:durable => false))
+      end
     end
   end
 end
