@@ -100,6 +100,9 @@ module Smith
       agent_process = agent_process(agent_data['name'])
       if agent_data['pid'] == agent_process.pid
         #delete_agent_process(agent_process.pid)
+        agent_process.pid = nil
+        agent_process.started_at = nil
+        agent_process.last_keep_alive = nil
         agent_process.acknowledge_stop
       else
         if agent_process.pid
