@@ -40,6 +40,10 @@ module Smith
         acknowledge_stop(agent_data)
       end
 
+      Smith::Messaging.new(:dead).receive_message do |header, agent_data|
+        do_dead(agent_data)
+      end
+
       Smith::Messaging.new(:keep_alive).receive_message do |header, agent_data|
         do_keep_alive(agent_data)
       end
@@ -53,9 +57,7 @@ module Smith
         when 'normal'
           @verbose = false
         when 'stop'
-          pp @agent_processes
-          running_agents = @agent_processes.select {|a| a.state == 'running' }
-          pp running_agents
+          running_agents = @agent_processes.select {|a| a.state == 'running' }.map {|a| a}
 
           if running_agents.empty?
             logger.info("Agency shutting down")
@@ -116,6 +118,11 @@ module Smith
     def do_keep_alive(agent_data)
       agent_process(agent_data['name']).last_keep_alive = agent_data['time']
       logger.debug("Agent keep alive: #{agent_data['name']}: #{agent_data['time']}") if @verbose
+    end
+
+    def do_dead(agent_data)
+      agent_process(agent_data['name']).no_process_running
+      logger.debug("Agent is dead: #{agent_data['name']}")
     end
 
     def agent_process(agent_name)
