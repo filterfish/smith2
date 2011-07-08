@@ -9,6 +9,8 @@ require 'smith'
 module Smith
   class AgentBootstrap
 
+    include Logger
+
     def initialize(path, agent_name)
       @agent_name = agent_name
       @agent_filename = File.expand_path(File.join(path, "#{agent_name.snake_case}.rb"))
@@ -23,8 +25,8 @@ module Smith
         agent_instance = Kernel.const_get(@agent_name).new
         agent_instance.run
       rescue => e
-        Logger.error("Failed to run agent: #{@agent_name}: #{e}")
-        Logger.error(e)
+        logger.error("Failed to run agent: #{@agent_name}: #{e}")
+        logger.error(e)
       end
     end
 

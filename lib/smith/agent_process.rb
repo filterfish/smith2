@@ -6,8 +6,9 @@ require 'dm-yaml-adapter'
 module Smith
   class AgentProcess
 
-    include DataMapper::Resource
+    include Logger
     include Extlib
+    include DataMapper::Resource
 
     property :id,               Serial
     property :name,             String, :required => true
@@ -22,12 +23,11 @@ module Smith
     state_machine :initial => :null do
 
       before_transition do |transition|
-        Logger.debug("Tranistion [#{name}]: :#{transition.from} -> :#{transition.to}")
+        logger.debug("Tranistion [#{name}]: :#{transition.from} -> :#{transition.to}")
       end
 
       after_failure do |transition|
-        Logger.debug(transition.inspect)
-        Logger.warn("Illegal state change [#{name}]: :#{transition.from} -> :#{transition.event}")
+        logger.warn("Illegal state change [#{name}]: :#{transition.from} -> :#{transition.event}")
       end
 
       after_transition :on => :start, :do => :do_start

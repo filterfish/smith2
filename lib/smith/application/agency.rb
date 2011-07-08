@@ -7,6 +7,8 @@ require 'smith/agent_state'
 module Smith
   class Agency
 
+    include Logger
+
     attr_reader :agents
 
     def initialize(opts={})
@@ -52,26 +54,26 @@ module Smith
           @verbose = false
         when 'stop'
           pp @agent_processes
-          running_agents = @agent_processes.select {|a| a.state == :running }
+          running_agents = @agent_processes.select {|a| a.state == 'running' }
           pp running_agents
 
           if running_agents.empty?
-            Logger.info("Agency shutting down")
+            logger.info("Agency shutting down")
             Smith.stop
           else
-            Logger.warn("Agents are still running: #{running_agents.join(", ")}") unless running_agents.empty?
-            Logger.info("Agency not shutting down. Use force_stop if you really want to shut it down.")
+            logger.warn("Agents are still running: #{running_agents.join(", ")}") unless running_agents.empty?
+            logger.info("Agency not shutting down. Use force_stop if you really want to shut it down.")
           end
         when 'force_stop'
-          Logger.info("Agency shutting down with predudice")
+          logger.info("Agency shutting down with predudice")
           Smith.stop
         else
-          Logger.warn("Agency command unknown: #{command}")
+          logger.warn("Agency command unknown: #{command}")
         end
       end
 
       Smith::Messaging.new(:state).receive_message do |header, agent_name|
-        Logger.info("Agent state for #{agent_name}: #{agent_process(agent_name).state}")
+        logger.info("Agent state for #{agent_name}: #{agent_process(agent_name).state}")
       end
     end
 
@@ -92,7 +94,7 @@ module Smith
       if agent_data['pid'] == agent_process.pid
         agent_process.acknowledge_start
       else
-        Logger.error("Agent reports different pid during acknowledge_start: #{agent_data['name']}")
+        logger.error("Agent reports different pid during acknowledge_start: #{agent_data['name']}")
       end
     end
 
@@ -106,14 +108,14 @@ module Smith
         agent_process.acknowledge_stop
       else
         if agent_process.pid
-          Logger.error("Agent reports different pid during acknowledge_stop: #{agent_data['name']}")
+          logger.error("Agent reports different pid during acknowledge_stop: #{agent_data['name']}")
         end
       end
     end
 
     def do_keep_alive(agent_data)
       agent_process(agent_data['name']).last_keep_alive = agent_data['time']
-      Logger.debug("Agent keep alive: #{agent_data['name']}: #{agent_data['time']}") if @verbose
+      logger.debug("Agent keep alive: #{agent_data['name']}: #{agent_data['time']}") if @verbose
     end
 
     def agent_process(agent_name)

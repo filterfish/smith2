@@ -1,6 +1,9 @@
 require 'json'
 
 module Smith
+
+  include Logger
+
   class Messaging
     def initialize(queue_name, options={})
       @queue_name = queue_name
@@ -46,7 +49,7 @@ module Smith
         if n > 0
           yield self
         else
-          Logger.debug("Nothing listening on #{queue_name}")
+          logger.debug("Nothing listening on #{queue_name}")
         end
       end
     end

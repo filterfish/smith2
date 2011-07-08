@@ -2,6 +2,9 @@ require 'pp'
 
 module Smith
   class Agent
+
+    include Logger
+
     def initialize(options={})
       Smith.on_error = proc {|e| pp e}
 
@@ -42,14 +45,14 @@ module Smith
 
     def agent_queue
       queue_name = "agent.#{self.class.to_s.snake_case}"
-      Logger.debug("Setting up agent queue: #{queue_name}")
+      logger.debug("Setting up agent queue: #{queue_name}")
       queues(queue_name).receive_message do |header, message|
         case message
         when 'stop'
           acknowledge_stop
           Smith.stop
         else
-          Logger.warn("Unkown message: #{message}")
+          logger.warn("Unkown message: #{message}")
         end
       end
     end
