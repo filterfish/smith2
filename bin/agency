@@ -1,16 +1,32 @@
 #!/usr/bin/env ruby
 
 require 'pp'
+require 'pathname'
 
-require File.expand_path(File.dirname(__FILE__) + '/../lib/smith')
-require File.expand_path(File.dirname(__FILE__) + '/../lib/smith/application/agency')
+root_path = Pathname.new("__FILE__}/..").expand_path
 
-Smith.start do
-  agents_path = '/home/rgh/dev/ruby/smith2/agents'
-  agency = Smith::Agency.new(:agents_path => agents_path)
+require root_path.join('lib/smith')
+require root_path.join('lib/smith/application/agency')
 
-  Smith::Logger.info("Starting #{File.basename($0)}")
-  agency.setup_queues
-  #agency.setup_monitoring
-  #agency.setup_agent_restart
+module Smith
+  class AgencyRunner
+
+    include Logger
+
+    def initialize(root)
+      @agency = Smith::Agency.new(:agents_path => root.join('agents'))
+    end
+
+    def run
+      Smith.start do
+        logger.info("Starting #{File.basename($0)}")
+        @agency.setup_queues
+        #agency.setup_monitoring
+        #agency.setup_agent_restart
+      end
+    end
+  end
 end
+
+agency_runner = Smith::AgencyRunner.new(root_path)
+agency_runner.run
