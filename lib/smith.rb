@@ -46,6 +46,9 @@ module Smith
       @handler = handler
     end
 
+    def running?
+      EM.reactor_running?
+    end
     def connection
       raise RuntimeError, "You must run this in a Smith.start block" if @connection.nil?
       @connection

@@ -9,6 +9,8 @@ require 'smith'
 module Smith
   class AgentBootstrap
 
+    attr_reader :agent
+
     include Logger
 
     def initialize(path, agent_name)
@@ -22,12 +24,38 @@ module Smith
 
     def run
       begin
-        agent_instance = Kernel.const_get(@agent_name).new
-        agent_instance.run
+        @agent = Kernel.const_get(@agent_name).new
+        @agent.run
       rescue => e
         logger.error("Failed to run agent: #{@agent_name}: #{e}")
         logger.error(e)
       end
+    end
+
+    def log
+      logger
+    end
+
+    # Exceptional shutdown of the agent.
+    def terminate
+      logger.debug("Sending dead message for #{agent.name}")
+      if Smith.running?
+        Messaging.new(:dead).send_message(:name => agent.name)
+        Smith.stop
+      else
+        Smith.start do
+          Messaging.new(:dead).send_message(:name => agent.name)
+          Smith.stop
+        end
+      end
+      unlink_pid_file
+    end
+
+    # Clean shutdown of the agent.
+    def shutdown
+      logger.debug("Agent stopped: #{agent.name}")
+      unlink_pid_file
+      Smith.stop if Smith.running?
     end
 
     def write_pid_file
@@ -47,32 +75,42 @@ module Smith
       @pid.cleanup
     end
   end
+end
 
-  path = ARGV[0]
-  agent_name = ARGV[1]
+path = ARGV[0]
+agent_name = ARGV[1]
 
-  exit 1 if agent_name.nil? || path.nil?
+exit 1 if agent_name.nil? || path.nil?
 
-  # Set the running instance name to the name of the agent.
-  $0 = "#{agent_name}"
+# Set the running instance name to the name of the agent.
+$0 = "#{agent_name}"
 
-  agent = AgentBootstrap.new(path, agent_name)
+bootstrapper = Smith::AgentBootstrap.new(path, agent_name)
 
-  if agent.write_pid_file
-    agent.load_agent
+include Smith::Logger
 
-    %w{TERM INT QUIT}.each do |sig|
-      trap sig, proc {
-        Logger.debug("Running signal handler for #{agent_name}")
-        Smith.stop
-        agent.unlink_pid_file
-      }
+begin
+  Smith.start {
+    if bootstrapper.write_pid_file
+      bootstrapper.load_agent
+
+      %w{TERM INT QUIT}.each do |sig|
+        trap sig, proc {
+          logger.error("Agent received: #{sig} signal: #{bootstrapper.agent.name}")
+          bootstrapper.terminate
+        }
+      end
+
+      bootstrapper.run
+    else
+      logger.error("Another instance of #{agent_name} is already running")
     end
+  }
 
-    Smith.start {
-      agent.run
-    }
-  else
-    Logger.error("Another instance of #{agent_name} is already running")
-  end
+  bootstrapper.shutdown
+
+rescue => e
+  logger.error("Agent #{bootstrapper.agent.name} has died.")
+  logger.error(e)
+  bootstrapper.terminate
 end
