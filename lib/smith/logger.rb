@@ -6,18 +6,19 @@ module Smith
 
       @logger = nil
 
-      def logger(log_config=nil, name=nil)
-        init(log_config, name)
+      def logger
+        init
       end
 
-      def init(log_config=nil, name=nil)
+      def init
         if @logger.nil?
-          @logger = if log_config
-                      ::Logging.configure(log_config)
-                      ::Logging::Logger[name]
-                    else
-                      ::Logging.logger(STDOUT)
-                    end
+          pattern_spec = {:pattern => "%.1l, [%d] -- %c:%L %m\n", :date_pattern => "%H:%M:%S"}
+          appender = Logging.appenders.stdout(:layout => Logging.layouts.pattern(pattern_spec))
+
+          Logging.logger.root.appenders = appender
+          Logging.logger.root.level = :debug
+          @logger = Logging.logger[Smith::Agent]
+          @logger.trace = true
         end
         @logger
       end
