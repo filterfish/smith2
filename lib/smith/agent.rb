@@ -5,13 +5,18 @@ module Smith
 
     include Logger
 
+    attr_accessor :name
+
     def initialize(options={})
       Smith.on_error = proc {|e| pp e}
 
+      @name = self.class.to_s
       @queues = Cache.new
       @queues.operator ->(name){Messaging.new(name)}
 
       @default_message_options = {:ack => true, :durable => true}
+
+      logger.debug("Starting #{name}")
 
       agent_queue
       acknowledge_start
