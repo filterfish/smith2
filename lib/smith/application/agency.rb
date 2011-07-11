@@ -18,9 +18,6 @@ module Smith
       @verbose = false
 
       DataMapper.setup(:default, "yaml:///var/tmp/smith")
-
-      @agent_monitor = AgentMonitoring.new(@agent_processes)
-      @agent_monitor.start_monitoring
     end
 
     def setup_queues
@@ -30,10 +27,6 @@ module Smith
 
       Smith::Messaging.new(:acknowledge_start).receive_message do |header, agent_data|
         acknowledge_start(agent_data)
-      end
-
-      Smith::Messaging.new(:stop).receive_message do |header, agent|
-        stop(agent)
       end
 
       Smith::Messaging.new(:acknowledge_stop).receive_message do |header, agent_data|
@@ -49,34 +42,70 @@ module Smith
       end
 
       # TODO do this properly.
-      Smith::Messaging.new(:ageny_control).receive_message do |header, command|
+      Smith::Messaging.new(:ageny_control).receive_message do |header, payload|
+        command = payload['command']
+        args = payload['args']
+        logger.debug("agency command: #{command}#{(args.empty?) ? '' : " #{args.join(', ')}"}.")
+
         case command
+        when 'agents'
+          agents = Pathname.new(AgentProcess.agent_path).each_child.inject([]) do |acc,agent_path|
+            acc.tap do |a|
+              unless agent_path.directory?
+                a << Extlib::Inflection.camelize(agent_path.basename('.rb'))
+              end
+            end
+          end
+          if agents.empty?
+            logger.info("No agents available.")
+          else
+            logger.info("Agents available: #{agents.join(", ")}.")
+          end
+        when 'list'
+          agents = @agent_processes.map(&:name)
+          if agents.empty?
+            logger.info("No agents running.")
+          else
+            logger.info("Agents running: #{agents.join(', ')}.")
+          end
+        when 'start'
+          args.each { |agent_name| start(agent_name) }
+        when 'state'
+          args.inject([]) do |acc,agent_name|
+            states = acc.tap do |a|
+              a << agent_process(agent_name).state
+            end
+            logger.info("Agent state for #{agent_name}: #{agent_process(agent_name).state}.")
+          end
+        when 'stop'
+          args.each { |agent_name| stop(agent_name) }
         when 'verbose'
           @verbose = true
           @agent_monitor.verbose = true
         when 'normal'
           @verbose = false
-        when 'stop'
+        when 'stop_agency'
           running_agents = @agent_processes.select {|a| a.state == 'running' }.map {|a| a}
 
           if running_agents.empty?
-            logger.info("Agency shutting down")
+            logger.info("Agency shutting down.")
             Smith.stop
           else
-            logger.warn("Agents are still running: #{running_agents.join(", ")}") unless running_agents.empty?
+            logger.warn("Agents are still running: #{running_agents.join(", ")}.") unless running_agents.empty?
             logger.info("Agency not shutting down. Use force_stop if you really want to shut it down.")
           end
         when 'force_stop'
-          logger.info("Agency shutting down with predudice")
+          logger.info("Agency shutting down with predudice.")
           Smith.stop
         else
-          logger.warn("Agency command unknown: #{command}")
+          logger.warn("Agency command unknown: #{command}.")
         end
       end
+    end
 
-      Smith::Messaging.new(:state).receive_message do |header, agent_name|
-        logger.info("Agent state for #{agent_name}: #{agent_process(agent_name).state}")
-      end
+    def start_monitoring
+      @agent_monitor = AgentMonitoring.new(@agent_processes)
+      @agent_monitor.start_monitoring
     end
 
     private
