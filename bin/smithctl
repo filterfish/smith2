@@ -1,0 +1,42 @@
+#!/usr/bin/env ruby
+
+$:.unshift(File.dirname(__FILE__) + '/../lib')
+
+require 'smith'
+
+module Smith
+  class SmithControl
+
+    @@commands =  [:agents, :force_stop_agency, :list, :log_level, :start, :state, :stop, :stop_agency]
+
+    attr_reader :commands
+
+    def initialize
+      @queue = Messaging.new(:ageny_control)
+    end
+
+    @@commands.each do |command|
+      define_method(command) do |argument|
+        @queue.consumers? do |queue|
+          queue.send_message(:command => command, :args => argument)
+        end
+        Smith.stop
+      end
+    end
+
+    def method_missing(*args)
+      puts "Unknown command: #{args.first}"
+      Smith.stop
+    end
+  end
+end
+
+command = ARGV.shift
+args = ARGV
+
+command || (puts "usage #{File.basename($0)} <command> opts]"; exit 2)
+
+Smith.start do
+  control = Smith::SmithControl.new
+  control.send(command, args)
+end
