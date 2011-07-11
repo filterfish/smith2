@@ -2,9 +2,10 @@ require 'json'
 
 module Smith
 
-  include Logger
-
   class Messaging
+
+    include Logger
+
     def initialize(queue_name, options={})
       @queue_name = queue_name
       @channel = AMQP::Channel.new(Smith.connection)
