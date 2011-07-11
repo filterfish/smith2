@@ -28,5 +28,9 @@ module Smith
   end
 end
 
+%w{TERM INT QUIT}.each do |sig|
+  trap sig, proc { puts "Shutting down"; Smith.stop }
+end
+
 agency_runner = Smith::AgencyRunner.new(root_path)
 agency_runner.run
