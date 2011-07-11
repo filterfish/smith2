@@ -6,6 +6,8 @@ require 'dm-yaml-adapter'
 module Smith
   class AgentProcess
 
+    @@agent_path = Pathname.new('/home/rgh/dev/ruby/smith2/agents')
+
     include Logger
     include Extlib
     include DataMapper::Resource
@@ -64,6 +66,10 @@ module Smith
       end
     end
 
+    def self.agent_path
+      @@agent_path
+    end
+
     private
 
     attr_accessor :agent_name
@@ -103,10 +109,9 @@ module Smith
         #STDERR.reopen("/dev/null")
         STDERR.reopen(STDOUT)
 
-        base_path = '/home/rgh/dev/ruby/smith2/agents'
         bootstraper = File.expand_path(File.join(File.dirname(__FILE__), 'bootstrap.rb'))
 
-        exec('ruby', bootstraper, base_path, name)
+        exec('ruby', bootstraper, @@agent_path, name)
       end
 
       # We don't want any zombies.
