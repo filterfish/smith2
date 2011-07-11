@@ -3,6 +3,7 @@ $:.unshift(File.dirname(__FILE__))
 require 'pp'
 require 'amqp'
 require 'tmpdir'
+require 'pathname'
 require 'extlib/inflection'
 require 'smith/logger'
 require 'smith/cache'
@@ -13,8 +14,9 @@ require 'smith/messaging'
 require 'daemons/pidfile_mp'
 
 module Smith
+  include Logger
+
   class << self
-    attr_accessor :logger
 
     def start(opts={}, &block)
 
@@ -29,11 +31,10 @@ module Smith
         @connection = connection
 
         @connection.on_error do |conn, reason|
-          pp reason
           if @handler
             @handler.call(conn, reason)
           else
-            @logger.error("Shutting down: #{reason.reply_code}: #{reason.reply_text}")
+            logger.error("Shutting down: #{reason.reply_code}: #{reason.reply_text}")
             EM.stop
           end
         end
