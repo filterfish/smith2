@@ -5,7 +5,7 @@ class NullAgent < Smith::Agent
   end
 
   def run
-    get_message(:test) do |header,message|
+    get_message(:null) do |header,message|
       logger.info(message)
     end
   end
