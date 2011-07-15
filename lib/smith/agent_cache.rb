@@ -1,9 +1,12 @@
 module Smith
   class AgentCache < Cache
 
-    def initialize
+    attr_accessor :path
+
+    def initialize(opts={})
       super()
-      operator ->(agent_name){AgentProcess.first(:name => agent_name) || AgentProcess.new(:name => agent_name)}
+      @path = (opts[:path].nil?) ? Smith.root_path.join('agents') : opts[:path]
+      operator ->(agent_name){AgentProcess.first(:name => agent_name) || AgentProcess.new(:name => agent_name, :path => @path)}
     end
 
     def state(state)

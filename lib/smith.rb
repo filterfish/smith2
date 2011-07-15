@@ -19,6 +19,10 @@ module Smith
 
   class << self
 
+    def root_path
+      Pathname.new(File.dirname(__FILE__) + '/..').expand_path
+    end
+
     def start(opts={}, &block)
 
       EM.epoll
