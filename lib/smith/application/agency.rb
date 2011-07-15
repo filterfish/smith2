@@ -78,7 +78,11 @@ module Smith
             logger.info("Agent state for #{agent_name}: #{@agent_processes[agent_name].state}.")
           end
         when 'stop'
-          args.each { |agent_name| stop(agent_name) }
+          if args.first == 'all'
+            @agent_processes.each { |agent_process| agent_process.stop }
+          else
+            args.each { |agent_name| stop(agent_name) }
+          end
         when 'verbose'
           @verbose = true
           @agent_monitor.verbose = true
