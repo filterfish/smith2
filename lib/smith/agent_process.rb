@@ -50,7 +50,7 @@ module Smith
       end
 
       event :stop do
-        transition [:running] => :stopping
+        transition [:running, :unknown] => :stopping
       end
 
       event :acknowledge_stop do
@@ -58,11 +58,11 @@ module Smith
       end
 
       event :no_process_running do
-        transition [:starting, :running, :stopping] => :dead
+        transition [:unknown, :starting, :running, :stopping] => :dead
       end
 
       event :not_responding do
-        transition [:starting, :acknowledge_start, :acknowledge_stop, :running, :stopping] => :unkown
+        transition [:starting, :acknowledge_start, :acknowledge_stop, :running, :stopping] => :unknown
       end
 
       event :kill do
