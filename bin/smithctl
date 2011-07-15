@@ -7,7 +7,7 @@ require 'smith'
 module Smith
   class SmithControl
 
-    @@commands =  [:agents, :force_stop_agency, :list, :log_level, :start, :state, :stop, :stop_agency]
+    @@commands =  [:agents, :force_stop_agency, :kill, :list, :log_level, :normal, :start, :state, :stop, :stop_agency, :verbose]
 
     attr_reader :commands
 
