@@ -25,7 +25,7 @@ module Smith
     state_machine :initial => :null do
 
       before_transition do |transition|
-        logger.debug("Tranistion [#{name}]: :#{transition.from} -> :#{transition.to}")
+        logger.debug("Transition [#{name}]: :#{transition.from} -> :#{transition.to}")
       end
 
       after_failure do |transition|

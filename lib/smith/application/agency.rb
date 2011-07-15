@@ -43,7 +43,7 @@ module Smith
       Smith::Messaging.new(:ageny_control).receive_message do |header, payload|
         command = payload['command']
         args = payload['args']
-        logger.debug("agency command: #{command}#{(args.empty?) ? '' : " #{args.join(', ')}"}.")
+        logger.debug("Agency command: #{command}#{(args.empty?) ? '' : " #{args.join(', ')}"}.")
 
         case command
         when 'agents'
@@ -93,7 +93,7 @@ module Smith
             logger.info("Agency not shutting down. Use force_stop if you really want to shut it down.")
           end
         when 'force_stop'
-          logger.info("Agency shutting down with predudice.")
+          logger.info("Agency shutting down with prejudice.")
           Smith.stop
         else
           logger.warn("Agency command unknown: #{command}.")
