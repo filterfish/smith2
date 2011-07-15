@@ -2,7 +2,6 @@ require 'pp'
 require 'state_machine'
 require 'dm-core'
 require 'dm-yaml-adapter'
-require 'smith/agent_state'
 
 module Smith
   class Agency
