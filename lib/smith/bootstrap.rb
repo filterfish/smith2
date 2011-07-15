@@ -59,16 +59,8 @@ module Smith
     end
 
     def write_pid_file
-      @pid = Daemons::PidFile.new(Daemons::Pid.dir(:normal, Dir::tmpdir, nil), ".rubymas-#{@agent_name.snake_case}")
-      if @pid.exist?
-        if @pid.running?
-          false
-        else
-          @pid.pid = Process.pid
-        end
-      else
-        @pid.pid = Process.pid
-      end
+      @pid = Daemons::PidFile.new(Daemons::Pid.dir(:normal, Dir::tmpdir, nil), ".rubymas-#{@agent_name.snake_case}", true)
+      @pid.pid = Process.pid
     end
 
     def unlink_pid_file
@@ -91,20 +83,17 @@ include Smith::Logger
 
 begin
   Smith.start {
-    if bootstrapper.write_pid_file
-      bootstrapper.load_agent
+    bootstrapper.write_pid_file
+    bootstrapper.load_agent
 
-      %w{TERM INT QUIT}.each do |sig|
-        trap sig, proc {
-          logger.error("Agent received: #{sig} signal: #{bootstrapper.agent.name}")
-          bootstrapper.terminate
-        }
-      end
-
-      bootstrapper.run
-    else
-      logger.error("Another instance of #{agent_name} is already running")
+    %w{TERM INT QUIT}.each do |sig|
+      trap sig, proc {
+        logger.error("Agent received: #{sig} signal: #{bootstrapper.agent.name}")
+        bootstrapper.terminate
+      }
     end
+
+    bootstrapper.run
   }
 
   bootstrapper.shutdown
