@@ -66,6 +66,8 @@ module Smith
           else
             logger.info("Agents running: #{agents.sort.join(', ')}.")
           end
+        when 'kill'
+          args.each { |agent_name| kill(agent_name) }
         when 'start'
           args.each { |agent_name| start(agent_name) }
         when 'state'

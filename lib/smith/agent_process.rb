@@ -64,6 +64,15 @@ module Smith
       event :not_responding do
         transition [:starting, :acknowledge_start, :acknowledge_stop, :running, :stopping] => :unkown
       end
+
+      event :kill do
+        transition [:unknown, :starting, :acknowledge_start, :stopped, :stopped, :acknowledge_stop, :running, :dead] => :null
+      end
+    end
+
+    def kill
+      logger.info("Sending kill signal: #{self.name}")
+      Process.kill('TERM', self.pid)
     end
 
     def self.agent_path
