@@ -21,8 +21,7 @@ module Smith
       Smith.start do
         logger.info("Starting #{File.basename($0)}")
         @agency.setup_queues
-        #agency.setup_monitoring
-        #agency.setup_agent_restart
+        @agency.start_monitoring
       end
     end
   end

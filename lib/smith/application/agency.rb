@@ -123,6 +123,8 @@ module Smith
     def acknowledge_start(agent_data)
       agent_process = agent_process(agent_data['name'])
       if agent_data['pid'] == agent_process.pid
+        agent_process.monitor = agent_data['monitor']
+        agent_process.singleton = agent_data['singleton']
         agent_process.acknowledge_start
       else
         logger.error("Agent reports different pid during acknowledge_start: #{agent_data['name']}")
@@ -134,6 +136,8 @@ module Smith
       if agent_data['pid'] == agent_process.pid
         #delete_agent_process(agent_process.pid)
         agent_process.pid = nil
+        agent_process.monitor = nil
+        agent_process.singleton = nil
         agent_process.started_at = nil
         agent_process.last_keep_alive = nil
         agent_process.acknowledge_stop

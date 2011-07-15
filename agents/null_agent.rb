@@ -1,7 +1,7 @@
 class NullAgent < Smith::Agent
 
   def initialize(opts={})
-    super(opts.merge(:restart => true))
+    super(opts.merge(:monitor => true))
   end
 
   def run

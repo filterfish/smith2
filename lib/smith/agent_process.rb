@@ -19,7 +19,7 @@ module Smith
     property :name,             String
     property :started_at,       Time
     property :last_keep_alive,  Time
-    property :restart,          Boolean
+    property :monitor,          Boolean
     property :singleton,        Boolean
 
     state_machine :initial => :null do

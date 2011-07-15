@@ -10,6 +10,11 @@ module Smith
     def initialize(options={})
       Smith.on_error = proc {|e| pp e}
 
+      @agent_options = {}.tap do |acc|
+        acc[:monitor] = options.delete(:monitor) || true
+        acc[:singleton] = options.delete(:singleton) || true
+      end
+
       @name = self.class.to_s
       @queues = Cache.new
       @queues.operator ->(name){Messaging.new(name)}
@@ -32,7 +37,7 @@ module Smith
     private
 
     def acknowledge_start
-      agent_data = {:pid => $$, :name => self.class.to_s, :started_at => Time.now.utc}
+      agent_data = @agent_options.merge(:pid => $$, :name => self.class.to_s, :started_at => Time.now.utc)
       Smith::Messaging.new(:acknowledge_start).send_message(agent_data, message_opts)
     end
 
@@ -42,9 +47,13 @@ module Smith
     end
 
     def start_keep_alive
-      send_keep_alive(queues(:keep_alive))
-      EventMachine::add_periodic_timer(1) do
+      if @agent_options[:monitor]
         send_keep_alive(queues(:keep_alive))
+        EventMachine::add_periodic_timer(1) do
+          send_keep_alive(queues(:keep_alive))
+        end
+      else
+        logger.debug("Not initiating keep alive agent is not being monitored: #{@name}")
       end
     end
 
