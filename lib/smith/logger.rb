@@ -1,6 +1,6 @@
 require 'logging'
 
-# TODO learn more about module programming and do thi properly.  It works
+# TODO learn more about module programming and do this properly.  It works
 # ok at the moment but I don't think it's done well and somethings don't
 # work, for example the trace level can only be changed once. If you start
 # out with info level and change it to dubug the trace level will still
@@ -12,7 +12,7 @@ module Smith
 
     protected
 
-    @@__pattern = "[%d] %5l - %20c:%L - %m\n"
+    @@__pattern = "[%d] %5l - %24c:%-3L - %m\n"
     @@__level = :debug
     @@__trace = true
 
