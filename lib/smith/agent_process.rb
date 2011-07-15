@@ -36,6 +36,7 @@ module Smith
       after_transition :on => :acknowledge_start, :do => :do_acknowledge_start
       after_transition :on => :stop, :do => :do_stop
       after_transition :on => :acknowledge_stop, :do => :do_acknowledge_stop
+      after_transition :on => :not_responding, :do => :do_reap_agent
 
       event :instantiate do
         transition [:null] => :stopped
@@ -98,6 +99,22 @@ module Smith
     def do_acknowledge_stop
     end
 
+    # If an agent is in an unknown state then this will check to see
+    # if the process is still alive and if it is kill it, otherwise
+    # log a message. TODO this is not really a reaper but I haven't
+    # quite worked out what I'm going to do with it so I'll leave it
+    # as is
+    def do_reap_agent
+      logger.info("Reaping agent: #{self.name}")
+      if Pathname.new('/proc').join(self.pid.to_s).exist?
+        logger.warn("Agent is still alive: #{self.name}")
+      else
+        logger.warn("Agent is already dead: #{self.name}")
+      end
+    end
+
+    # Start an agent. This forks and execs the bootstrapper class
+    # which then becomes responsible for managing the agent process.
     def start_agent
       self.pid = fork do
         # Detach from the controlling terminal
