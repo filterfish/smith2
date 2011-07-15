@@ -11,8 +11,7 @@ module Smith
     attr_reader :agents
 
     def initialize(opts={})
-      @agent_processes = AgentCache.new
-
+      @agent_processes = AgentCache.new(:path => opts.delete(:path))
       @verbose = false
 
       DataMapper.setup(:default, "yaml:///var/tmp/smith")
@@ -32,11 +31,11 @@ module Smith
       end
 
       Smith::Messaging.new(:dead).receive_message do |header, agent_data|
-        do_dead(agent_data)
+        dead(agent_data)
       end
 
       Smith::Messaging.new(:keep_alive).receive_message do |header, agent_data|
-        do_keep_alive(agent_data)
+        keep_alive(agent_data)
       end
 
       # TODO do this properly.
@@ -48,7 +47,7 @@ module Smith
 
         case command
         when 'agents'
-          agents = Pathname.new(AgentProcess.agent_path).each_child.inject([]) do |acc,agent_path|
+          agents = Pathname.new(@agent_processes.path).each_child.inject([]) do |acc,agent_path|
             acc.tap do |a|
               unless agent_path.directory?
                 a << Extlib::Inflection.camelize(agent_path.basename('.rb'))
@@ -80,7 +79,7 @@ module Smith
           end
         when 'stop'
           if args.first == 'all'
-            @agent_processes.each { |agent_process| agent_process.stop }
+            @agent_processes.each { |agent_process| stop(agent_name) }
           else
             args.each { |agent_name| stop(agent_name) }
           end
@@ -119,47 +118,60 @@ module Smith
     attr_reader :agent_states
 
     def start(agent_name)
-      @agent_processes[agent_name].start
-    end
-
-    def stop(agent_name)
-      @agent_processes[agent_name].stop
-    end
-
-    def acknowledge_start(agent_data)
-      agent_process = @agent_processes[agent_data['name']]
-      if agent_data['pid'] == agent_process.pid
-        agent_process.monitor = agent_data['monitor']
-        agent_process.singleton = agent_data['singleton']
-        agent_process.acknowledge_start
-      else
-        logger.error("Agent reports different pid during acknowledge_start: #{agent_data['name']}")
+      @agent_processes[agent_name].tap do |agent_process|
+        agent_process.name = agent_name
+        agent_process.start
       end
     end
 
-    def acknowledge_stop(agent_data)
-      agent_process = @agent_processes[agent_data['name']]
-      if agent_data['pid'] == agent_process.pid
-        #delete_agent_process(agent_process.pid)
-        agent_process.pid = nil
-        agent_process.monitor = nil
-        agent_process.singleton = nil
-        agent_process.started_at = nil
-        agent_process.last_keep_alive = nil
-        agent_process.acknowledge_stop
-      else
-        if agent_process.pid
-          logger.error("Agent reports different pid during acknowledge_stop: #{agent_data['name']}")
+    def kill(agent_name)
+      @agent_processes[agent_name].tap do |agent_process|
+        agent_process.kill
+      end
+    end
+
+    def stop(agent_name)
+      @agent_processes[agent_name].tap do |agent_process|
+        agent_process.stop
+      end
+    end
+
+    def acknowledge_start(agent_data)
+      @agent_processes[agent_data['name']].tap do |agent_process|
+        if agent_data['pid'] == agent_process.pid
+          agent_process.monitor = agent_data['monitor']
+          agent_process.singleton = agent_data['singleton']
+          agent_process.acknowledge_start
+        else
+          logger.error("Agent reports different pid during acknowledge_start: #{agent_data['name']}")
         end
       end
     end
 
-    def do_keep_alive(agent_data)
+    def acknowledge_stop(agent_data)
+      @agent_processes[agent_data['name']].tap do |agent_process|
+        if agent_data['pid'] == agent_process.pid
+          #delete_agent_process(agent_process.pid)
+          agent_process.pid = nil
+          agent_process.monitor = nil
+          agent_process.singleton = nil
+          agent_process.started_at = nil
+          agent_process.last_keep_alive = nil
+          agent_process.acknowledge_stop
+        else
+          if agent_process.pid
+            logger.error("Agent reports different pid during acknowledge_stop: #{agent_data['name']}")
+          end
+        end
+      end
+    end
+
+    def keep_alive(agent_data)
       @agent_processes[agent_data['name']].last_keep_alive = agent_data['time']
       logger.debug("Agent keep alive: #{agent_data['name']}: #{agent_data['time']}") if @verbose
     end
 
-    def do_dead(agent_data)
+    def dead(agent_data)
       @agent_processes[agent_data['name']].no_process_running
       logger.debug("Agent is dead: #{agent_data['name']}")
     end
