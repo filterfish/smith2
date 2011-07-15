@@ -6,26 +6,17 @@ require 'smith'
 
 module Smith
   class SmithControl
-
-    @@commands =  [:agents, :force_stop_agency, :kill, :list, :log_level, :normal, :start, :state, :stop, :stop_agency, :verbose]
-
-    attr_reader :commands
-
     def initialize
       @queue = Messaging.new(:ageny_control)
     end
 
-    @@commands.each do |command|
-      define_method(command) do |argument|
-        @queue.consumers? do |queue|
-          queue.send_message(:command => command, :args => argument)
-        end
-        Smith.stop
-      end
-    end
-
     def method_missing(*args)
-      puts "Unknown command: #{args.first}"
+      command = args.shift
+      arguments = args.shift
+
+      @queue.consumers? do |queue|
+        queue.send_message(:command => command, :args => arguments)
+      end
       Smith.stop
     end
   end

@@ -40,6 +40,7 @@ module Smith
       end
 
       # TODO do this properly.
+      # TODO check the command and arguments. Maybe use json schema.
       Smith::Messaging.new(:ageny_control).receive_message do |header, payload|
         command = payload['command']
         args = payload['args']
