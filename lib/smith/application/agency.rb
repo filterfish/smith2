@@ -57,14 +57,14 @@ module Smith
           if agents.empty?
             logger.info("No agents available.")
           else
-            logger.info("Agents available: #{agents.join(", ")}.")
+            logger.info("Agents available: #{agents.sort.join(", ")}.")
           end
         when 'list'
           agents = @agent_processes.names
           if agents.empty?
             logger.info("No agents running.")
           else
-            logger.info("Agents running: #{agents.join(', ')}.")
+            logger.info("Agents running: #{agents.sort.join(', ')}.")
           end
         when 'start'
           args.each { |agent_name| start(agent_name) }
