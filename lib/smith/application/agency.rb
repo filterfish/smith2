@@ -88,6 +88,7 @@ module Smith
           @agent_monitor.verbose = true
         when 'normal'
           @verbose = false
+          @agent_monitor.verbose = false
         when 'stop_agency'
           running_agents = @agent_processes.state(:running)
 
