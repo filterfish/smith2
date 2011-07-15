@@ -16,20 +16,41 @@ module Smith
       end
     end
 
+    def entries
+      @cache.keys.map(&:to_s)
+    end
+
     def invalidate(name)
       @cache.delete(name)
     end
 
     def select
-      @cache.select { |k,v| yield v }
+      # This seems wierd. TODO verify that this is best way to do this.
+      @cache.select { |k,v| yield v }.map { |k,v| v }
     end
 
     def map
-      @cache.map { |k,v| yield v }
+      if block_given?
+        @cache.map { |k,v| yield v }
+      else
+        @cache.map { |k,v| v }
+      end
     end
 
     def each
-      @cache.each { |k,v| yield v }
+      if block_given?
+        @cache.each_value { |v| yield v }
+      else
+        @cache.each_value
+      end
+    end
+
+    def empty?
+      @cache.empty?
+    end
+
+    def size
+      @cache.size
     end
   end
 end
