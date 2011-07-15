@@ -1,22 +1,22 @@
 require 'pp'
 require 'state_machine'
 require 'dm-core'
+require 'dm-observer'
 require 'dm-yaml-adapter'
 
 module Smith
-  class AgentProcess
 
-    @@agent_path = Pathname.new('/home/rgh/dev/ruby/smith2/agents')
+  class AgentProcess
 
     include Logger
     include Extlib
     include DataMapper::Resource
 
     property :id,               Serial
+    property :path,             String, :required => true
     property :name,             String, :required => true
     property :state,            String, :required => true
     property :pid,              Integer
-    property :name,             String
     property :started_at,       Time
     property :last_keep_alive,  Time
     property :monitor,          Boolean
@@ -29,14 +29,8 @@ module Smith
       end
 
       after_failure do |transition|
-        logger.warn("Illegal state change [#{name}]: :#{transition.from} -> :#{transition.event}")
+        logger.debug("Illegal state change [#{name}]: :#{transition.from} -> :#{transition.event}")
       end
-
-      after_transition :on => :start, :do => :do_start
-      after_transition :on => :acknowledge_start, :do => :do_acknowledge_start
-      after_transition :on => :stop, :do => :do_stop
-      after_transition :on => :acknowledge_stop, :do => :do_acknowledge_stop
-      after_transition :on => :not_responding, :do => :do_reap_agent
 
       event :instantiate do
         transition [:null] => :stopped
@@ -67,56 +61,24 @@ module Smith
       end
 
       event :kill do
-        transition [:unknown, :starting, :acknowledge_start, :stopped, :stopped, :acknowledge_stop, :running, :dead] => :null
+        transition [:null, :unknown, :starting, :acknowledge_start, :stopped, :stopped, :acknowledge_stop, :running, :dead] => :null
       end
     end
+  end
 
-    def kill
-      logger.info("Sending kill signal: #{self.name}")
-      Process.kill('TERM', self.pid)
-    end
+  class AgentProcessObserver
 
-    def self.agent_path
-      @@agent_path
-    end
+    include Logger
+    include DataMapper::Observer
 
-    private
-
-    attr_accessor :agent_name
-
-    def do_start
-      self.started_at = Time.now.utc
-      start_agent
-    end
-
-    def do_stop
-      stop_agent
-    end
-
-    def do_acknowledge_start
-    end
-
-    def do_acknowledge_stop
-    end
-
-    # If an agent is in an unknown state then this will check to see
-    # if the process is still alive and if it is kill it, otherwise
-    # log a message. TODO this is not really a reaper but I haven't
-    # quite worked out what I'm going to do with it so I'll leave it
-    # as is
-    def do_reap_agent
-      logger.info("Reaping agent: #{self.name}")
-      if Pathname.new('/proc').join(self.pid.to_s).exist?
-        logger.warn("Agent is still alive: #{self.name}")
-      else
-        logger.warn("Agent is already dead: #{self.name}")
-      end
-    end
+    observe Smith::AgentProcess
 
     # Start an agent. This forks and execs the bootstrapper class
     # which then becomes responsible for managing the agent process.
-    def start_agent
-      self.pid = fork do
+    def self.start(agent_process)
+      agent_process.started_at = Time.now.utc
+      agent_process.pid = fork do
+
         # Detach from the controlling terminal
         unless sess_id = Process.setsid
           raise 'Cannot detach from controlling terminal'
@@ -132,20 +94,57 @@ module Smith
         # Sort out the remaining file descriptors. Don't do anything with
         # stdout (and by extension stderr) as want the agency to manage it.
         STDIN.reopen("/dev/null")
-        #STDERR.reopen("/dev/null")
         STDERR.reopen(STDOUT)
 
         bootstraper = File.expand_path(File.join(File.dirname(__FILE__), 'bootstrap.rb'))
 
-        exec('ruby', bootstraper, @@agent_path, name)
+        exec('ruby', bootstraper, agent_process.path, agent_process.name)
       end
 
       # We don't want any zombies.
-      Process.detach(pid)
+      Process.detach(agent_process.pid)
     end
 
-    def stop_agent
-      Smith::Messaging.new("agent.#{name.snake_case}").send_message("stop")
+    def self.acknowledge_start(agent_process)
     end
+
+    def self.stop(agent_process)
+      Smith::Messaging.new("agent.#{agent_process.name.snake_case}").send_message("stop")
+    end
+
+    def self.acknowledge_stop(agent_process)
+    end
+
+    def self.kill(agent_process)
+      # FIXME sort out the logger so that it works at the class level
+      #logger.info("Sending kill signal: #{agent_process.name}")
+      if agent_process.pid
+        Process.kill('TERM', agent_process.pid)
+        #logger.error("Trying to kill non-existent agent: #{agent_process.name}")
+      end
+    end
+
+    # If an agent is in an unknown state then this will check to see
+    # if the process is still alive and if it is kill it, otherwise
+    # log a message. TODO this is not really a reaper but I haven't
+    # quite worked out what I'm going to do with it so I'll leave it
+    # as is
+    def self.reap_agent(agent_process)
+      logger.info("Reaping agent: #{agent_process.name}")
+      if Pathname.new('/proc').join(agent_process.pid.to_s).exist?
+        logger.warn("Agent is still alive: #{agent_process.name}")
+      else
+        logger.warn("Agent is already dead: #{agent_process.name}")
+      end
+    end
+  end
+
+  AgentProcess.state_machine do
+    after_transition :on => :start, :do => AgentProcessObserver.method(:start)
+    after_transition :on => :acknowledge_start, :do => AgentProcessObserver.method(:acknowledge_start)
+    after_transition :on => :stop, :do => AgentProcessObserver.method(:stop)
+    after_transition :on => :kill, :do => AgentProcessObserver.method(:kill)
+    after_transition :on => :acknowledge_stop, :do => AgentProcessObserver.method(:acknowledge_stop)
+    after_transition :on => :not_responding, :do => AgentProcessObserver.method(:reap_agent)
   end
 end
