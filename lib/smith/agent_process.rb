@@ -64,6 +64,10 @@ module Smith
         transition [:null, :unknown, :starting, :acknowledge_start, :stopped, :stopped, :acknowledge_stop, :running, :dead] => :null
       end
     end
+
+    def private_queue_name
+      "agent.#{name.snake_case}"
+    end
   end
 
   class AgentProcessObserver
@@ -109,7 +113,7 @@ module Smith
     end
 
     def self.stop(agent_process)
-      Smith::Messaging.new("agent.#{agent_process.name.snake_case}").send_message("stop")
+      Smith::Messaging.new(agent_process.private_queue_name).send_message(:command => :stop)
     end
 
     def self.acknowledge_stop(agent_process)
