@@ -70,6 +70,9 @@ module Smith
         when 'stop'
           acknowledge_stop
           Smith.stop
+        when 'log_level'
+          logger.info("Setting log level to #{args} for: #{name}")
+          Logger.level args
         else
           logger.warn("Unknown command: #{command} -> #{args.inspect}")
         end

@@ -68,6 +68,24 @@ module Smith
           end
         when 'kill'
           args.each { |agent_name| kill(agent_name) }
+        when 'log-level'
+          log_level = args.shift
+          agent_names = args
+
+          case agent_names.first
+          when 'all'
+            @agent_processes.each { |agent_process| Smith::Messaging.new("agent.#{agent_process.private_queue_name}").send_message(:command => :log_level, :args => log_level) }
+          when 'agency'
+            logger.info("Setting agency log level to: #{log_level}")
+            Logger.level log_level
+          when nil
+            logger.warn("No log level set. Not changing log level")
+          else
+            agent_names.each do |agent_name|
+              agent_process = @agent_processes[agent_name]
+              Smith::Messaging.new(agent_process.private_queue_name).send_message(:command => :log_level, :args => log_level)
+            end
+          end
         when 'start'
           args.each { |agent_name| start(agent_name) }
         when 'state'
