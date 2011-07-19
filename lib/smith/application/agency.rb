@@ -60,7 +60,7 @@ module Smith
             logger.info("Agents available: #{agents.sort.join(", ")}.")
           end
         when 'list'
-          agents = @agent_processes.names
+          agents = @agent_processes.state(:running).map(&:name)
           if agents.empty?
             logger.info("No agents running.")
           else

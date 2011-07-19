@@ -61,7 +61,7 @@ module Smith
       end
 
       event :kill do
-        transition [:null, :unknown, :starting, :acknowledge_start, :stopped, :stopped, :acknowledge_stop, :running, :dead] => :null
+        transition [:null, :unknown, :starting, :acknowledge_start, :stopping, :acknowledge_stop, :running, :dead] => :null
       end
     end
 
