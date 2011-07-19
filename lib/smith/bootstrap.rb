@@ -3,7 +3,6 @@
 
 $: << File.dirname(__FILE__) + '/..'
 
-require 'extlib'
 require 'smith'
 
 module Smith
@@ -23,6 +22,7 @@ module Smith
     end
 
     def run
+      write_pid_file
       begin
         @agent = Kernel.const_get(@agent_name).new
         @agent.run
@@ -32,22 +32,17 @@ module Smith
       end
     end
 
-    def log
-      logger
-    end
-
     # Exceptional shutdown of the agent.
     def terminate
       logger.debug("Sending dead message for #{agent.name}")
       if Smith.running?
-        Messaging.new(:dead).send_message(:name => agent.name)
-        Smith.stop
+        send_dead_message
       else
         Smith.start do
-          Messaging.new(:dead).send_message(:name => agent.name)
-          Smith.stop
+          send_dead_message
         end
       end
+      Smith.stop
       unlink_pid_file
     end
 
@@ -58,9 +53,15 @@ module Smith
       Smith.stop if Smith.running?
     end
 
+    private
+
     def write_pid_file
       @pid = Daemons::PidFile.new(Daemons::Pid.dir(:normal, Dir::tmpdir, nil), ".rubymas-#{@agent_name.snake_case}", true)
       @pid.pid = Process.pid
+    end
+
+    def send_dead_message
+      Messaging.new(:dead).send_message(:name => agent.name)
     end
 
     def unlink_pid_file
@@ -83,7 +84,6 @@ include Smith::Logger
 
 begin
   Smith.start {
-    bootstrapper.write_pid_file
     bootstrapper.load_agent
 
     %w{TERM INT QUIT}.each do |sig|
