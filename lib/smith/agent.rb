@@ -58,15 +58,20 @@ module Smith
     end
 
     def agent_queue
-      queue_name = "agent.#{self.class.to_s.snake_case}"
+      queue_name = "agent.#{name.snake_case}"
       logger.debug("Setting up agent queue: #{queue_name}")
-      queues(queue_name).receive_message do |header, message|
-        case message
+      queues(queue_name).receive_message do |header, payload|
+        command = payload['command']
+        args = payload['args']
+
+        logger.debug("Command received on agent private queue: #{command} #{args}")
+
+        case command
         when 'stop'
           acknowledge_stop
           Smith.stop
         else
-          logger.warn("Unkown message: #{message}")
+          logger.warn("Unknown command: #{command} -> #{args.inspect}")
         end
       end
     end
