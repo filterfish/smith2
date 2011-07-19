@@ -96,7 +96,18 @@ module Smith
             logger.info("Agent state for #{agent_name}: #{@agent_processes[agent_name].state}.")
           end
         when 'stop'
-          if args.first == 'all'
+          case args.first
+          when 'agency'
+            running_agents = @agent_processes.state(:running)
+
+            if running_agents.empty?
+              logger.info("Agency shutting down.")
+              Smith.stop
+            else
+              logger.warn("Agents are still running: #{running_agents.map(&:name).join(", ")}.") unless running_agents.empty?
+              logger.info("Agency not shutting down. Use force_stop if you really want to shut it down.")
+            end
+          when 'all'
             @agent_processes.each { |agent_process| stop(agent_name) }
           else
             args.each { |agent_name| stop(agent_name) }
@@ -107,16 +118,6 @@ module Smith
         when 'normal'
           @verbose = false
           @agent_monitor.verbose = false
-        when 'stop_agency'
-          running_agents = @agent_processes.state(:running)
-
-          if running_agents.empty?
-            logger.info("Agency shutting down.")
-            Smith.stop
-          else
-            logger.warn("Agents are still running: #{running_agents.join(", ")}.") unless running_agents.empty?
-            logger.info("Agency not shutting down. Use force_stop if you really want to shut it down.")
-          end
         when 'force_stop'
           logger.info("Agency shutting down with prejudice.")
           Smith.stop
