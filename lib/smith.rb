@@ -12,6 +12,7 @@ require 'smith/agent'
 require 'smith/agent_cache'
 require 'smith/agent_process'
 require 'smith/agent_monitoring'
+require 'smith/agency_command_processor'
 require 'smith/messaging'
 require 'daemons/pidfile_mp'
 

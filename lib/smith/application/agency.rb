@@ -1,27 +1,21 @@
-require 'pp'
-require 'state_machine'
 require 'dm-core'
-require 'dm-yaml-adapter'
 
 module Smith
   class Agency
 
     include Logger
 
-    attr_reader :agents
+    attr_reader :agents, :agent_processes
 
     def initialize(opts={})
       @agent_processes = AgentCache.new(:path => opts.delete(:path))
       @verbose = false
+      @command_processor = AgencyCommandProcessor.new(self)
 
       DataMapper.setup(:default, "yaml:///var/tmp/smith")
     end
 
     def setup_queues
-      Smith::Messaging.new(:start).receive_message do |header, agent|
-        start(agent)
-      end
-
       Smith::Messaging.new(:acknowledge_start).receive_message do |header, agent_data|
         acknowledge_start(agent_data)
       end
@@ -38,92 +32,11 @@ module Smith
         keep_alive(agent_data)
       end
 
-      # TODO do this properly.
-      # TODO check the command and arguments. Maybe use json schema.
       Smith::Messaging.new(:ageny_control).receive_message do |header, payload|
         command = payload['command']
         args = payload['args']
         logger.debug("Agency command: #{command}#{(args.empty?) ? '' : " #{args.join(', ')}"}.")
-
-        case command
-        when 'agents'
-          agents = Pathname.new(@agent_processes.path).each_child.inject([]) do |acc,agent_path|
-            acc.tap do |a|
-              unless agent_path.directory?
-                a << Extlib::Inflection.camelize(agent_path.basename('.rb'))
-              end
-            end
-          end
-          if agents.empty?
-            logger.info("No agents available.")
-          else
-            logger.info("Agents available: #{agents.sort.join(", ")}.")
-          end
-        when 'list'
-          agents = @agent_processes.state(:running).map(&:name)
-          if agents.empty?
-            logger.info("No agents running.")
-          else
-            logger.info("Agents running: #{agents.sort.join(', ')}.")
-          end
-        when 'kill'
-          args.each { |agent_name| kill(agent_name) }
-        when 'log-level'
-          log_level = args.shift
-          agent_names = args
-
-          case agent_names.first
-          when 'all'
-            @agent_processes.each { |agent_process| Smith::Messaging.new("agent.#{agent_process.private_queue_name}").send_message(:command => :log_level, :args => log_level) }
-          when 'agency'
-            logger.info("Setting agency log level to: #{log_level}")
-            Logger.level log_level
-          when nil
-            logger.warn("No log level set. Not changing log level")
-          else
-            agent_names.each do |agent_name|
-              agent_process = @agent_processes[agent_name]
-              Smith::Messaging.new(agent_process.private_queue_name).send_message(:command => :log_level, :args => log_level)
-            end
-          end
-        when 'start'
-          args.each { |agent_name| start(agent_name) }
-        when 'state'
-          args.inject([]) do |acc,agent_name|
-            states = acc.tap do |a|
-              a << @agent_processes[agent_name].state
-            end
-            logger.info("Agent state for #{agent_name}: #{@agent_processes[agent_name].state}.")
-          end
-        when 'stop'
-          case args.first
-          when 'agency'
-            running_agents = @agent_processes.state(:running)
-
-            if running_agents.empty?
-              logger.info("Agency shutting down.")
-              Smith.stop
-            else
-              logger.warn("Agents are still running: #{running_agents.map(&:name).join(", ")}.") unless running_agents.empty?
-              logger.info("Agency not shutting down. Use force_stop if you really want to shut it down.")
-            end
-          when 'all'
-            @agent_processes.each { |agent_process| stop(agent_name) }
-          else
-            args.each { |agent_name| stop(agent_name) }
-          end
-        when 'verbose'
-          @verbose = true
-          @agent_monitor.verbose = true
-        when 'normal'
-          @verbose = false
-          @agent_monitor.verbose = false
-        when 'force_stop'
-          logger.info("Agency shutting down with prejudice.")
-          Smith.stop
-        else
-          logger.warn("Agency command unknown: #{command}.")
-        end
+        @command_processor.send(payload['command'], payload['args'])
       end
     end
 
@@ -132,28 +45,12 @@ module Smith
       @agent_monitor.start_monitoring
     end
 
+    def verbose=(vebosity)
+      @verbose = vebosity
+      @agent_monitor.verbose = vebosity
+    end
+
     private
-
-    attr_reader :agent_states
-
-    def start(agent_name)
-      @agent_processes[agent_name].tap do |agent_process|
-        agent_process.name = agent_name
-        agent_process.start
-      end
-    end
-
-    def kill(agent_name)
-      @agent_processes[agent_name].tap do |agent_process|
-        agent_process.kill
-      end
-    end
-
-    def stop(agent_name)
-      @agent_processes[agent_name].tap do |agent_process|
-        agent_process.stop
-      end
-    end
 
     def acknowledge_start(agent_data)
       @agent_processes[agent_data['name']].tap do |agent_process|
