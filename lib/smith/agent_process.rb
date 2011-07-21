@@ -1,8 +1,6 @@
 require 'pp'
 require 'state_machine'
-require 'dm-core'
 require 'dm-observer'
-require 'dm-yaml-adapter'
 
 module Smith
 
