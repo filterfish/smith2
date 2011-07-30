@@ -121,7 +121,7 @@ module Smith
       # FIXME sort out the logger so that it works at the class level
       #logger.info("Sending kill signal: #{agent_process.name}")
       if agent_process.pid
-        Process.kill('TERM', agent_process.pid)
+        Process.kill('TERM', agent_process.pid) rescue nil
         #logger.error("Trying to kill non-existent agent: #{agent_process.name}")
       end
     end
