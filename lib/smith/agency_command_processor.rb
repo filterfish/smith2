@@ -81,7 +81,7 @@ module Smith
           logger.info("Agency not shutting down. Use force_stop if you really want to shut it down.")
         end
       when 'all'
-        @agent_processes.each { |agent_process| _stop(agent_name) }
+        @agent_processes.each { |agent_process| _stop(agent_process.name) }
       else
         args.each { |agent_name| _stop(agent_name) }
       end
