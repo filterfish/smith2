@@ -52,5 +52,11 @@ module Smith
     def size
       @cache.size
     end
+
+    protected
+
+    def update(name, entry)
+      @cache[name] = entry
+    end
   end
 end
