@@ -37,7 +37,7 @@ module Smith
       default_queue.receive_message(&method(:default_handler))
     end
 
-    def get_message(queue, options={}, &block)
+    def listen(queue, options={}, &block)
       queues(queue).receive_message(options) do |header,message|
         block.call(header, message)
       end
