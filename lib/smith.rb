@@ -1,5 +1,3 @@
-$:.unshift(File.dirname(__FILE__))
-
 require 'pp'
 require 'amqp'
 require 'tmpdir'
@@ -8,15 +6,16 @@ require 'dm-core'
 require 'dm-yaml-adapter'
 require 'extlib/string'
 require 'extlib/inflection'
-require 'smith/logger'
-require 'smith/cache'
-require 'smith/agent'
-require 'smith/agent_cache'
-require 'smith/agent_process'
-require 'smith/agent_monitoring'
-require 'smith/agency_command_processor'
-require 'smith/messaging'
 require 'daemons/pidfile_mp'
+
+require_relative 'smith/logger'
+require_relative 'smith/cache'
+require_relative 'smith/agent'
+require_relative 'smith/agent_cache'
+require_relative 'smith/agent_process'
+require_relative 'smith/agent_monitoring'
+require_relative 'smith/agency_command_processor'
+require_relative 'smith/messaging'
 
 module Smith
   include Logger
