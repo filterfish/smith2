@@ -41,7 +41,7 @@ module Smith
       agent_names = args
       case agent_names.first
       when 'all'
-        @agent_processes.each { |agent_process| Smith::Messaging.new("agent.#{agent_process.private_queue_name}").send_message(:command => :log_level, :args => log_level) }
+        @agent_processes.each { |agent_process| Smith::Messaging.new(agent_process.private_queue_name).send_message(:command => :log_level, :args => log_level) }
       when 'agency'
         logger.info("Setting agency log level to: #{log_level}")
         Logger.level log_level
@@ -101,7 +101,6 @@ module Smith
     end
 
     def method_missing(method)
-      pp method
       logger.warn("Agency command unknown: #{method.to_s}.")
     end
 

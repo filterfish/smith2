@@ -7,7 +7,7 @@ require 'smith'
 module Smith
   class SmithControl
     def initialize
-      @queue = Messaging.new(:ageny_control)
+      @queue = Messaging.new('agency.control')
     end
 
     def method_missing(*args)

@@ -7,10 +7,10 @@ module Smith
     include Logger
 
     def initialize(queue_name, options={})
-      @queue_name = queue_name
+      @queue_name = "smith.#{queue_name}"
       @channel = AMQP::Channel.new(Smith.connection)
-      @exchange = @channel.direct(queue_name.to_s, options)
-      @queue = @channel.queue(queue_name.to_s, options).bind(@exchange)
+      @exchange = @channel.direct(@queue_name.to_s, options)
+      @queue = @channel.queue(@queue_name.to_s, options).bind(@exchange)
     end
 
     def send_message(message, options={})

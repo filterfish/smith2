@@ -67,13 +67,13 @@ module Smith
     end
 
     def agent_queue
-      queue_name = "agent.#{name.snake_case}"
+      queue_name = "#{agent_queue_name}.control"
       logger.debug("Setting up agent queue: #{queue_name}")
       queues(queue_name).receive_message do |header, payload|
         command = payload['command']
         args = payload['args']
 
-        logger.debug("Command received on agent private queue: #{command} #{args}")
+        logger.debug("Command received on agent control queue: #{command} #{args}")
 
         case command
         when 'stop'

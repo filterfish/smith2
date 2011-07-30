@@ -8,11 +8,11 @@ module Smith
     attr_reader :agents, :agent_processes
 
     def initialize(opts={})
+      DataMapper.setup(:default, "yaml:///var/tmp/smith")
+
       @agent_processes = AgentCache.new(:path => opts.delete(:path))
       @verbose = false
       @command_processor = AgencyCommandProcessor.new(self)
-
-      DataMapper.setup(:default, "yaml:///var/tmp/smith")
     end
 
     def setup_queues
@@ -32,7 +32,7 @@ module Smith
         keep_alive(agent_data)
       end
 
-      Smith::Messaging.new(:ageny_control).receive_message do |header, payload|
+      Smith::Messaging.new('agency.control').receive_message do |header, payload|
         command = payload['command']
         args = payload['args']
         logger.debug("Agency command: #{command}#{(args.empty?) ? '' : " #{args.join(', ')}"}.")

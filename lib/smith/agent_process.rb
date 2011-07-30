@@ -64,7 +64,7 @@ module Smith
     end
 
     def private_queue_name
-      "agent.#{name.snake_case}"
+      "agent.#{name.sub(/Agent$/, '').snake_case}.control"
     end
   end
 
