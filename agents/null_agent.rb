@@ -4,9 +4,7 @@ class NullAgent < Smith::Agent
     super(opts.merge(:monitor => true))
   end
 
-  def run
-    get_message(:null) do |header,message|
-      logger.info(message)
-    end
+  def default_handler(metadata, payload)
+    logger.info(payload)
   end
 end

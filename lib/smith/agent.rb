@@ -21,11 +21,20 @@ module Smith
 
       @default_message_options = {:ack => true, :durable => true}
 
-      logger.debug("Starting #{name}")
+      # Set up a default queue
+      default_queue
 
       agent_queue
       acknowledge_start
       start_keep_alive
+
+      logger.info("Starting #{name}")
+    end
+
+    def run
+      raise ArgumentError, "You need to supply a default_handler" if !respond_to?(:default_handler)
+
+      default_queue.receive_message(&method(:default_handler))
     end
 
     def get_message(queue, options={}, &block)
@@ -81,6 +90,14 @@ module Smith
 
     def message_opts(options={})
       options.merge(@default_message_options)
+    end
+
+    def default_queue
+      queues(agent_queue_name)
+    end
+
+    def agent_queue_name
+      "agent.#{name.sub(/Agent$/, '').snake_case}"
     end
 
     def queues(queue_name)

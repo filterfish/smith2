@@ -5,7 +5,7 @@ class TestAgent < Smith::Agent
   end
 
   def run
-    get_message(:test) do |header,message|
+    listen(:test) do |header,message|
       logger.info(message)
     end
   end

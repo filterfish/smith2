@@ -21,7 +21,7 @@ module Smith
       load @agent_filename
     end
 
-    def run
+    def start!
       write_pid_file
       begin
         @agent = Kernel.const_get(@agent_name).new
@@ -93,13 +93,13 @@ begin
       }
     end
 
-    bootstrapper.run
+    bootstrapper.start!
   }
 
   bootstrapper.shutdown
 
 rescue => e
-  logger.error("Agent #{bootstrapper.agent.name} has died.")
+  logger.error("Agent #{agent_name} has died.")
   logger.error(e)
   bootstrapper.terminate
 end
