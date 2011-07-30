@@ -29,6 +29,7 @@ module Smith
       rescue => e
         logger.error("Failed to run agent: #{@agent_name}: #{e}")
         logger.error(e)
+        terminate
       end
     end
 
