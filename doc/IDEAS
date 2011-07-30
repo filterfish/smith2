@@ -4,3 +4,8 @@ Have an top like tool. Send the agent state to a queue so that anything can atta
 and do with it what it will. If this is done on a topic queue with fanout then a tool would be
 able to get the state of every agent in the network. Obviously if nothing is listening on the
 queue then no messages would be sent.
+
+Agents should be namespace-able. The agency and smithctl should understand this.
+
+Allow an agent to verify that it's the same version as that on disc. Maybe implement an autoload
+system. Look at shogun
