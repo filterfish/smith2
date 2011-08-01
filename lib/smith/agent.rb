@@ -10,9 +10,9 @@ module Smith
     def initialize(options={})
       Smith.on_error = proc {|e| pp e}
 
-      @agent_options = {}.tap do |acc|
-        acc[:monitor] = options.delete(:monitor) || true
-        acc[:singleton] = options.delete(:singleton) || true
+      @agent_options = {}.tap do |opts|
+        opts[:monitor] = options.key?(:monitor) ? options.delete(:monitor) : true
+        opts[:singleton] = options.key?(:singleton) ? options.delete(:singleton) : true
       end
 
       @name = self.class.to_s
