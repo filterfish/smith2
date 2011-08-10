@@ -10,14 +10,12 @@ module Smith
       @queue = Messaging.new('agency.control')
     end
 
-    def method_missing(*args)
-      command = args.shift
-      arguments = args.shift
+    def send_command(*args, &blk)
+      payload = {:command => args.shift, :args => args.shift}
 
       @queue.consumers? do |queue|
-        queue.send_message(:command => command, :args => arguments)
+        queue.send_message(payload, :persistent => true, :nowait => false, &blk)
       end
-      Smith.stop
     end
   end
 end
@@ -29,5 +27,5 @@ command || (puts "usage #{File.basename($0)} <command> opts]"; exit 2)
 
 Smith.start do
   control = Smith::SmithControl.new
-  control.send(command, args)
+  control.send_command(command, args) { Smith.stop(true) }
 end

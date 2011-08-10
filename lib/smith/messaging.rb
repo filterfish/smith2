@@ -6,6 +6,8 @@ module Smith
 
     include Logger
 
+    attr_reader :queue_name
+
     def initialize(queue_name, options={})
       @queue_name = "smith.#{queue_name}"
       @channel = AMQP::Channel.new(Smith.connection)
@@ -18,8 +20,8 @@ module Smith
       @queue = @channel.queue(@queue_name.to_s, options).bind(@exchange)
     end
 
-    def send_message(message, options={})
-      @exchange.publish({:message => message}.to_json, {:ack => true}.merge(options))
+    def send_message(message, options={}, &blk)
+      @exchange.publish({:message => message}.to_json, {:ack => true}.merge(options), &blk)
     end
 
     def receive_message(options={}, &block)
@@ -68,9 +70,5 @@ module Smith
         end
       end
     end
-
-    private
-
-    attr_reader :queue_name
   end
 end

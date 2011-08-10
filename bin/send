@@ -24,7 +24,7 @@ Smith.start do
   queue = Smith::Messaging.new(queue_name)
 
   work = proc do |n, iter|
-    queue.send_message(payload) do
+    queue.send_message(payload, :persistent => true, :nowait => false) do
       iter.next
     end
   end
