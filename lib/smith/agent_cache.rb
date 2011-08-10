@@ -14,10 +14,7 @@ module Smith
       select {|a| a.state == state.to_s }
     end
 
-    def names
-      entries
-    end
-
+    alias names :entries
     alias :[] :entry
 
     private

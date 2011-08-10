@@ -5,7 +5,7 @@ require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 describe Smith::AgentCache do
 
   before(:each) do
-    DataMapper.setup(:default, "yaml:///var/tmp/smith")
+    DataMapper.setup(:default, "yaml:///tmp/smith")
     @cache = Smith::AgentCache.new
   end
 

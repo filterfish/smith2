@@ -1,5 +1,8 @@
 module Smith
   class Cache
+
+    include Enumerable
+
     def initialize
       @cache = {}
     end
@@ -8,12 +11,8 @@ module Smith
       @operator = operator
     end
 
-    def entry(name)
-      if @cache[name]
-        @cache[name]
-      else
-        @cache[name] = @operator.call(name)
-      end
+    def entry(name, create=true)
+      @cache[name] ||= @operator.call(name)
     end
 
     def entries
@@ -24,33 +23,24 @@ module Smith
       @cache.delete(name)
     end
 
-    def select
-      # This seems wierd. TODO verify that this is best way to do this.
-      @cache.select { |k,v| yield v }.map { |k,v| v }
-    end
-
-    def map
-      if block_given?
-        @cache.map { |k,v| yield v }
-      else
-        @cache.map { |k,v| v }
-      end
-    end
-
     def each
-      if block_given?
         @cache.each_value { |v| yield v }
-      else
-        @cache.each_value
-      end
     end
 
     def empty?
       @cache.empty?
     end
 
+    def exist?(name)
+      !@cache[name].nil?
+    end
+
     def size
       @cache.size
+    end
+
+    def to_s
+      @cache.to_s
     end
 
     protected

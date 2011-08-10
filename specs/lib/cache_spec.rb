@@ -17,6 +17,20 @@ describe Smith::Cache do
     @cache.entry(:new_agent).should == 'new_agent'
   end
 
+  it 'should check for the existance of an entry without changing the cache' do
+    @cache.entry(:new_agent).should == 'new_agent'
+    @cache.exist?(:new_agent).should == true
+    @cache.exist?(:non_existant_agent).should == false
+    @cache.size.should == 1
+  end
+
+  # This will probably fail on 1.8
+  it 'should print a pretty representation of the cache' do
+    @cache.entry(:new_agent).should == 'new_agent'
+    @cache.entry(:another_new_agent).should == 'another_new_agent'
+    @cache.to_s.should == {:new_agent => "new_agent", :another_new_agent => "another_new_agent"}.to_s
+  end
+
   context 'each' do
     let(:entries) { ['first_agent', 'second_agent'] }
 
@@ -43,9 +57,9 @@ describe Smith::Cache do
       @cache.map { |e| " #{e} " }.should == entries.map { |e| " #{e} " }
     end
 
-    it 'should return an Array if there is no block' do
+    it 'should return an Enumerator if there is no block' do
       entries.each { |entry| @cache.entry(entry) }
-      @cache.map.should == entries
+      entries.map.should be_an_instance_of(Enumerator)
     end
   end
 
