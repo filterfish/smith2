@@ -12,6 +12,8 @@ module Smith
       @queue_name = "smith.#{queue_name}"
       @channel = AMQP::Channel.new(Smith.connection)
 
+      options.merge!(:durable => true)
+
       # Set up QOS. If you do not do this then the subscribe in receive_message
       # will get overwelmd and the whole thing will collapse in on itself.
       @channel.prefetch(1)
