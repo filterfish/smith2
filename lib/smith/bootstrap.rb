@@ -19,12 +19,12 @@ module Smith
 
     def load_agent
       load @agent_filename
+      @agent = Kernel.const_get(@agent_name).new
     end
 
     def start!
       write_pid_file
       begin
-        @agent = Kernel.const_get(@agent_name).new
         @agent.run
       rescue => e
         logger.error("Failed to run agent: #{@agent_name}: #{e}")
@@ -84,7 +84,7 @@ bootstrapper = Smith::AgentBootstrap.new(path, agent_name)
 include Smith::Logger
 
 begin
-  Smith.start {
+  Smith.start do
     bootstrapper.load_agent
 
     %w{TERM INT QUIT}.each do |sig|
@@ -95,7 +95,7 @@ begin
     end
 
     bootstrapper.start!
-  }
+  end
 
   bootstrapper.shutdown
 
