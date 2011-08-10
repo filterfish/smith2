@@ -3,17 +3,35 @@
 $:.unshift(File.dirname(__FILE__) + '/../lib')
 
 require 'smith'
+require 'trollop'
+
+parser = Trollop::Parser.new do
+  banner "usage: #{$0} OPTIONS <queue> <payload>"
+
+  opt :number,    "the number of times to send the message", :type => :integer
+end
+
+opts = Trollop::with_standard_exception_handling parser do
+  raise Trollop::HelpNeeded if ARGV.size < 2
+  parser.parse ARGV
+end
 
 queue_name = ARGV[0]
 payload = ARGV[1]
 
-if queue_name.nil? && payload.nil?
-  puts "usage: #{File.basename($0)} <queue> <payload>"
-  exit 1
-end
-
 Smith.start do
+
   queue = Smith::Messaging.new(queue_name)
-  queue.send_message(payload)
-  Smith.stop
+
+  work = proc do |n, iter|
+    queue.send_message(payload) do
+      iter.next
+    end
+  end
+
+  done = proc do
+    Smith.stop(true)
+  end
+
+  EM::Iterator.new(0..opts[:number] - 1).each(work, done)
 end
