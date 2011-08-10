@@ -1,11 +1,15 @@
-If an agent hasn't started after 20 seconds (ie there are no keep alives) set the state to dead.
+If an agent hasn't started after 20 seconds (ie there are no keep alives)
+set the state to dead.
 
-Have an top like tool. Send the agent state to a queue so that anything can attach to the queue
-and do with it what it will. If this is done on a topic queue with fanout then a tool would be
-able to get the state of every agent in the network. Obviously if nothing is listening on the
+Have an top like tool. Send the agent state to a queue so that anything
+can attach to the queue and do with it what it will. If this is done
+on a topic queue with fanout then a tool would be able to get the state
+of every agent in the network. Obviously if nothing is listening on the
 queue then no messages would be sent.
 
-Agents should be namespace-able. The agency and smithctl should understand this.
+Agents should be namespace-able. The agency and smithctl should understand
+this. Agents should be controllable on a namespace basis, e.g. shutdown
+all agents in a particular namespace.
 
-Allow an agent to verify that it's the same version as that on disc. Maybe implement an autoload
-system. Look at shogun
+Allow an agent to verify that it's the same version as that on disc. Maybe
+implement an autoload system. Look at shogun
