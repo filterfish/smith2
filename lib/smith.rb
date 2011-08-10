@@ -63,12 +63,12 @@ module Smith
       @connection
     end
 
-    def stop
-      EM.add_timer(1) {
-        connection.close {
-          EM.stop
-        }
-      }
+    def stop(immediately=false)
+      if immediately
+        connection.close { EM.stop }
+      else
+        EM.add_timer(1) { connection.close { EM.stop } }
+      end
     end
   end
 end
