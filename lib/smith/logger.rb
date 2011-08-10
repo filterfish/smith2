@@ -12,7 +12,7 @@ module Smith
 
     protected
 
-    @@__pattern = "[%d] %5l - %24c:%-3L - %m\n"
+    @@__pattern = "[%d] %5l - %30c:%-3L - %m\n"
     @@__level = :debug
     @@__trace = true
 
