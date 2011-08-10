@@ -1,10 +1,10 @@
 class NullAgent < Smith::Agent
 
   def initialize(opts={})
-    super(opts.merge(:monitor => true))
+    super(opts.merge(:monitor => false))
   end
 
-  def default_handler(metadata, payload)
+  task do |payload|
     logger.info(payload)
   end
 end

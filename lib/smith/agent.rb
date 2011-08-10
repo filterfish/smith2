@@ -1,5 +1,3 @@
-require 'pp'
-
 module Smith
   class Agent
 
@@ -10,10 +8,9 @@ module Smith
     def initialize(options={})
       Smith.on_error = proc {|e| pp e}
 
-      @agent_options = {}.tap do |opts|
-        opts[:monitor] = options.key?(:monitor) ? options.delete(:monitor) : true
-        opts[:singleton] = options.key?(:singleton) ? options.delete(:singleton) : true
-      end
+      @agent_options = {}
+      @agent_options[:monitor] = options.key?(:monitor) ? options.delete(:monitor) : true
+      @agent_options[:singleton] = options.key?(:singleton) ? options.delete(:singleton) : true
 
       @name = self.class.to_s
       @queues = Cache.new
@@ -21,25 +18,34 @@ module Smith
 
       @default_message_options = {:ack => true, :durable => true}
 
-      # Set up a default queue
-      default_queue
-
       agent_queue
       acknowledge_start
       start_keep_alive
-
-      logger.info("Starting #{name}")
     end
 
     def run
-      raise ArgumentError, "You need to supply a default_handler" if !respond_to?(:default_handler)
+      raise ArgumentError, "You need to supply a default_handler" if @@task.nil?
 
-      default_queue.receive_message(&method(:default_handler))
+      EM.threadpool_size = 1
+      default_queue.receive_message(:ack => false) do |metadata,payload|
+        EM.defer do
+          @@task.call(payload)
+        end
+      end
+
+      logger.debug("Setting up default queue: #{default_queue.queue_name}")
+      logger.info("Starting #{name}")
     end
 
     def listen(queue, options={}, &block)
-      queues(queue).receive_message(options) do |header,message|
-        block.call(header, message)
+      queues(queue).receive_message(options) do |header,payload|
+        block.call(header, payload)
+      end
+    end
+
+    class << self
+      def task(&blk)
+        @@task = blk
       end
     end
 
@@ -68,7 +74,7 @@ module Smith
 
     def agent_queue
       queue_name = "#{agent_queue_name}.control"
-      logger.debug("Setting up agent queue: #{queue_name}")
+      logger.debug("Setting up agent control queue: #{queue_name}")
       queues(queue_name).receive_message do |header, payload|
         command = payload['command']
         args = payload['args']
