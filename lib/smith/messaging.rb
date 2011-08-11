@@ -33,6 +33,15 @@ module Smith
       end
     end
 
+    def pop(options={}, &block)
+      options = {:ack => true}.merge(options)
+      @queue.pop(options) do |metadata, payload|
+        data = (payload) ? JSON.parse(payload)["message"] : nil
+        block.call data
+        metadata.ack
+      end
+    end
+
     def number_of_messages
       @queue.status do |num_messages, num_consumers|
         yield num_messages
