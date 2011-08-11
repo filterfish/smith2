@@ -16,8 +16,6 @@ module Smith
       @queues = Cache.new
       @queues.operator ->(name){Messaging.new(name)}
 
-      @default_message_options = {:ack => true, :durable => true}
-
       agent_queue
       acknowledge_start
       start_keep_alive
@@ -53,12 +51,12 @@ module Smith
 
     def acknowledge_start
       agent_data = @agent_options.merge(:pid => $$, :name => self.class.to_s, :started_at => Time.now.utc)
-      Smith::Messaging.new(:acknowledge_start).send_message(agent_data, message_opts)
+      Smith::Messaging.new(:acknowledge_start).send_message(agent_data)
     end
 
     def acknowledge_stop
       agent_data = {:pid => $$, :name => self.class.to_s}
-      Smith::Messaging.new(:acknowledge_stop).send_message(agent_data, message_opts)
+      Smith::Messaging.new(:acknowledge_stop).send_message(agent_data)
     end
 
     def start_keep_alive
@@ -112,7 +110,7 @@ module Smith
 
     def send_keep_alive(queue)
       queue.consumers? do |queue|
-        queue.send_message({:name => self.class.to_s, :time => Time.now.utc}, message_opts(:durable => false))
+        queue.send_message({:name => self.class.to_s, :time => Time.now.utc}, :durable => false)
       end
     end
   end
