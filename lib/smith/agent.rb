@@ -16,7 +16,7 @@ module Smith
       @queues = Cache.new
       @queues.operator ->(name){Messaging.new(name)}
 
-      agent_queue
+      setup_control_queue
       acknowledge_start
       start_keep_alive
     end
@@ -31,7 +31,6 @@ module Smith
         end
       end
 
-      logger.debug("Setting up default queue: #{default_queue.queue_name}")
       logger.info("Starting #{name}")
     end
 
@@ -70,10 +69,14 @@ module Smith
       end
     end
 
-    def agent_queue
-      queue_name = "#{agent_queue_name}.control"
-      logger.debug("Setting up agent control queue: #{queue_name}")
-      queues(queue_name).receive_message do |header, payload|
+    def send_keep_alive(queue)
+      queue.consumers? do |queue|
+        queue.send_message({:name => self.class.to_s, :time => Time.now.utc}, :durable => false)
+      end
+    end
+
+    def setup_control_queue
+      control_queue.receive_message do |header, payload|
         command = payload['command']
         args = payload['args']
 
@@ -96,22 +99,26 @@ module Smith
       options.merge(@default_message_options)
     end
 
-    def default_queue
-      queues(agent_queue_name)
-    end
-
-    def agent_queue_name
-      "agent.#{name.sub(/Agent$/, '').snake_case}"
-    end
-
     def queues(queue_name)
       @queues.entry(queue_name)
     end
 
-    def send_keep_alive(queue)
-      queue.consumers? do |queue|
-        queue.send_message({:name => self.class.to_s, :time => Time.now.utc}, :durable => false)
-      end
+    def default_queue
+      logger.debug("Setting up default queue: #{agent_queue_name}") unless @queues.exist?(agent_queue_name)
+      queues(agent_queue_name)
+    end
+
+    def control_queue
+      logger.debug("Setting up control queue: #{agent_control_queue_name}") unless @queues.exist?(agent_control_queue_name)
+      queues(agent_control_queue_name)
+    end
+
+    def agent_control_queue_name
+      "#{agent_queue_name}.control"
+    end
+
+    def agent_queue_name
+      "agent.#{name.sub(/Agent$/, '').snake_case}"
     end
   end
 end
