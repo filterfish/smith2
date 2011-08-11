@@ -34,7 +34,9 @@ module Smith
 
     def start(opts={}, &block)
 
-      EM.epoll
+    def start(opts={}, &block)
+      EM.epoll if EM.epoll?
+      EM.kqueue if EM.kqueue?
       EM.set_descriptor_table_size(opts[:fdsize] || 1024)
 
       handler = Proc.new { |settings| puts "Cannot connect to the AMQP server."; EM.stop }
