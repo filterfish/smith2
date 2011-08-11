@@ -3,14 +3,12 @@ module Smith
 
     include Logger
 
+    @@agent_options = Smith.config.agent
+
     attr_accessor :name
 
     def initialize(options={})
       Smith.on_error = proc {|e| pp e}
-
-      @agent_options = {}
-      @agent_options[:monitor] = options.key?(:monitor) ? options.delete(:monitor) : true
-      @agent_options[:singleton] = options.key?(:singleton) ? options.delete(:singleton) : true
 
       @name = self.class.to_s
       @queues = Cache.new
@@ -22,7 +20,7 @@ module Smith
     end
 
     def run
-      raise ArgumentError, "You need to supply a default_handler" if @@task.nil?
+      raise ArgumentError, "You need to call Agent.task(&blk)" if @@task.nil?
 
       EM.threadpool_size = 1
       default_queue.receive_message(:ack => false) do |metadata,payload|
@@ -44,12 +42,26 @@ module Smith
       def task(&blk)
         @@task = blk
       end
+
+      def options(opts)
+        opts.each { |k,v| merge_options(k, v) }
+      end
+
+      def merge_options(option, value)
+        if @@agent_options[option].nil?
+          raise ArgumentError, "Unknown option: #{option}"
+        else
+          @@agent_options[option] = value
+        end
+      end
+      private :merge_options
+
     end
 
     private
 
     def acknowledge_start
-      agent_data = @agent_options.merge(:pid => $$, :name => self.class.to_s, :started_at => Time.now.utc)
+      agent_data = agent_options.merge(:pid => $$, :name => self.class.to_s, :started_at => Time.now.utc)
       Smith::Messaging.new(:acknowledge_start).send_message(agent_data)
     end
 
@@ -59,7 +71,7 @@ module Smith
     end
 
     def start_keep_alive
-      if @agent_options[:monitor]
+      if agent_options[:monitor]
         send_keep_alive(queues(:keep_alive))
         EventMachine::add_periodic_timer(1) do
           send_keep_alive(queues(:keep_alive))
@@ -97,6 +109,10 @@ module Smith
 
     def message_opts(options={})
       options.merge(@default_message_options)
+    end
+
+    def agent_options
+      @@agent_options
     end
 
     def queues(queue_name)
