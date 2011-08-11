@@ -24,18 +24,15 @@ module Smith
 
     def start!
       write_pid_file
-      begin
-        @agent.run
-      rescue => e
-        logger.error("Failed to run agent: #{@agent_name}: #{e}")
-        logger.error(e)
-        terminate
-      end
+      @agent.run
     end
 
     # Exceptional shutdown of the agent.
-    def terminate
-      logger.debug("Sending dead message for #{agent.name}")
+    def terminate!(exception=nil)
+      logger.error("Agent #{@agent_name} is dead.")
+      logger.error(exception) if exception
+      logger.debug("Sending dead message for #{@agent_name}")
+
       if Smith.running?
         send_dead_message
       else
@@ -43,13 +40,13 @@ module Smith
           send_dead_message
         end
       end
-      Smith.stop
       unlink_pid_file
+      Smith.stop
     end
 
     # Clean shutdown of the agent.
     def shutdown
-      logger.debug("Agent stopped: #{agent.name}")
+      logger.debug("Agent stopped: #{@agent_name}")
       unlink_pid_file
       Smith.stop if Smith.running?
     end
@@ -62,11 +59,11 @@ module Smith
     end
 
     def send_dead_message
-      Messaging.new(:dead).send_message(:name => agent.name)
+      Messaging.new(:dead).send_message(:name => @agent_name)
     end
 
     def unlink_pid_file
-      @pid.cleanup
+      @pid.cleanup if @pid
     end
   end
 end
@@ -81,8 +78,6 @@ $0 = "#{agent_name}"
 
 bootstrapper = Smith::AgentBootstrap.new(path, agent_name)
 
-include Smith::Logger
-
 begin
   Smith.start do
     bootstrapper.load_agent
@@ -90,7 +85,7 @@ begin
     %w{TERM INT QUIT}.each do |sig|
       trap sig, proc {
         logger.error("Agent received: #{sig} signal: #{bootstrapper.agent.name}")
-        bootstrapper.terminate
+        bootstrapper.terminate!
       }
     end
 
@@ -99,8 +94,6 @@ begin
 
   bootstrapper.shutdown
 
-rescue => e
-  logger.error("Agent #{agent_name} has died.")
-  logger.error(e)
-  bootstrapper.terminate
+rescue Exception => e
+  bootstrapper.terminate!(e)
 end
