@@ -10,14 +10,6 @@ require 'extlib/inflection'
 require 'daemons/pidfile_mp'
 
 require_relative 'smith/logger'
-require_relative 'smith/config'
-require_relative 'smith/cache'
-require_relative 'smith/agent'
-require_relative 'smith/agent_cache'
-require_relative 'smith/agent_process'
-require_relative 'smith/agent_monitoring'
-require_relative 'smith/agency_command_processor'
-require_relative 'smith/messaging'
 
 module Smith
   include Logger
@@ -79,3 +71,12 @@ module Smith
     end
   end
 end
+
+require_relative 'smith/config'
+require_relative 'smith/cache'
+require_relative 'smith/agent'
+require_relative 'smith/agent_cache'
+require_relative 'smith/agent_process'
+require_relative 'smith/agent_monitoring'
+require_relative 'smith/agency_command_processor'
+require_relative 'smith/messaging'
