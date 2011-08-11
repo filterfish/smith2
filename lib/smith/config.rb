@@ -2,14 +2,19 @@
 module Smith
   class Config
     @@config = Optimism do
-      eventmachine do
-        file_descriptors 1024
+      agent do
+        monitor    true
+        singleton  true
       end
 
       amqp do
-        namespace 'smith'
-        ack       true
-        durable   true
+        ack        true
+        durable    true
+        namespace  'smith'
+      end
+
+      eventmachine do
+        file_descriptors 1024
       end
     end
 
