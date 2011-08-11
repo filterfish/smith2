@@ -24,6 +24,15 @@ module Smith
 
   class << self
 
+    def connection
+      raise RuntimeError, "You must run this in a Smith.start block" if @connection.nil?
+      @connection
+    end
+
+    def on_error=(handler)
+      @handler = handler
+    end
+
     def config
       Smith::Config.get
     end
@@ -32,7 +41,9 @@ module Smith
       Pathname.new(File.dirname(__FILE__) + '/..').expand_path
     end
 
-    def start(opts={}, &block)
+    def running?
+      EM.reactor_running?
+    end
 
     def start(opts={}, &block)
       EM.epoll if EM.epoll?
@@ -57,18 +68,6 @@ module Smith
 
         block.call
       end
-    end
-
-    def on_error=(handler)
-      @handler = handler
-    end
-
-    def running?
-      EM.reactor_running?
-    end
-    def connection
-      raise RuntimeError, "You must run this in a Smith.start block" if @connection.nil?
-      @connection
     end
 
     def stop(immediately=false)
