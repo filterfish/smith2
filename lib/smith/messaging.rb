@@ -9,7 +9,7 @@ module Smith
     attr_reader :queue_name
 
     def initialize(queue_name, options={})
-      @queue_name = "smith.#{queue_name}"
+      @queue_name = queue_name
       @channel = AMQP::Channel.new(Smith.connection)
 
       options.merge!(:durable => true)
@@ -18,8 +18,8 @@ module Smith
       # will get overwelmd and the whole thing will collapse in on itself.
       @channel.prefetch(1)
 
-      @exchange = @channel.direct(@queue_name.to_s, options)
-      @queue = @channel.queue(@queue_name.to_s, options).bind(@exchange)
+      @exchange = @channel.direct(namespaced_queue_name, options)
+      @queue = @channel.queue(namespaced_queue_name, options).bind(@exchange)
     end
 
     def send_message(message, options={}, &blk)
@@ -71,6 +71,12 @@ module Smith
           logger.debug("Nothing listening on #{queue_name}")
         end
       end
+    end
+
+    private
+
+    def namespaced_queue_name
+      "#{Smith.config.amqp.namespace}.#{queue_name}"
     end
   end
 end
