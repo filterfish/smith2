@@ -9,13 +9,12 @@ module Smith
     end
 
     def agents(args)
-      agents = Pathname.new(@agent_processes.path).each_child.inject([]) do |acc,agent_path|
+      agents = Pathname.new(@agent_processes.path).each_child.inject([]) do |acc,p|
         acc.tap do |a|
-          unless agent_path.directory?
-            a << Extlib::Inflection.camelize(agent_path.basename('.rb'))
-          end
+          a << Extlib::Inflection.camelize(p.basename('.rb')) unless p.directory?
         end
       end
+
       if agents.empty?
         logger.info("No agents available.")
       else
@@ -41,7 +40,7 @@ module Smith
       agent_names = args
       case agent_names.first
       when 'all'
-        @agent_processes.each { |agent_process| Smith::Messaging.new(agent_process.private_queue_name).send_message(:command => :log_level, :args => log_level) }
+        @agent_processes.each { |agent_process| send_agent_private_message(agent_name, :command => :log_level, :args => log_level) }
       when 'agency'
         logger.info("Setting agency log level to: #{log_level}")
         Logger.level log_level
@@ -49,8 +48,11 @@ module Smith
         logger.warn("No log level set. Not changing log level")
       else
         agent_names.each do |agent_name|
-          agent_process = @agent_processes[agent_name]
-          Smith::Messaging.new(agent_process.private_queue_name).send_message(:command => :log_level, :args => log_level)
+          if @agent_processes.exist?(agent_name)
+            send_agent_private_message(agent_name, :command => :log_level, :args => log_level)
+          else
+            logger.warn("Agent doesn't exist")
+          end
         end
       end
     end
@@ -100,7 +102,7 @@ module Smith
       Smith.stop
     end
 
-    def method_missing(method)
+    def method_missing(method, *args)
       logger.warn("Agency command unknown: #{method.to_s}.")
     end
 
@@ -123,6 +125,10 @@ module Smith
       @agent_processes[agent_name].tap do |agent_process|
         agent_process.stop
       end
+    end
+
+    def send_agent_private_message(agent_name, message)
+      Smith::Messaging.new(@agent_processes[agent_name].private_queue_name).send_message(message)
     end
   end
 end
