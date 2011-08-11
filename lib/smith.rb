@@ -2,6 +2,7 @@ require 'pp'
 require 'amqp'
 require 'tmpdir'
 require 'pathname'
+require 'optimism'
 require 'dm-core'
 require 'dm-yaml-adapter'
 require 'extlib/string'
@@ -9,6 +10,7 @@ require 'extlib/inflection'
 require 'daemons/pidfile_mp'
 
 require_relative 'smith/logger'
+require_relative 'smith/config'
 require_relative 'smith/cache'
 require_relative 'smith/agent'
 require_relative 'smith/agent_cache'
@@ -21,6 +23,10 @@ module Smith
   include Logger
 
   class << self
+
+    def config
+      Smith::Config.get
+    end
 
     def root_path
       Pathname.new(File.dirname(__FILE__) + '/..').expand_path
