@@ -1,6 +1,7 @@
 require 'pp'
 require 'amqp'
 require 'tmpdir'
+require 'logging'
 require 'pathname'
 require 'optimism'
 require 'dm-core'
