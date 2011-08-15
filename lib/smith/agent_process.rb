@@ -78,7 +78,7 @@ module Smith
     end
 
     # Return the agent control queue.
-    def private_queue_name
+    def control_queue_name
       "agent.#{name.sub(/Agent$/, '').snake_case}.control"
     end
   end
@@ -126,7 +126,7 @@ module Smith
     end
 
     def self.stop(agent_process)
-      Smith::Messaging.new(agent_process.private_queue_name).send_message(:command => :stop)
+      Smith::Messaging.new(agent_process.control_queue_name).send_message(:command => :stop)
     end
 
     def self.acknowledge_stop(agent_process)
