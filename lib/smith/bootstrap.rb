@@ -13,6 +13,11 @@ module Smith
     include Logger
 
     def initialize(path, agent_name)
+      # FIXME
+      # This doesn't do what I think it should. If an exception is
+      # thrown in setup_control_queue, for example, it just kills
+      # the agent without it actually raising the exception.
+      Thread.abort_on_exception = true
       @agent_name = agent_name
       @agent_filename = File.expand_path(File.join(path, "#{agent_name.snake_case}.rb"))
     end
