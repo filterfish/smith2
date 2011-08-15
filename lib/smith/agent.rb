@@ -29,7 +29,7 @@ module Smith
         end
       end
 
-      logger.info("Starting #{name}")
+      logger.info("Starting #{name}:[#{$$}]")
     end
 
     def listen(queue, options={}, &block)
@@ -99,8 +99,12 @@ module Smith
           acknowledge_stop
           Smith.stop
         when 'log_level'
-          logger.info("Setting log level to #{args} for: #{name}")
-          Logger.level args
+          begin
+            logger.info("Setting log level to #{args} for: #{name}")
+            log_level(args)
+          rescue ArgumentError => e
+            logger.error("Incorrect log level: #{args}")
+          end
         else
           logger.warn("Unknown command: #{command} -> #{args.inspect}")
         end
