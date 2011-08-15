@@ -35,23 +35,37 @@ module Smith
       args.each { |agent_name| _kill(agent_name) }
     end
 
-    def log_level(args)
+    def logging_level(args)
       log_level = args.shift
       agent_names = args
       case agent_names.first
       when 'all'
-        @agent_processes.each { |agent_process| send_agent_private_message(agent_name, :command => :log_level, :args => log_level) }
+        alive_processes = @agent_processes.select do |agent_process|
+          @agent_processes.alive?(agent_process.name)
+        end
+
+        if alive_processes.empty?
+          logger.info("No agents running.")
+        else
+          alive_processes.each do |agent_process|
+            send_agent_control_message(agent_process.name, :command => :log_level, :args => log_level)
+          end
+        end
       when 'agency'
-        logger.info("Setting agency log level to: #{log_level}")
-        Logger.level log_level
+        begin
+          logger.info("Setting agency log level to: #{log_level}")
+          log_level(log_level)
+        rescue ArgumentError
+          logger.error("Incorrect log level: #{log_level}")
+        end
       when nil
         logger.warn("No log level set. Not changing log level")
       else
         agent_names.each do |agent_name|
-          if @agent_processes.exist?(agent_name)
-            send_agent_private_message(agent_name, :command => :log_level, :args => log_level)
+          if @agent_processes.alive?(agent_name)
+            send_agent_control_message(agent_name, :command => :log_level, :args => log_level)
           else
-            logger.warn("Agent doesn't exist")
+            logger.warn("Agent is not running: #{agent_name}")
           end
         end
       end
@@ -127,8 +141,8 @@ module Smith
       end
     end
 
-    def send_agent_private_message(agent_name, message)
-      Smith::Messaging.new(@agent_processes[agent_name].private_queue_name).send_message(message)
+    def send_agent_control_message(agent_name, message)
+      Smith::Messaging.new(@agent_processes[agent_name].control_queue_name).send_message(message)
     end
   end
 end
