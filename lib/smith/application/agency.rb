@@ -36,7 +36,7 @@ module Smith
         command = payload['command']
         args = payload['args']
         logger.debug("Agency command: #{command}#{(args.empty?) ? '' : " #{args.join(', ')}"}.")
-        @command_processor.send(payload['command'], payload['args'])
+        @command_processor.public_send(payload['command'], payload['args'])
       end
     end
 
