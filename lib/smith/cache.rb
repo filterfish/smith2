@@ -11,7 +11,7 @@ module Smith
       @operator = operator
     end
 
-    def entry(name, create=true)
+    def entry(name)
       @cache[name] ||= @operator.call(name)
     end
 
