@@ -10,6 +10,10 @@ module Smith
       populate
     end
 
+    def alive?(name)
+      (exist?(name)) ? entry(name).alive? : false
+    end
+
     def state(state)
       select {|a| a.state == state.to_s }
     end

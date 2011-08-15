@@ -63,6 +63,21 @@ module Smith
       end
     end
 
+    # Check to see if the agent is alive.
+    def alive?
+      if self.pid
+        begin
+          Process.kill(0, self.pid)
+          true
+        rescue Exception
+          false
+        end
+      else
+        false
+      end
+    end
+
+    # Return the agent control queue.
     def private_queue_name
       "agent.#{name.sub(/Agent$/, '').snake_case}.control"
     end
