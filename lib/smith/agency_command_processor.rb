@@ -9,17 +9,7 @@ module Smith
     end
 
     def agents(args)
-      agents = Pathname.new(@agent_processes.path).each_child.inject([]) do |acc,p|
-        acc.tap do |a|
-          a << Extlib::Inflection.camelize(p.basename('.rb')) unless p.directory?
-        end
-      end
-
-      if agents.empty?
-        logger.info("No agents available.")
-      else
-        logger.info("Agents available: #{agents.sort.join(", ")}.")
-      end
+      Smith::AgencyCommand.run(:agents, 'agency', :agency => @agency,  :agents => @agent_processes)
     end
 
     def list(args)
