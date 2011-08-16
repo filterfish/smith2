@@ -34,6 +34,15 @@ module Smith
       Pathname.new(File.dirname(__FILE__) + '/..').expand_path
     end
 
+    def agent_default_path
+      p = Pathname.new(config.agents.default_path)
+      if p.absolute?
+        p
+      else
+        root_path.join(p)
+      end
+    end
+
     def running?
       EM.reactor_running?
     end

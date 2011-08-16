@@ -14,7 +14,7 @@ module Smith
     include Logger
 
     def initialize(root)
-      @agency = Smith::Agency.new(:path => Smith.root_path.join("agents"))
+      @agency = Smith::Agency.new(:path => Smith.agent_default_path)
     end
 
     def run

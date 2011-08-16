@@ -7,6 +7,11 @@ module Smith
         singleton  true
       end
 
+      agents do
+        # If this is a relative path then it's relative to Smith.root_path
+        default_path 'agents'
+      end
+
       amqp do
         ack        true
         durable    true
