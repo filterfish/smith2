@@ -2,6 +2,10 @@ module Smith
   module Logger
 
     def self.included(base)
+
+      Logging.reset
+      Logging.init([:verbose, :debug, :info, :warn, :error, :fatal])
+
       base.class_eval do
         include Methods
         extend Methods

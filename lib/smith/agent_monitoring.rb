@@ -4,7 +4,6 @@ module Smith
     include Logger
 
     def initialize(agent_processes)
-      @verbose = false
       @agent_processes = agent_processes
     end
 
@@ -12,7 +11,7 @@ module Smith
       EventMachine::add_periodic_timer(1) do
         @agent_processes.each do |agent_process|
           if agent_process.monitor
-            logger.debug("Agent state for #{agent_process.name}: #{agent_process.state}") if @verbose
+            logger.verbose("Agent state for #{agent_process.name}: #{agent_process.state}")
             case agent_process.state
             when 'running'
               if agent_process.last_keep_alive
@@ -43,10 +42,6 @@ module Smith
           end
         end
       end
-    end
-
-    def verbose=(flag)
-      @verbose = flag
     end
   end
 end

@@ -11,7 +11,6 @@ module Smith
       DataMapper.setup(:default, "yaml:///var/tmp/smith")
 
       @agent_processes = AgentCache.new(:path => opts.delete(:path))
-      @verbose = false
       @command_processor = AgencyCommandProcessor.new(self)
     end
 
@@ -43,11 +42,6 @@ module Smith
     def start_monitoring
       @agent_monitor = AgentMonitoring.new(@agent_processes)
       @agent_monitor.start_monitoring
-    end
-
-    def verbose=(vebosity)
-      @verbose = vebosity
-      @agent_monitor.verbose = vebosity
     end
 
     private
@@ -84,7 +78,7 @@ module Smith
 
     def keep_alive(agent_data)
       @agent_processes[agent_data['name']].last_keep_alive = agent_data['time']
-      logger.debug("Agent keep alive: #{agent_data['name']}: #{agent_data['time']}") if @verbose
+      logger.verbose("Agent keep alive: #{agent_data['name']}: #{agent_data['time']}")
     end
 
     def dead(agent_data)
