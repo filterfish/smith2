@@ -3,8 +3,11 @@ module Smith
 
     def self.included(base)
 
-      Logging.reset
-      Logging.init([:verbose, :debug, :info, :warn, :error, :fatal])
+      # Nasty hack to supress already initialized constant warning. It's the
+      # right thing to do as the init method should only be called once.
+      if !Logging.const_defined?(:MAX_LEVEL_LENGTH)
+        Logging.init([:verbose, :debug, :info, :warn, :error, :fatal])
+      end
 
       base.class_eval do
         include Methods
