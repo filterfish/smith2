@@ -22,6 +22,15 @@ module Smith
       @agent_filename = File.expand_path(File.join(path, "#{agent_name.snake_case}.rb"))
     end
 
+    def signal_handlers
+      %w{TERM INT QUIT}.each do |sig|
+        trap sig, proc {
+          logger.error("Agent received: #{sig} signal: #{agent.name}")
+          terminate!
+        }
+      end
+    end
+
     def load_agent
       load @agent_filename
       @agent = Kernel.const_get(@agent_name).new
@@ -86,19 +95,10 @@ bootstrapper = Smith::AgentBootstrap.new(path, agent_name)
 begin
   Smith.start do
     bootstrapper.load_agent
-
-    %w{TERM INT QUIT}.each do |sig|
-      trap sig, proc {
-        logger.error("Agent received: #{sig} signal: #{bootstrapper.agent.name}")
-        bootstrapper.terminate!
-      }
-    end
-
+    bootstrapper.signal_handlers
     bootstrapper.start!
   end
-
   bootstrapper.shutdown
-
 rescue Exception => e
   bootstrapper.terminate!(e)
 end
