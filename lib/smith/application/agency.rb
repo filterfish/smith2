@@ -11,7 +11,6 @@ module Smith
       DataMapper.setup(:default, "yaml:///var/tmp/smith")
 
       @agent_processes = AgentCache.new(:path => opts.delete(:path))
-      @command_processor = AgencyCommandProcessor.new(self)
     end
 
     def setup_queues
@@ -32,10 +31,11 @@ module Smith
       end
 
       Smith::Messaging.new('agency.control').receive_message do |header, payload|
-        command = payload['command']
-        args = payload['args']
-        logger.debug("Agency command: #{command}#{(args.empty?) ? '' : " #{args.join(', ')}"}.")
-        @command_processor.public_send(payload['command'], payload['args'])
+        begin
+          Smith::AgencyCommand.run(payload['command'], payload['args'], :agency => self,  :agents => @agent_processes)
+        rescue AgencyCommand::UnkownCommandError => e
+          logger.error("Command not known: #{command}")
+        end
       end
     end
 
