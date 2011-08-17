@@ -9,7 +9,22 @@ queue then no messages would be sent.
 
 Agents should be namespace-able. The agency and smithctl should understand
 this. Agents should be controllable on a namespace basis, e.g. shutdown
-all agents in a particular namespace.
+all agents in a particular namespace. Consider using vhosts.
 
 Allow an agent to verify that it's the same version as that on disc. Maybe
 implement an autoload system. Look at shogun
+
+Think about whether to not send messages to agents if they aren't alive.
+At the moment this is a little inconsistent: some command check to see it
+the agent is alive and others check to see if there is anything listening
+on the queue.
+
+Have an option that shuts down all agents when the agency is closed.
+
+Have a config item where I can put a list of agents that I can then start
+(or stop or kill for that matter)all at the same time. For example the
+command might be:
+
+  smithctl group start <group name>
+  smithctl group stop <group name>
+
