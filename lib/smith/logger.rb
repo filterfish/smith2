@@ -19,7 +19,7 @@ module Smith
     module Methods
       protected
 
-      @@__pattern = "%5l - %30c:%-3L - %m\n"
+      @@__pattern = Smith::Config.get.logging.default_pattern
       @@__level = :debug
       @@__trace = true
       @@__appender_type = Logging::Appenders::Stdout

@@ -21,6 +21,10 @@ module Smith
       eventmachine do
         file_descriptors 1024
       end
+
+      logging do
+        default_pattern "%7l - %30c:%-3L - %m\n"
+      end
     end
 
     def self.get

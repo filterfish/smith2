@@ -10,6 +10,7 @@ require 'extlib/string'
 require 'extlib/inflection'
 require 'daemons/pidfile_mp'
 
+require_relative 'smith/config'
 require_relative 'smith/logger'
 
 module Smith
@@ -82,7 +83,6 @@ module Smith
   end
 end
 
-require_relative 'smith/config'
 require_relative 'smith/cache'
 require_relative 'smith/agent'
 require_relative 'smith/agent_cache'
