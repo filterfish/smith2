@@ -2,6 +2,7 @@
 
 module Smith
   class AgencyCommand
+    class UnkownCommandError < RuntimeError; end
 
     include Logger
 
@@ -14,7 +15,10 @@ module Smith
     # only :auto_load is supported.
     #
     def self.run(command, target, vars, opts={})
+      logger.debug("Agency command: #{command}#{(target.empty?) ? '' : " #{target.join(', ')}"}.")
+
       load_command(command) unless opts[:auto_load] == false
+
       Smith::AgencyCommands.const_get(Extlib::Inflection.camelize(command)).new(target).tap do |clazz|
         clazz.instance_eval <<-EOM, __FILE__, __LINE__ + 1
           instance_variable_set(:"@target", target)
@@ -28,6 +32,8 @@ module Smith
           EOM
         end
 
+        # FIXME. target is being used for both the target and any arguments if
+        # this is the way it's going to be it should be renamed
         clazz.execute(target)
       end
     end
@@ -40,11 +46,20 @@ module Smith
     def verify_options(opts)
     end
 
+    def send_agent_control_message(agent, message)
+      Smith::Messaging.new(agent.control_queue_name).send_message(message)
+    end
+
     private
 
     # Load the command from the lib/smith/agency_commands directory.
     def self.load_command(cmd)
-      require Smith.root_path.join('lib').join("smith").join('agency_commands').join(cmd.to_s)
+      cmd_path = Smith.root_path.join('lib').join("smith").join('agency_commands').join(cmd.to_s)
+      if cmd_path.sub_ext('.rb').exist?
+        require cmd_path
+      else
+        raise UnkownCommandError, "Command class does not exist: #{cmd}"
+      end
     end
   end
 end
