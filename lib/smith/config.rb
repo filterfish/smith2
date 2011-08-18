@@ -23,7 +23,8 @@ module Smith
       end
 
       logging do
-        default_pattern "%7l - %30c:%-3L - %m\n"
+        default_pattern "[%d] %7l - %25c:%-3L - %m\n"
+        default_date_pattern "%Y/%m/%d %H:%M:%S"
       end
     end
 

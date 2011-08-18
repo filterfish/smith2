@@ -15,11 +15,11 @@ module Smith
       end
     end
 
-
     module Methods
       protected
 
       @@__pattern = Smith::Config.get.logging.default_pattern
+      @@__date_pattern = Smith::Config.get.logging.default_date_pattern
       @@__level = :debug
       @@__trace = true
       @@__appender_type = Logging::Appenders::Stdout
@@ -43,12 +43,18 @@ module Smith
         Logging.logger.root.appenders = @appender
       end
 
-      def log_pattern(pattern=nil)
-        if pattern
-          @@__pattern = pattern
+      def log_pattern(*pattern)
+        case pattern.size
+        when 1
+          @@__pattern = pattern.shift
+          @reload = true
+        when 2
+          @@__pattern = pattern.shift
+          @@__date_pattern = pattern.shift
           @reload = true
         end
-        Logging.layouts.pattern({:pattern => @@__pattern, :date_pattern => "%H:%M:%S"})
+
+        Logging.layouts.pattern({:pattern => @@__pattern, :date_pattern => @@__date_pattern})
       end
 
       def log_trace(trace)
