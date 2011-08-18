@@ -12,12 +12,22 @@ module Smith
         default_path 'agents'
       end
 
+      # Only put options that amqp understands here.
       amqp do
-        ack        true
-        durable    true
-        namespace  'smith'
+        ack         true
+        durable     true
+        auto_delete true
+
+        broker do
+          host      'localhost'
+          port      5672
+          user      'guest'
+          password  'guest'
+          vhost     '/'
+        end
       end
 
+      # Only put options that eventmachine understands here.
       eventmachine do
         file_descriptors 1024
       end
