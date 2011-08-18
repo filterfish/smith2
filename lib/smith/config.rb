@@ -7,6 +7,7 @@ module Smith
         singleton  true
       end
 
+      # Options relating to agents only. Don't put agency stuff here.
       agents do
         # If this is a relative path then it's relative to Smith.root_path
         default_path 'agents'
@@ -35,6 +36,10 @@ module Smith
       logging do
         default_pattern "[%d] %7l - %25c:%-3L - %m\n"
         default_date_pattern "%Y/%m/%d %H:%M:%S"
+      end
+
+      smith do
+        namespace  'smith'
       end
     end
 

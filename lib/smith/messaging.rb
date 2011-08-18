@@ -80,7 +80,7 @@ module Smith
     private
 
     def namespaced_queue_name
-      "#{Smith.config.amqp.namespace}.#{queue_name}"
+      "#{Smith.config.smith.namespace}.#{queue_name}"
     end
   end
 end
