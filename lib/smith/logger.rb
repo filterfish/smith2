@@ -3,8 +3,6 @@ module Smith
 
     def self.included(base)
 
-      # Nasty hack to supress already initialized constant warning. It's the
-      # right thing to do as the init method should only be called once.
       if !Logging.const_defined?(:MAX_LEVEL_LENGTH)
         Logging.init([:verbose, :debug, :info, :warn, :error, :fatal])
       end
@@ -27,8 +25,12 @@ module Smith
 
       def log_level(level=nil)
         if level
-          @@__level = level
-          @reload = true
+          if Logging::LEVELS[level.to_s]
+            @@__level = level
+            @reload = true
+          else
+            raise ArgumentError, "Unknown level: #{level}"
+          end
         end
         Logging.logger.root.level = @@__level
       end

@@ -106,6 +106,22 @@ describe Smith::Logger do
       log_output = Smith::ClassUnderTest.capture_stdout { cut.send(:logger).fatal("instance log message") }
       log_output.should == "  FATAL - Smith::ClassUnderTest: - instance log message\n"
     end
+
+    it 'should throw an error if an inccorect level is set' do
+      expect {
+          cut.send(:log_level, :nonsense)
+      }.to raise_error(ArgumentError, /Unknown level: nonsense/)
+    end
+
+    it 'should still log at debug even after an exception' do
+      cut.send(:log_level, :debug)
+      expect {
+          cut.send(:log_level, :nonsense)
+      }.to raise_error(ArgumentError, /Unknown level: nonsense/)
+
+      log_output = Smith::ClassUnderTest.capture_stdout { cut.send(:logger).debug("log message") }
+      log_output.should == "  DEBUG - Smith::ClassUnderTest: - log message\n"
+    end
   end
 
   context :reload do
