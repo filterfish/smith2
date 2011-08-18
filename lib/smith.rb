@@ -53,9 +53,10 @@ module Smith
       EM.kqueue if EM.kqueue?
       EM.set_descriptor_table_size(opts[:fdsize] || 1024)
 
-      handler = Proc.new { |settings| puts "Cannot connect to the AMQP server."; EM.stop }
-
-      connection_settings = {:on_tcp_connection_failure => handler}
+      connection_settings = Smith.config.amqp.broker._child.merge({
+        :on_tcp_connection_failure => method(:tcp_connection_failure_handler),
+        :on_possible_authentication_failure => method(:authentication_failure_handler)
+      })
 
       AMQP.start(connection_settings) do |connection|
         @connection = connection
@@ -79,6 +80,33 @@ module Smith
       else
         EM.add_timer(1) { connection.close { EM.stop } }
       end
+    end
+
+    private
+
+    def tcp_connection_failure_handler(settings)
+      # Only display the following settings.
+      s = settings.select { |k,v| ([:user, :pass, :vhost, :host, :port, :ssl].include?(k)) }
+
+      logger.fatal("Cannot connect to the AMQP server.")
+      logger.fatal("Is the server running and are the connection details correct?")
+      logger.info("Details:")
+      s.each do |k,v|
+        logger.info(" Setting: %-7s%s" %  [k, v])
+      end
+      EM.stop
+    end
+
+    def authentication_failure_handler(settings)
+      # Only display the following settings.
+      s = settings.select { |k,v| [:user, :pass, :vhost, :host].include?(k) }
+
+      logger.fatal("Authenticaton failure.")
+      logger.info("Details:")
+      s.each do |k,v|
+        logger.info(" Setting: %-7s%s" %  [k, v])
+      end
+      EM.stop
     end
   end
 end
