@@ -1,8 +1,8 @@
 #encoding: utf-8
 
 module Smith
-  module AgencyCommands
-    class Start < AgencyCommand
+  module Commands
+    class Start < Command
       def execute(target)
         target.each do |agent|
           agents[agent].name = agent

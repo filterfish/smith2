@@ -1,8 +1,8 @@
 #encoding: utf-8
 
 module Smith
-  module AgencyCommands
-    class List < AgencyCommand
+  module Commands
+    class List < Command
       def execute(target)
         running_agents = agents.state(:running).map(&:name)
         if running_agents.empty?

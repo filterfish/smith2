@@ -1,8 +1,8 @@
 #encoding: utf-8
 
 module Smith
-  module AgencyCommands
-    class Agents < AgencyCommand
+  module Commands
+    class Agents < Command
       def execute(target)
         agent_paths = Smith.agent_default_path.each_child.inject([]) do |acc,p|
           acc.tap do |a|

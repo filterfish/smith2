@@ -1,8 +1,8 @@
 #encoding: utf-8
 
 module Smith
-  module AgencyCommands
-    class Stop < AgencyCommand
+  module Commands
+    class Stop < Command
       def execute(target)
         case target.first
         when 'agency'

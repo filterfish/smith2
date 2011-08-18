@@ -1,8 +1,8 @@
 #encoding: utf-8
 
 module Smith
-  module AgencyCommands
-    class LogLevel < AgencyCommand
+  module Commands
+    class LogLevel < Command
       def execute(target)
         level = target.shift
 
