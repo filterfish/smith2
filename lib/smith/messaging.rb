@@ -8,18 +8,29 @@ module Smith
 
     attr_reader :queue_name
 
-    def initialize(queue_name, options={})
+    def initialize(queue_name, opts={})
       @queue_name = queue_name
-      @channel = AMQP::Channel.new(Smith.connection)
+      channel = AMQP::Channel.new(Smith.connection)
 
-      options.merge!(:durable => true)
+      channel.on_error do |channel, channel_close|
+        pp channel_close
+        Smith.stop(true)
+      end
+
+      # Optimism doesn't look enough like a hash for amqp so use
+      # ._child. Quite why Optimism has public methods starting with
+      # an underscore I'll never know.
+      #
+      # Be careful here as Smith.config is a global object so #merge!
+      # will change the options for the entire address space.
+      options = Smith.config.amqp._child.merge(opts)
 
       # Set up QOS. If you do not do this then the subscribe in receive_message
       # will get overwelmd and the whole thing will collapse in on itself.
-      @channel.prefetch(1)
+      channel.prefetch(1)
 
-      @exchange = @channel.direct(namespaced_queue_name, options)
-      @queue = @channel.queue(namespaced_queue_name, options).bind(@exchange)
+      @exchange = channel.direct(namespaced_queue_name, options)
+      @queue = channel.queue(namespaced_queue_name, options).bind(@exchange)
     end
 
     def send_message(message, options={}, &blk)
