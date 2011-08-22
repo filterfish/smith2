@@ -133,11 +133,15 @@ module Smith
     end
 
     def self.kill(agent_process)
-      # FIXME sort out the logger so that it works at the class level
-      #logger.info("Sending kill signal: #{agent_process.name}")
       if agent_process.pid
-        Process.kill('TERM', agent_process.pid) rescue nil
-        #logger.error("Trying to kill non-existent agent: #{agent_process.name}")
+        logger.info("Sending kill signal: #{agent_process.name}(#{agent_process.pid})")
+        begin
+          Process.kill('TERM', agent_process.pid)
+        rescue
+          logger.error("Process does not exist. PID is stale: #{agent_process.pid}: #{agent_process.name}")
+        end
+      else
+        logger.error("Not sending kill signal, agent state is: #{agent_process.state}: #{agent_process.name}")
       end
     end
 
