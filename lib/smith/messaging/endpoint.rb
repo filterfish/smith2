@@ -7,6 +7,11 @@ module Smith
         set_endpoint_options
 
         @channel = AMQP::Channel.new(Smith.connection)
+
+        # Set up QOS. If you do not do this then the subscribe in receive_message
+        # will get overwelmd and the whole thing will collapse in on itself.
+        @channel.prefetch(1)
+
         @channel.on_error do |channel, channel_close|
           Smith.stop(true)
         end
