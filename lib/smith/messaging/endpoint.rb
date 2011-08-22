@@ -18,6 +18,32 @@ module Smith
         @queue.bind(@exchange, :routing_key => normalised_queue_name)
       end
 
+      def number_of_messages
+        @queue.status do |num_messages, num_consumers|
+          yield num_messages
+        end
+      end
+
+      def number_of_consumers
+        @queue.status do |num_messages, num_consumers|
+          yield num_consumers
+        end
+      end
+
+      def consumers?(blk=nil, err=proc {logger.debug("Nothing listening on #{queue_name}")})
+        number_of_consumers do |n|
+          if n > 0
+            if blk.respond_to? :call
+              blk.call(self)
+            else
+              yield self
+            end
+          else
+            err.call
+          end
+        end
+      end
+
       protected
 
       attr_accessor :exchange, :queue
