@@ -11,8 +11,12 @@ module Smith
       @operator = operator
     end
 
-    def entry(name)
-      @cache[name] ||= @operator.call(name)
+    def entry(name, option=nil)
+      if option
+        @cache[name] ||= @operator.call(name, option)
+      else
+        @cache[name] ||= @operator.call(name)
+      end
     end
 
     def entries
