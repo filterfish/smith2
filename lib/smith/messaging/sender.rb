@@ -27,7 +27,7 @@ module Smith
 
       def set_sender_options
         @normal_publish_options = Smith.config.amqp.publish._child
-        @receive_publish_options = Smith.config.amqp.publish._child.merge(:exclusive => true, :immediate => true)
+        @receive_publish_options = Smith.config.amqp.publish._child.merge(:exclusive => true)
       end
     end
   end
