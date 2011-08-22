@@ -21,10 +21,10 @@ payload = ARGV[1]
 
 Smith.start do
 
-  queue = Smith::Messaging.new(queue_name)
+  sender = Smith::Messaging::Sender.new(queue_name)
 
   work = proc do |n, iter|
-    queue.send_message(payload, :persistent => true, :nowait => false) do
+    sender.publish(payload, :persistent => true, :nowait => false) do
       iter.next
     end
   end

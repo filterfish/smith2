@@ -12,7 +12,7 @@ module Smith
 
       @name = self.class.to_s
       @queues = Cache.new
-      @queues.operator ->(name){Messaging.new(name)}
+      @queues.operator ->(name, option){(option == :sender) ? Messaging::Sender.new(name) : Messaging::Receiver.new(name)}
 
       setup_control_queue
       acknowledge_start
@@ -20,10 +20,10 @@ module Smith
     end
 
     def run
-      raise ArgumentError, "You need to call Agent.task(&blk)" if @@task.nil?
+      raise ArgumentError, "You need to call Agent.task(&block)" if @@task.nil?
 
       EM.threadpool_size = 1
-      default_queue.receive_message(:ack => false) do |metadata,payload|
+      default_queue.subscribe(:ack => false) do |metadata,payload|
         EM.defer do
           @@task.call(payload)
         end
@@ -33,7 +33,7 @@ module Smith
     end
 
     def listen(queue, options={}, &block)
-      queues(queue).receive_message(options) do |header,payload|
+      queues(queue, :receiver).receive(options) do |header,payload|
         block.call(header, payload)
       end
     end
@@ -62,19 +62,19 @@ module Smith
 
     def acknowledge_start
       agent_data = agent_options.merge(:pid => $$, :name => self.class.to_s, :started_at => Time.now.utc)
-      Smith::Messaging.new(:acknowledge_start).send_message(agent_data)
+      Messaging::Sender.new(:acknowledge_start).publish(agent_data)
     end
 
     def acknowledge_stop
       agent_data = {:pid => $$, :name => self.class.to_s}
-      Smith::Messaging.new(:acknowledge_stop).send_message(agent_data)
+      Messaging::Sender.new(:acknowledge_stop).publish(agent_data)
     end
 
     def start_keep_alive
       if agent_options[:monitor]
-        send_keep_alive(queues(:keep_alive))
+        send_keep_alive(queues(:keep_alive, :sender))
         EventMachine::add_periodic_timer(1) do
-          send_keep_alive(queues(:keep_alive))
+          send_keep_alive(queues(:keep_alive, :sender))
         end
       else
         logger.debug("Not initiating keep alive agent is not being monitored: #{@name}")
@@ -83,14 +83,14 @@ module Smith
 
     def send_keep_alive(queue)
       queue.consumers? do |queue|
-        queue.send_message({:name => self.class.to_s, :time => Time.now.utc}, :durable => false)
+        queue.publish({:name => self.class.to_s, :time => Time.now.utc}, :durable => false)
       end
     end
 
     def setup_control_queue
-      control_queue.receive_message do |header, payload|
-        command = payload['command']
-        args = payload['args']
+      control_queue.subscribe do |header, payload|
+        command = payload[:command]
+        args = payload[:args]
 
         logger.debug("Command received on agent control queue: #{command} #{args}")
 
@@ -119,18 +119,18 @@ module Smith
       @@agent_options
     end
 
-    def queues(queue_name)
-      @queues.entry(queue_name)
+    def queues(queue_name, option=nil)
+      @queues.entry(queue_name, option)
     end
 
     def default_queue
       logger.debug("Setting up default queue: #{agent_queue_name}") unless @queues.exist?(agent_queue_name)
-      queues(agent_queue_name)
+      queues(agent_queue_name, :receiver)
     end
 
     def control_queue
       logger.debug("Setting up control queue: #{agent_control_queue_name}") unless @queues.exist?(agent_control_queue_name)
-      queues(agent_control_queue_name)
+      queues(agent_control_queue_name, :receiver)
     end
 
     def agent_control_queue_name

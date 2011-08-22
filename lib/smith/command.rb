@@ -47,7 +47,7 @@ module Smith
     end
 
     def send_agent_control_message(agent, message)
-      Smith::Messaging.new(agent.control_queue_name).send_message(message)
+      Messaging::Sender.new(agent.control_queue_name).publish(message)
     end
 
     private

@@ -126,7 +126,7 @@ module Smith
     end
 
     def self.stop(agent_process)
-      Smith::Messaging.new(agent_process.control_queue_name).send_message(:command => :stop)
+      Messaging::Sender.new(agent_process.control_queue_name).publish(:command => :stop)
     end
 
     def self.acknowledge_stop(agent_process)

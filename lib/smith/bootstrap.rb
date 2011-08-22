@@ -73,7 +73,7 @@ module Smith
     end
 
     def send_dead_message
-      Messaging.new(:dead).send_message(:name => @agent_name)
+      Messaging::Sender.new(:dead).publish(:name => @agent_name)
     end
 
     def unlink_pid_file

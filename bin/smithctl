@@ -7,15 +7,15 @@ require 'smith'
 module Smith
   class SmithControl
     def initialize
-      @queue = Messaging.new('agency.control')
+      @sender = Messaging::Sender.new('agency.control')
     end
 
     def send_command(*args, &blk)
       payload = {:command => args.shift, :args => args.shift}
 
-      sender = proc { |queue| queue.send_message(payload, :persistent => true, :nowait => false, &blk) }
+      sender = proc { |sender| sender.publish(payload, :persistent => true, &blk) }
       error = proc { puts "Agency not running"; Smith.stop(true) }
-      @queue.consumers?(sender, error)
+      @sender.consumers?(sender, error)
     end
   end
 end
