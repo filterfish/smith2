@@ -10,8 +10,8 @@ describe Smith::Config do
 
   it 'should set meaning defaults' do
     @config.eventmachine.file_descriptors.should == 1024
-    @config.amqp.ack.should == true
-    @config.amqp.durable.should == true
+    @config.amqp.publish.ack.should == true
+    @config.amqp.exchange.durable.should == true
 
     @config.smith.namespace.should == 'smith'
   end

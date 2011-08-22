@@ -2,6 +2,7 @@
 module Smith
   class Config
     @@config = Optimism do
+
       agent do
         monitor    true
         singleton  true
@@ -15,16 +16,34 @@ module Smith
 
       # Only put options that amqp understands here.
       amqp do
-        ack         true
-        durable     true
-        auto_delete true
+        publish do
+          ack         true
+        end
+
+        pop do
+          ack         true
+        end
+
+        subscribe do
+          ack         true
+        end
+
+        exchange do
+          durable     true
+          auto_delete true
+        end
+
+        queue do
+          durable     true
+          auto_delete true
+        end
 
         broker do
-          host      'localhost'
-          port      5672
-          user      'guest'
-          password  'guest'
-          vhost     '/'
+          host        'localhost'
+          port        5672
+          user        'guest'
+          password    'guest'
+          vhost       '/'
         end
       end
 
