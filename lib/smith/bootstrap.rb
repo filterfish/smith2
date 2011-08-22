@@ -1,3 +1,5 @@
+# -*- encoding: utf-8 -*-
+#
 # This should never be run directly it should only be
 # ever run by the agency.
 

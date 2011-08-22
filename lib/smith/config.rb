@@ -1,4 +1,4 @@
-# encoding: utf-8
+# -*- encoding: utf-8 -*-
 module Smith
   class Config
     @@config = Optimism do

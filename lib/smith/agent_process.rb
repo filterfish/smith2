@@ -1,3 +1,4 @@
+# -*- encoding: utf-8 -*-
 require 'pp'
 require 'state_machine'
 require 'dm-observer'

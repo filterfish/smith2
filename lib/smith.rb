@@ -1,4 +1,4 @@
-require 'pp'
+# -*- encoding: utf-8 -*-
 require 'amqp'
 require 'tmpdir'
 require 'logging'

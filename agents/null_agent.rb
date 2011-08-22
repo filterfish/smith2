@@ -1,3 +1,4 @@
+# -*- encoding: utf-8 -*-
 class NullAgent < Smith::Agent
 
   task do |payload|

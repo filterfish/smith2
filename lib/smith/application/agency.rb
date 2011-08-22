@@ -1,3 +1,4 @@
+# -*- encoding: utf-8 -*-
 require 'dm-core'
 
 module Smith

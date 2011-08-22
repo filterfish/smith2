@@ -1,5 +1,4 @@
-# encoding: utf-8
-
+# -*- encoding: utf-8 -*-
 module Smith
   class Command
     class UnkownCommandError < RuntimeError; end
