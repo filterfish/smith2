@@ -69,9 +69,9 @@ module Smith
       Messaging::Sender.new(:acknowledge_start).publish(agent_data)
     end
 
-    def acknowledge_stop
+    def acknowledge_stop(&block)
       agent_data = {:pid => $$, :name => self.class.to_s}
-      Messaging::Sender.new(:acknowledge_stop).publish(agent_data)
+      Messaging::Sender.new(:acknowledge_stop).publish(agent_data, {:persistent => true}, &block)
     end
 
     def start_keep_alive
@@ -99,10 +99,9 @@ module Smith
         logger.debug("Command received on agent control queue: #{command} #{args}")
 
         case command
-        when 'stop'
-          acknowledge_stop
-          Smith.stop
-        when 'log_level'
+        when :stop
+          acknowledge_stop { Smith.stop }
+        when :log_level
           begin
             logger.info("Setting log level to #{args} for: #{name}")
             log_level(args)
