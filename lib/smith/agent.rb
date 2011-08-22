@@ -43,15 +43,19 @@ module Smith
         @@task = blk
       end
 
+      # Options supported:
+      # :monitor,   the agency will monitor the agent & if dies restart.
+      # :singleton, only every have one agent. If this is set to false
+      #             multiple agents are allow.
       def options(opts)
         opts.each { |k,v| merge_options(k, v) }
       end
 
       def merge_options(option, value)
-        if @@agent_options[option].nil?
-          raise ArgumentError, "Unknown option: #{option}"
-        else
+        if @@agent_options[option]
           @@agent_options[option] = value
+        else
+          raise ArgumentError, "Unknown option: #{option}"
         end
       end
       private :merge_options
