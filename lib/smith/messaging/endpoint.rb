@@ -29,7 +29,7 @@ module Smith
       private
 
       def random(prefix = '', suffix = '')
-        "#{prefix}#{rand(999_999_999).to_s(16)}#{suffix}"
+        "#{prefix}#{SecureRandom.hex(8)}#{suffix}"
       end
 
       def set_endpoint_options
