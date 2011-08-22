@@ -25,7 +25,7 @@ module Smith
 
       def subscribe_and_reply(opts={}, &block)
         reply_payload = subscribe(@receive_subscribe_options.merge(opts)) do |metadata,payload|
-          raise NoReplyTo, "Cannot reply as reply_to is not set."
+          raise NoReplyTo, "Cannot reply as reply_to is not set." if metadata.reply_to.nil?
           options = @receive_publish_options.merge(:routing_key => normalise(metadata.reply_to), :correlation_id => metadata.message_id).merge(opts)
           Sender.new(metadata.reply_to).publish(block.call(metadata,payload))
         end
