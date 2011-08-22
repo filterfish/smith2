@@ -88,7 +88,7 @@ module Smith
     include Logger
     include DataMapper::Observer
 
-    observe Smith::AgentProcess
+    observe AgentProcess
 
     # Start an agent. This forks and execs the bootstrapper class
     # which then becomes responsible for managing the agent process.

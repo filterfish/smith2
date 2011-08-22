@@ -19,7 +19,7 @@ module Smith
 
       load_command(command) unless opts[:auto_load] == false
 
-      Smith::Commands.const_get(Extlib::Inflection.camelize(command)).new(target).tap do |clazz|
+      Commands.const_get(Extlib::Inflection.camelize(command)).new(target).tap do |clazz|
         clazz.instance_eval <<-EOM, __FILE__, __LINE__ + 1
           instance_variable_set(:"@target", target)
           def target; @target; end

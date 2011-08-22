@@ -29,7 +29,7 @@ module Smith
     end
 
     def config
-      Smith::Config.get
+      Config.get
     end
 
     def root_path
@@ -54,7 +54,7 @@ module Smith
       EM.kqueue if EM.kqueue?
       EM.set_descriptor_table_size(opts[:fdsize] || 1024)
 
-      connection_settings = Smith.config.amqp.broker._child.merge({
+      connection_settings = config.amqp.broker._child.merge({
         :on_tcp_connection_failure => method(:tcp_connection_failure_handler),
         :on_possible_authentication_failure => method(:authentication_failure_handler)
       })

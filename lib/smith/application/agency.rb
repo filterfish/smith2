@@ -32,7 +32,7 @@ module Smith
 
       Messaging::Receiver.new('agency.control').subscribe do |header, payload|
         begin
-          Smith::Command.run(payload['command'], payload['args'], :agency => self,  :agents => @agent_processes)
+          Command.run(payload[:command], payload[:args], :agency => self,  :agents => @agent_processes)
         rescue Command::UnkownCommandError => e
           logger.error("Command not known: #{command}")
         end
