@@ -14,7 +14,8 @@ module Smith
         default_path 'agents'
       end
 
-      # Only put options that amqp understands here.
+      # These directly translate to amqp options so
+      # only put options that amqp understands.
       amqp do
         publish do
           ack         true
@@ -53,7 +54,9 @@ module Smith
       end
 
       logging do
-        default_pattern "[%d] %7l - %25c:%-3L - %m\n"
+        trace true
+        level :debug
+        default_pattern "[%d] %7l - %28c:%-3L - %m\n"
         default_date_pattern "%Y/%m/%d %H:%M:%S"
       end
 

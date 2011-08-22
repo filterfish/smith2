@@ -18,8 +18,8 @@ module Smith
 
       @@__pattern = Smith::Config.get.logging.default_pattern
       @@__date_pattern = Smith::Config.get.logging.default_date_pattern
-      @@__level = :debug
-      @@__trace = true
+      @@__level = Smith::Config.get.logging.level
+      @@__trace = Smith::Config.get.logging.trace
       @@__appender_type = Logging::Appenders::Stdout
       @@__name = 'smith'
 
