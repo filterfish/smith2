@@ -6,9 +6,9 @@ module Smith
       def execute(target)
         running_agents = agents.state(:running).map(&:name)
         if running_agents.empty?
-          logger.info("No agents running.")
+          "No agents running."
         else
-          logger.info("Agents running: #{running_agents.sort.join(', ')}.")
+          "Agents running: #{running_agents.sort.join(', ')}."
         end
       end
     end

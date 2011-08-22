@@ -19,23 +19,22 @@ module Smith
 
       load_command(command) unless opts[:auto_load] == false
 
-      Commands.const_get(Extlib::Inflection.camelize(command)).new(target).tap do |clazz|
-        clazz.instance_eval <<-EOM, __FILE__, __LINE__ + 1
+      clazz = Commands.const_get(Extlib::Inflection.camelize(command)).new(target)
+      clazz.instance_eval <<-EOM, __FILE__, __LINE__ + 1
           instance_variable_set(:"@target", target)
           def target; @target; end
-        EOM
+      EOM
 
-        vars.each do |k,v|
-          clazz.instance_eval <<-EOM, __FILE__, __LINE__ + 1
+      vars.each do |k,v|
+        clazz.instance_eval <<-EOM, __FILE__, __LINE__ + 1
             instance_variable_set(:"@#{k}", v)
             def #{k}; @#{k}; end
-          EOM
-        end
-
-        # FIXME. target is being used for both the target and any arguments if
-        # this is the way it's going to be it should be renamed
-        clazz.execute(target)
+        EOM
       end
+
+      # FIXME. target is being used for both the target and any arguments if
+      # this is the way it's going to be it should be renamed
+      clazz.execute(target).tap {|ret| logger.debug(ret) if ret }
     end
 
     protected

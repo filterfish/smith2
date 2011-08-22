@@ -8,6 +8,7 @@ module Smith
           agents[agent].name = agent
           agents[agent].start
         end
+        nil
       end
     end
   end

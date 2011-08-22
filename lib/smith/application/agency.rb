@@ -30,11 +30,12 @@ module Smith
         keep_alive(agent_data)
       end
 
-      Messaging::Receiver.new('agency.control').subscribe do |header, payload|
+      Messaging::Receiver.new('agency.control').subscribe_and_reply do |header, payload|
         begin
           Command.run(payload[:command], payload[:args], :agency => self,  :agents => @agent_processes)
         rescue Command::UnkownCommandError => e
-          logger.error("Command not known: #{command}")
+          logger.warn("Unknown command: #{payload[:command]}")
+          "Command not known: #{payload[:command]}"
         end
       end
     end

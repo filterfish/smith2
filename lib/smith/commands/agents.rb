@@ -11,9 +11,9 @@ module Smith
         end
 
         if agent_paths.empty?
-          logger.info("No agents available.")
+          "No agents available."
         else
-          logger.info("Agents available: #{agent_paths.sort.join(", ")}.")
+          "Agents available: #{agent_paths.sort.join(", ")}."
         end
       end
     end
