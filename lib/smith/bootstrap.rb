@@ -43,21 +43,30 @@ module Smith
       @agent.run
     end
 
-    # Exceptional shutdown of the agent.
+    # Exceptional shutdown of the agent. Note. Whenever this is
+    # called it almost certain that the reactor is not going to
+    # be running. So it must be restarted and then shutdown again
+    # See the note at the in main.
     def terminate!(exception=nil)
-      logger.error("Agent #{@agent_name} is dead.")
-      logger.error(exception) if exception
-      logger.debug("Sending dead message for #{@agent_name}")
+      logger.error("Terminating: #{@agent_name}.")
+      if exception
+        logger.error(exception.message)
+        logger.debug(exception)
+      end
 
       if Smith.running?
+        logger.debug("Smith is running")
         send_dead_message
+        unlink_pid_file
+        Smith.stop
       else
+        logger.debug("Restarting Smith.")
         Smith.start do
           send_dead_message
+          unlink_pid_file
+          Smith.stop
         end
       end
-      unlink_pid_file
-      Smith.stop
     end
 
     # Clean shutdown of the agent.
@@ -75,11 +84,14 @@ module Smith
     end
 
     def send_dead_message
+      logger.debug("Sending dead message to agency: #{@agent_name}")
       Messaging::Sender.new(:dead).publish(:name => @agent_name)
     end
 
     def unlink_pid_file
-      @pid.cleanup if @pid
+      if @pid && @pid.exist?
+        logger.debug("Cleaning up pid file: #{@pid.filename}")
+      end
     end
   end
 end
@@ -94,6 +106,10 @@ $0 = "#{agent_name}"
 
 bootstrapper = Smith::AgentBootstrap.new(path, agent_name)
 
+# I've tried putting the exception handling in the main reactor loog
+# but it doesn't do anything. I know theres a resaon for this but I
+# don't what it is at the moment. Just beware that whenever there
+# is an exception the recator is not going going to be running.
 begin
   Smith.start do
     bootstrapper.load_agent
