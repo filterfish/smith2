@@ -4,10 +4,11 @@
 require 'pp'
 require 'pathname'
 
-root_path = Pathname.new("__FILE__}/..").expand_path
+root_path = Pathname.new('__FILE__').join('..').expand_path
+$:.unshift(root_path.join('lib'))
 
-require root_path.join('lib/smith')
-require root_path.join('lib/smith/application/agency')
+require 'smith'
+require 'smith/application/agency'
 
 module Smith
   class AgencyRunner
@@ -29,7 +30,7 @@ module Smith
 end
 
 %w{TERM INT QUIT}.each do |sig|
-  trap sig, proc { puts "Shutting down"; Smith.stop }
+  trap sig, proc { puts "Shutting down"; Smith.stop(true) }
 end
 
 agency_runner = Smith::AgencyRunner.new(root_path)
