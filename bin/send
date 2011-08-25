@@ -9,7 +9,7 @@ require 'trollop'
 parser = Trollop::Parser.new do
   banner "usage: #{$0} OPTIONS <queue> <payload>"
 
-  opt :number,    "the number of times to send the message", :type => :integer
+  opt :number,    "the number of times to send the message", :type => :integer, :default => 1
 end
 
 opts = Trollop::with_standard_exception_handling parser do
