@@ -77,9 +77,18 @@ module Smith
 
     def stop(immediately=false)
       if immediately
-        connection.close { EM.stop }
+        connection.close { EM.stop { logger.debug("Reactor Stopped") } }
       else
-        EM.add_timer(1) { connection.close { EM.stop } }
+        if running?
+          EM.add_timer(1) do
+            connection.close do
+              EM.stop { logger.debug("Reactor Stopped") }
+            end
+          end
+        else
+          logger.fatal("Eventmachine is not running, exiting with prejudice")
+          exit!
+        end
       end
     end
 
