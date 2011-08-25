@@ -3,11 +3,15 @@ module Smith
   module Commands
     class Start < Command
       def execute(target)
-        target.each do |agent|
-          agents[agent].name = agent
-          agents[agent].start
+        if target.empty?
+          "Start what? No agent specified."
+        else
+          target.each do |agent|
+            agents[agent].name = agent
+            agents[agent].start
+          end
+          nil
         end
-        nil
       end
     end
   end
