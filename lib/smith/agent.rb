@@ -23,7 +23,11 @@ module Smith
 
       EM.threadpool_size = 1
       default_queue.subscribe(:ack => false) do |metadata,payload|
-        EM.defer do
+        if @@threads
+          EM.defer do
+            @@task.call(payload)
+          end
+        else
           @@task.call(payload)
         end
       end
@@ -38,7 +42,8 @@ module Smith
     end
 
     class << self
-      def task(&blk)
+      def task(opts={}, &blk)
+        @@threads = opts[:threads] || false
         @@task = blk
       end
 
