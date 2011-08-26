@@ -85,7 +85,7 @@ module Smith
 
     def dead(agent_data)
       @agent_processes[agent_data[:name]].no_process_running
-      logger.debug("Agent is dead: #{agent_data[:name]}")
+      logger.fatal("Agent is dead: #{agent_data[:name]}")
     end
 
     # FIXME this doesn't work.
