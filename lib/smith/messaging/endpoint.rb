@@ -13,7 +13,10 @@ module Smith
         # will get overwelmd and the whole thing will collapse in on itself.
         @channel.prefetch(1)
 
+        @channel.auto_recovery = true
         @channel.on_error do |channel, channel_close|
+          logger.debug("channel_close.class: #{channel_close.class}")
+          logger.warn("Channel error: #{channel_close.reply_text}")
           Smith.stop(true)
         end
 

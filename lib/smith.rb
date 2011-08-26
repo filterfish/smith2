@@ -62,12 +62,29 @@ module Smith
       AMQP.start(connection_settings) do |connection|
         @connection = connection
 
+        @connection.on_tcp_connection_loss do |connection, settings|
+          reconnect = proc do
+            EM.add_timer(5) do
+              logger.error("TCP connection error. Attempting restart")
+              @connection.reconnect
+              if @connection.connected?
+                reconnect.call
+              end
+            end
+          end
+
+          reconnect.call
+        end
+
+        @connection.after_recovery do
+          logger.info("Connection to AMQP server has been restored")
+        end
+
         @connection.on_error do |conn, reason|
           if @handler
             @handler.call(conn, reason)
           else
             logger.error("Shutting down: #{reason.reply_code}: #{reason.reply_text}")
-            EM.stop
           end
         end
 
