@@ -9,8 +9,6 @@ module Smith
     attr_accessor :name
 
     def initialize(options={})
-      Smith.on_error = proc {|e| pp e}
-
       @name = self.class.to_s
       @queues = Cache.new
       @queues.operator ->(name, option){(option == :sender) ? Messaging::Sender.new(name) : Messaging::Receiver.new(name)}
