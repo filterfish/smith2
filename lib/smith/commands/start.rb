@@ -2,7 +2,7 @@
 module Smith
   module Commands
     class Start < Command
-      def execute(target)
+      def execute
         if target.empty?
           "Start what? No agent specified."
         else

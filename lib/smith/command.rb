@@ -20,20 +20,18 @@ module Smith
 
       clazz = Commands.const_get(Extlib::Inflection.camelize(command)).new(target)
       clazz.instance_eval <<-EOM, __FILE__, __LINE__ + 1
-          instance_variable_set(:"@target", target)
-          def target; @target; end
+        instance_variable_set(:"@target", target)
+        def target; [@target].flatten; end
       EOM
 
       vars.each do |k,v|
         clazz.instance_eval <<-EOM, __FILE__, __LINE__ + 1
-            instance_variable_set(:"@#{k}", v)
-            def #{k}; @#{k}; end
+          instance_variable_set(:"@#{k}", v)
+          def #{k}; @#{k}; end
         EOM
       end
 
-      # FIXME. target is being used for both the target and any arguments if
-      # this is the way it's going to be it should be renamed
-      clazz.execute(target).tap {|ret| logger.debug(ret) if ret }
+      clazz.execute.tap {|ret| logger.debug(ret) if ret }
     end
 
     protected

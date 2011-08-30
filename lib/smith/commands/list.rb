@@ -2,7 +2,7 @@
 module Smith
   module Commands
     class List < Command
-      def execute(target)
+      def execute
         running_agents = agents.state(:running).map(&:name)
         if running_agents.empty?
           "No agents running."

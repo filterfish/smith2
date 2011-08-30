@@ -2,7 +2,7 @@
 module Smith
   module Commands
     class Stop < Command
-      def execute(target)
+      def execute
         case target.first
         when 'agency'
           running_agents = agents.state(:running)

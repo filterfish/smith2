@@ -2,11 +2,10 @@
 module Smith
   module Commands
     class LogLevel < Command
-      def execute(target)
+      def execute
         level = target.shift
 
         if level.nil?
-          #logger.warn("No log level. You must specify a log level and a target")
           "No log level. You must specify a log level and a target")
         else
           case target.first
@@ -25,7 +24,6 @@ module Smith
               nil
             end
           when nil
-            #logger.warn("No target. You must specify one of the following: agency, all or a list of agents")
             "No target. You must specify one of the following: 'agency', 'all' or a list of agents"
           else
             target.each do |agent|

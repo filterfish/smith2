@@ -2,7 +2,7 @@
 module Smith
   module Commands
     class Agents < Command
-      def execute(target)
+      def execute
         agent_paths = Smith.agent_default_path.each_child.inject([]) do |acc,p|
           acc.tap do |a|
             a << Extlib::Inflection.camelize(p.basename('.rb')) unless p.directory?

@@ -2,7 +2,7 @@
 module Smith
   module Commands
     class State < Command
-      def execute(target)
+      def execute
         target.inject([]) do |acc,agent_name|
           acc.tap { |a| a << ["#{agent_name}: #{agents[agent_name].state}"] }
         end.join(",")
