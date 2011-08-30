@@ -142,7 +142,7 @@ module Smith
           logger.error("Process does not exist. PID is stale: #{agent_process.pid}: #{agent_process.name}")
         end
       else
-        logger.error("Not sending kill signal, agent state is: #{agent_process.state}: #{agent_process.name}")
+        logger.error("Not sending kill signal, agent pid is not set: #{agent_process.name}")
       end
     end
 

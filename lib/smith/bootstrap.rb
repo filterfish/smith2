@@ -56,12 +56,11 @@ module Smith
       end
 
       if Smith.running?
-        logger.debug("Smith is running")
         send_dead_message
         unlink_pid_file
         Smith.stop
       else
-        logger.debug("Restarting Smith.")
+        logger.debug("Reconnecting to AMQP Broker.")
         Smith.start do
           send_dead_message
           unlink_pid_file
