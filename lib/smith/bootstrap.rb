@@ -25,11 +25,12 @@ module Smith
     end
 
     def signal_handlers
+      logger.debug("Installing default signal handlers")
       %w{TERM INT QUIT}.each do |sig|
-        trap sig, proc {
-          logger.error("Agent received: #{sig} signal: #{agent.name}")
+        @agent.install_signal_handler(sig) do |sig|
+          logger.error("Agent received: signal #{sig}: #{agent.name}")
           terminate!
-        }
+        end
       end
     end
 

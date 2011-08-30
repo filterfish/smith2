@@ -10,16 +10,15 @@ module Smith
 
     def initialize(options={})
       @name = self.class.to_s
+      @signal_handlers = Hash.new { |h,k| h[k] = Array.new }
       @queues = Cache.new
-      @queues.operator ->(name, option){(option == :sender) ? Messaging::Sender.new(name) : Messaging::Receiver.new(name)}
-
-      setup_control_queue
-      acknowledge_start
-      start_keep_alive
+      @queues.operator ->(name, option=nil){(option == :sender) ? Messaging::Sender.new(name) : Messaging::Receiver.new(name)}
     end
 
     def run
       raise ArgumentError, "You need to call Agent.task(&block)" if @@task.nil?
+
+      setup_control_queue
 
       EM.threadpool_size = 1
       default_queue.subscribe(:ack => false) do |metadata,payload|
@@ -32,12 +31,25 @@ module Smith
         end
       end
 
+      acknowledge_start
+      start_keep_alive
+
       logger.info("Starting #{name}:[#{$$}]")
     end
 
     def listen(queue, options={}, &block)
       queues(queue, :receiver).receive(options) do |header,payload|
         block.call(header, payload)
+      end
+    end
+
+    def install_signal_handler(signal, position=:end, &blk)
+      raise ArgumentError, "Unknown position: #{position}" if ![:beginning, :end].include?(position)
+
+      logger.debug("Installing signal handler for #{signal}")
+      @signal_handlers[signal].insert((position == :beginning) ? 0 : -1, blk)
+      @signal_handlers.each do |sig, handlers|
+        trap(sig, proc { |sig| handlers.each { |handler| handler.call(sig) } })
       end
     end
 
