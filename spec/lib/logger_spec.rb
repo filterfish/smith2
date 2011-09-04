@@ -1,4 +1,4 @@
-# encoding: utf-8
+# -*- encoding: utf-8 -*-
 
 # A few notes about this spec.
 # 1. The helper that the logging gem supplies only works with rspec 1
@@ -8,7 +8,7 @@
 # 2. I'm using send instead of invoking the method directly because the
 #    methods are protected.
 
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
+require 'spec_helper'
 
 $pattern = "%7l - %c:%L - %m\n"
 
