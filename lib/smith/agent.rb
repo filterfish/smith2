@@ -20,7 +20,7 @@ module Smith
 
       setup_control_queue
 
-      EM.threadpool_size = 1
+      EM.threadpool_size = 1 if @@threads
       default_queue.subscribe(:ack => false) do |metadata,payload|
         if @@threads
           EM.defer do
