@@ -15,22 +15,6 @@ module Smith
     end
 
     def setup_queues
-      Messaging::Receiver.new(:acknowledge_start).subscribe do |header, agent_data|
-        acknowledge_start(agent_data)
-      end
-
-      Messaging::Receiver.new(:acknowledge_stop).subscribe do |header, agent_data|
-        acknowledge_stop(agent_data)
-      end
-
-      Messaging::Receiver.new(:dead).subscribe do |header, agent_data|
-        dead(agent_data)
-      end
-
-      Messaging::Receiver.new(:keep_alive).subscribe do |header, agent_data|
-        keep_alive(agent_data)
-      end
-
       Messaging::Receiver.new('agency.control').subscribe_and_reply do |header, payload|
         begin
           Command.run(payload[:command], payload[:args], :agency => self,  :agents => @agent_processes)
@@ -38,6 +22,24 @@ module Smith
           logger.warn("Unknown command: #{payload[:command]}")
           "Command not known: #{payload[:command]}"
         end
+      end
+
+      Messaging::Receiver.new('agent.lifecycle').subscribe do |header, payload|
+        pp payload
+        case payload[:state]
+        when :dead
+          dead(payload[:data])
+        when :acknowledge_start
+          acknowledge_start(payload[:data])
+        when :acknowledge_stop
+          acknowledge_stop(payload[:data])
+        else
+          logger.warn("Unkown command received on agent.lifecycle queue")
+        end
+      end
+
+      Messaging::Receiver.new('agent.keepalive').subscribe do |header, agent_data|
+        keep_alive(agent_data)
       end
     end
 

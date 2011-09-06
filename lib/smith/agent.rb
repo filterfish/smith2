@@ -75,26 +75,24 @@ module Smith
         end
       end
       private :merge_options
-
     end
 
     private
 
     def acknowledge_start
       agent_data = agent_options.merge(:pid => $$, :name => self.class.to_s, :started_at => Time.now.utc)
-      Messaging::Sender.new(:acknowledge_start).publish(agent_data)
+      Messaging::Sender.new('agent.lifecycle').publish(:state => :acknowledge_start, :data => agent_data)
     end
 
     def acknowledge_stop(&block)
       agent_data = {:pid => $$, :name => self.class.to_s}
-      Messaging::Sender.new(:acknowledge_stop).publish(agent_data, {:persistent => true}, &block)
+      Messaging::Sender.new('agent.lifecycle').publish({:state => :acknowledge_stop, :data => agent_data}, {:persistent => true}, &block)
     end
 
     def start_keep_alive
       if agent_options[:monitor]
-        send_keep_alive(queues(:keep_alive, :sender))
         EventMachine::add_periodic_timer(1) do
-          send_keep_alive(queues(:keep_alive, :sender))
+          send_keep_alive(queues('agent.keepalive', :sender))
         end
       else
         logger.debug("Not initiating keep alive agent is not being monitored: #{@name}")
