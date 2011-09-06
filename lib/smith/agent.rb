@@ -49,7 +49,7 @@ module Smith
       logger.debug("Installing signal handler for #{signal}")
       @signal_handlers[signal].insert((position == :beginning) ? 0 : -1, blk)
       @signal_handlers.each do |sig, handlers|
-        trap(sig, proc { |sig| handlers.each { |handler| handler.call(sig) } })
+        trap(sig, proc { |sig| run_signal_handlers(sig, handlers) })
       end
     end
 
@@ -78,6 +78,11 @@ module Smith
     end
 
     private
+
+    def run_signal_handlers(sig, handlers)
+      logger.debug("Running signal handlers for agent: #{name}: #{sig}")
+      handlers.each { |handler| handler.call(sig) }
+    end
 
     def acknowledge_start
       agent_data = agent_options.merge(:pid => $$, :name => self.class.to_s, :started_at => Time.now.utc)
