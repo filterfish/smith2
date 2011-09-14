@@ -1,8 +1,20 @@
 module Smith
   module Messaging
+
+    module ClassMethods
+      include Extlib
+      def encoder_class(e)
+        Encoder.const_get((e.is_a?(Symbol)) ? Inflection.camelize(e) : e.to_s.split(/::/).last)
+      end
+    end
+
     class Payload
-      def initialize(message, encoder=:default)
-        @encoder = Encoder.const_get(Extlib::Inflection.camelize(encoder)).new(message)
+      include Logger
+      include ClassMethods
+      extend ClassMethods
+
+      def initialize(message, encoder=Messaging::Encoder::Default)
+        @encoder = encoder_class(encoder).send(:new, message)
       end
 
       def encoder
@@ -13,8 +25,8 @@ module Smith
         @encoder.encode
       end
 
-      def self.decode(message, encoder=:default)
-        Encoder.const_get(Extlib::Inflection.camelize(encoder)).decode(message)
+      def self.decode(message, encoder=Messaging::Encoder::Default)
+        encoder_class(encoder).decode(message)
       end
     end
   end
