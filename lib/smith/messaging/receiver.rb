@@ -10,9 +10,9 @@ module Smith
         set_receiver_options
       end
 
-      # Subscribes to a queue and passes the headers and payload into
-      # the block. +subscribe+ will automatically acknowledge the
-      # message unless the options sets :ack to false.
+      # Subscribes to a queue and passes the headers and payload into the
+      # block. +subscribe+ will automatically acknowledge the message unless
+      # the options sets :ack to false.
       def subscribe(opts={}, &block)
         if !@queue.subscribed?
           options = @normal_subscribe_options.merge(opts)
@@ -29,11 +29,11 @@ module Smith
         end
       end
 
-      # Subscribes to a queue, passing the headers and payload into
-      # the block, and publishes the result of the block to the reply_to
-      # queue. +subscribe_and_reply+ will automatically acknowledge the
-      # message unless the options sets :ack to false. If the reply_to
-      # queue is not set a +NoReplyTo+ exception is thrown.
+      # Subscribes to a queue, passing the headers and payload into the block,
+      # and publishes the result of the block to the reply_to queue.
+      # +subscribe_and_reply+ will automatically acknowledge the message unless
+      # the options sets :ack to false. If the reply_to queue is not set a
+      # +NoReplyTo+ exception is thrown.
 
       def subscribe_and_reply(opts={}, &block)
         reply_payload = subscribe(@receive_subscribe_options.merge(opts)) do |metadata,payload|

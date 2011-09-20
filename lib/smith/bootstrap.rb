@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 #
-# This should never be run directly it should only be
-# ever run by the agency.
+# This should never be run directly it should only ever be run by
+# the agency.
 
 $: << File.dirname(__FILE__) + '/..'
 
