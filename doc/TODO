@@ -1,0 +1,8 @@
+* Fix bug where an agent is not shut down properly when multiple agents
+  are stopped simulaneously.
+
+* Use caller instead of exception so I don't get a reference to the
+  bootstrap class. Not sure how to format it though.
+
+* Ensure that if an agent is in a die/restart loop that when the agent
+  is stopped it is removed from the run list.

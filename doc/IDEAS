@@ -37,3 +37,11 @@
   pop-queue.
 
 * list commnd should display the state of the agent.
+
+* Think about the idea of a run list. Or is this already implemented in
+  the state machine.
+
+* Have a whitelist/blacklist mechanism listing agents that an agent can
+  receive messages from.
+
+* Have an errback if publish_and_receive times out.
