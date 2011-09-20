@@ -38,7 +38,7 @@ module Smith
         end
       end
 
-      def consumers?(blk=nil, err=proc {logger.debug("Nothing listening on #{queue_name}")})
+      def consumers?(blk=nil, err=proc {logger.debug("Nothing listening on #{@queue.name}")})
         number_of_consumers do |n|
           if n > 0
             if blk.respond_to? :call
