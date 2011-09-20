@@ -85,13 +85,16 @@ module Smith
     end
 
     def acknowledge_start
-      agent_data = agent_options.merge(:pid => $$, :name => self.class.to_s, :started_at => Time.now.utc)
-      Messaging::Sender.new('agent.lifecycle').publish(:state => :acknowledge_start, :data => agent_data)
+      payload = Messaging::Payload.new(:agent_lifecycle).content(agent_options.merge(:state => 'acknowledge_start',
+                                                                                     :pid => $$.to_s,
+                                                                                     :name => self.class.to_s,
+                                                                                     :started_at => Time.now.utc.to_i.to_s))
+      Messaging::Sender.new('agent.lifecycle').publish(payload)
     end
 
     def acknowledge_stop(&block)
-      agent_data = {:pid => $$, :name => self.class.to_s}
-      Messaging::Sender.new('agent.lifecycle').publish({:state => :acknowledge_stop, :data => agent_data}, {:persistent => true}, &block)
+      payload = Messaging::Payload.new(:agent_lifecycle).content(:state => 'acknowledge_stop', :pid => $$.to_s, :name => self.class.to_s)
+      Messaging::Sender.new('agent.lifecycle').publish(payload, :persistent => true, &block)
     end
 
     def start_keep_alive
@@ -106,29 +109,26 @@ module Smith
 
     def send_keep_alive(queue)
       queue.consumers? do |queue|
-        queue.publish({:name => self.class.to_s, :time => Time.now.utc}, :durable => false)
+        queue.publish(Messaging::Payload.new.content(:name => self.class.to_s, :time => Time.now.utc), :durable => false)
       end
     end
 
     def setup_control_queue
       control_queue.subscribe do |header, payload|
-        command = payload[:command]
-        args = payload[:args]
+        logger.debug("Command received on agent control queue: #{payload.command} #{payload.options}")
 
-        logger.debug("Command received on agent control queue: #{command} #{args}")
-
-        case command
-        when :stop
+        case payload.command
+        when 'stop'
           acknowledge_stop { Smith.stop }
-        when :log_level
+        when 'log_level'
           begin
-            logger.info("Setting log level to #{args} for: #{name}")
-            log_level(args)
+            logger.info("Setting log level to #{payload.options} for: #{name}")
+            log_level(payload.options)
           rescue ArgumentError => e
-            logger.error("Incorrect log level: #{args}")
+            logger.error("Incorrect log level: #{payload.options}")
           end
         else
-          logger.warn("Unknown command: #{command} -> #{args.inspect}")
+          logger.warn("Unknown command: #{payload.command} -> #{payload.options.inspect}")
         end
       end
     end

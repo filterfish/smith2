@@ -6,12 +6,12 @@ module Smith
         level = target.shift
 
         if level.nil?
-          "No log level. You must specify a log level and a target")
+          "No log level. You must specify a log level and a target"
         else
           case target.first
           when 'all'
             agents.state(:running).each do |agent|
-              send_agent_control_message(agent, :command => :log_level, :args => level)
+              send_agent_control_message(agent, :command => 'log_level', :options => level)
             end
             nil
           when 'agency'
@@ -28,7 +28,7 @@ module Smith
           else
             target.each do |agent|
               if agents[agent].running?
-                send_agent_control_message(agents[agent], :command => :log_level, :args => level)
+                send_agent_control_message(agents[agent], :command => 'log_level', :options => level)
               end
             end
             nil
@@ -39,7 +39,7 @@ module Smith
       private
 
       def send_agent_control_message(agent, message)
-        Messaging::Sender.new(agent.control_queue_name).publish(message)
+        Messaging::Sender.new(agent.control_queue_name).publish(Messaging::Payload.new(:agent_command).content(message))
       end
     end
   end

@@ -2,6 +2,8 @@
 module Smith
   module Messaging
     class Endpoint
+      include Logger
+
       def initialize(queue_name, encoder=Encoder, queue_opts={})
         extend encoder
 

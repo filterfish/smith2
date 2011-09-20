@@ -12,8 +12,7 @@ module Smith
     end
 
     def send_command(*args, &blk)
-      payload = {:command => args.shift, :args => args.shift}
-
+      payload = Messaging::Payload.new(:agency_command).content(:command => args.shift, :options => args.shift)
       sender = proc { |sender| sender.publish_and_receive(payload, :persistent => true, &blk) }
       error = proc { puts "Agency not running"; Smith.stop(true) }
       @sender.consumers?(sender, error)

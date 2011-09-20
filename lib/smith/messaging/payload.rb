@@ -22,6 +22,7 @@ module Smith
 
       def content(content)
         @encoder = @clazz.send(:new, content)
+        self
       end
 
       # Returns the encoder class.

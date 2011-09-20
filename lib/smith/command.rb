@@ -14,7 +14,8 @@ module Smith
     # only :auto_load is supported.
     #
     def self.run(command, target, vars, opts={})
-      logger.debug("Agency command: #{command}#{(target.empty?) ? '' : " #{[target].flatten.join(', ')}"}.")
+      target ||= []
+      logger.debug("Agency command: #{command}#{(target.empty?) ? '' : " #{target.join(', ')}"}.")
 
       load_command(command) unless opts[:auto_load] == false
 

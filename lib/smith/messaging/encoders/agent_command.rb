@@ -2,7 +2,7 @@
 module Smith
   module Messaging
     module Encoder
-      class Command
+      class AgentCommand
         include Beefcake::Message
 
         required :command, :string, 1

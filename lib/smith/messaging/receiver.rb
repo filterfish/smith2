@@ -19,7 +19,7 @@ module Smith
           @queue.subscribe(options) do |metadata,payload|
             reply_payload = nil
             if payload
-              reply_payload = block.call(metadata, decode(payload))
+              reply_payload = block.call(metadata, Payload.decode(payload, metadata.type))
               metadata.ack if options[:ack]
             end
             reply_payload
@@ -39,10 +39,10 @@ module Smith
         reply_payload = subscribe(@receive_subscribe_options.merge(opts)) do |metadata,payload|
           if metadata.reply_to
             options = @receive_publish_options.merge(:routing_key => normalise(metadata.reply_to), :correlation_id => metadata.message_id).merge(opts)
-            Sender.new(metadata.reply_to).publish(block.call(metadata,payload))
+            Sender.new(metadata.reply_to).publish(Payload.new.content(block.call(metadata, payload)), options)
           else
             logger.warn("No reply_to queue set for: #{@queue.name}: #{metadata.exchange}")
-            block.call(metadata,payload)
+            block.call(metadata, payload)
           end
         end
       end

@@ -36,7 +36,7 @@ module Smith
               logger.info("Agent is shutting down: #{agent_process.name}")
             when 'dead'
               logger.info("Restarting dead agent: #{agent_process.name}")
-              Messaging::Sender.new('agency.control').publish(:command => :start, :args => [agent_process.name])
+              Messaging::Sender.new('agency.control').publish(Messaging::Payload.new(:agency_command).content(:command => :start, :options => [agent_process.name]))
             when 'unknown'
               logger.info("Agent is in an unknown state: #{agent_process.name}")
             end

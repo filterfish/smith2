@@ -81,7 +81,7 @@ module Smith
         @connection.on_error do |conn, reason|
           case reason.reply_code
           when 320
-            logger.warn("AMQP server shutdown. Watting.")
+            logger.warn("AMQP server shutdown. Waiting.")
           else
             if @handler
               @handler.call(conn, reason)
@@ -148,7 +148,9 @@ require_relative 'smith/agent_process'
 require_relative 'smith/agent_monitoring'
 require_relative 'smith/command'
 require_relative 'smith/messaging/encoders/default'
-require_relative 'smith/messaging/encoders/command'
+require_relative 'smith/messaging/encoders/agency_command'
+require_relative 'smith/messaging/encoders/agent_command'
+require_relative 'smith/messaging/encoders/agent_lifecycle'
 require_relative 'smith/messaging/payload'
 require_relative 'smith/messaging/endpoint'
 require_relative 'smith/messaging/exceptions'

@@ -10,8 +10,8 @@ module Smith
       end
 
       def publish(message, opts={}, &block)
-        options = @normal_publish_options.merge(:routing_key => normalise(@queue_name)).merge(opts)
-        exchange.publish(encode(message), options, &block)
+        options = @normal_publish_options.merge(:routing_key => normalise(@queue_name), :type => message.encoder.to_s).merge(opts)
+        exchange.publish(message.encode, options, &block)
       end
 
       def publish_and_receive(message, opts={}, &block)
