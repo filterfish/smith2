@@ -15,9 +15,9 @@ module Smith
     property :path,             String, :required => true
     property :name,             String, :required => true
     property :state,            String, :required => true
-    property :pid,              Integer
+    property :pid,              String
     property :started_at,       Time
-    property :last_keep_alive,  Time
+    property :last_keep_alive,  Integer
     property :monitor,          Boolean
     property :singleton,        Boolean
 
@@ -120,7 +120,7 @@ module Smith
       end
 
       # We don't want any zombies.
-      Process.detach(agent_process.pid)
+      Process.detach(agent_process.pid.to_i)
     end
 
     def self.acknowledge_start(agent_process)

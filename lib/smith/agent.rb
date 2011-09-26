@@ -109,7 +109,7 @@ module Smith
 
     def send_keep_alive(queue)
       queue.consumers? do |queue|
-        queue.publish(Messaging::Payload.new.content(:name => self.class.to_s, :time => Time.now.utc), :durable => false)
+        queue.publish(Messaging::Payload.new(:agent_keepalive).content(:name => self.class.to_s, :pid => $$.to_s, :time => Time.now.utc.to_i.to_s), :durable => false)
       end
     end
 

@@ -51,7 +51,7 @@ module Smith
 
     def acknowledge_start(agent_data)
       @agent_processes[agent_data.name].tap do |agent_process|
-        if agent_data.pid.to_i == agent_process.pid
+        if agent_data.pid == agent_process.pid
           agent_process.monitor = agent_data.monitor
           agent_process.singleton = agent_data.singleton
           agent_process.acknowledge_start
@@ -63,8 +63,7 @@ module Smith
 
     def acknowledge_stop(agent_data)
       @agent_processes[agent_data.name].tap do |agent_process|
-        if agent_data.pid.to_i == agent_process.pid
-          #delete_agent_process(agent_process.pid)
+        if agent_data.pid == agent_process.pid
           agent_process.pid = nil
           agent_process.monitor = nil
           agent_process.singleton = nil
@@ -85,8 +84,20 @@ module Smith
     end
 
     def keep_alive(agent_data)
-      @agent_processes[agent_data['name']].last_keep_alive = agent_data['time']
-      logger.verbose("Agent keep alive: #{agent_data['name']}: #{agent_data['time']}")
+      @agent_processes[agent_data.name].tap do |agent_process|
+        if agent_data.pid == agent_process.pid
+          agent_process.last_keep_alive = agent_data.time
+          logger.verbose("Agent keep alive: #{agent_data.name}: #{agent_data.time}")
+
+          # We need to call save explicitly here as the keep alive is not part of
+          # the state_machine which is the thing that writes the state to disc.
+          agent_process.save
+        else
+          if agent_process.pid
+            logger.error("Agent reports different pid during acknowledge_stop: #{agent_data.name}")
+          end
+        end
+      end
     end
 
     # FIXME this doesn't work.
