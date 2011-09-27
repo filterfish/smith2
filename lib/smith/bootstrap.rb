@@ -49,11 +49,8 @@ module Smith
     # be running. So it must be restarted and then shutdown again
     # See the note at the in main.
     def terminate!(exception=nil)
+      logger.error(format_exception(exception)) if exception
       logger.error("Terminating: #{@agent_name}.")
-      if exception
-        logger.error(exception.message)
-        logger.debug(exception)
-      end
 
       if Smith.running?
         send_dead_message
@@ -92,6 +89,14 @@ module Smith
       if @pid && @pid.exist?
         logger.debug("Cleaning up pid file: #{@pid.filename}")
       end
+    end
+
+    def format_exception(exception)
+      str = "#{exception.class.to_s}: #{exception.message}\n\t"
+      if exception.backtrace
+        str << exception.backtrace[0..-1].join("\n\t")
+      end
+      str
     end
   end
 end
