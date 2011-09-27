@@ -1,4 +1,7 @@
 # -*- encoding: utf-8 -*-
+
+require 'trollop'
+
 module Smith
   class Command
     class UnkownCommandError < RuntimeError; end
@@ -13,38 +16,37 @@ module Smith
     # +opts+ options for the Command class. At the moment
     # only :auto_load is supported.
     #
-    def self.run(command, target, vars, opts={})
+    def self.run(command, args, vars, opts={})
       target ||= []
       logger.debug("Agency command: #{command}#{(target.empty?) ? '' : " #{target.join(', ')}"}.")
 
       load_command(command) unless opts[:auto_load] == false
 
       clazz = Commands.const_get(Extlib::Inflection.camelize(command)).new(target)
-      clazz.instance_eval <<-EOM, __FILE__, __LINE__ + 1
-        instance_variable_set(:"@target", target)
-        def target; [@target].flatten; end
-      EOM
 
-      vars.each do |k,v|
-        clazz.instance_eval <<-EOM, __FILE__, __LINE__ + 1
-          instance_variable_set(:"@#{k}", v)
-          def #{k}; @#{k}; end
-        EOM
+      begin
+        options, target = parse_options(clazz, args)
+        clazz.options_parser.banner("smithctl #{self.class.to_s.downcase} OPTIONS [Agents]")
+
+        vars.merge(:options => options, :target => target).each do |k,v|
+          clazz.instance_eval <<-EOM, __FILE__, __LINE__ + 1
+            instance_variable_set(:"@#{k}", v)
+            def #{k}; @#{k}; end
+          EOM
+        end
+
+        clazz.execute.tap {|ret| logger.debug(ret) if ret }
+      rescue Trollop::CommandlineError => e
+        parser_help(clazz, :prefix => "Error: #{e.message}.\n")
+      rescue Trollop::HelpNeeded
+        parser_help(clazz)
       end
-
-      clazz.execute.tap {|ret| logger.debug(ret) if ret }
     end
 
-    protected
-
-    # The options are always in this form:
-    #
-    # command option [agent|agency]
-    def verify_options(opts)
-    end
-
-    def send_agent_control_message(agent, message)
-      Messaging::Sender.new(agent.control_queue_name).publish(message)
+    # Banner callback. This is called when the parser is called.
+    # I'm sure there is a better way of doing this.
+    def self.banner(command)
+      "smithctl #{command} OPTIONS [Agents]"
     end
 
     private
@@ -57,6 +59,27 @@ module Smith
       else
         raise UnkownCommandError, "Command class does not exist: #{cmd}"
       end
+    end
+
+    # Uses the options_parser method in the specific command class to procees
+    # any options associated with that command. If no options_parser method
+    # exits then an empty Array is returned. Any members of the args array
+    # that are not parsed by the options parser are return as the target, i.e.
+    # the agent(s) that the command is to operate on.
+    def self.parse_options(clazz, args)
+      if clazz.respond_to?(:options_parser)
+        [clazz.options_parser.parse(args), args]
+      else
+        [{}, args]
+      end
+    end
+
+    def self.parser_help(clazz, opts={})
+      StringIO.new.tap do |help|
+        help.puts opts[:prefix] if opts[:prefix]
+        clazz.options_parser.educate(help)
+        help.rewind
+      end.read
     end
   end
 end
