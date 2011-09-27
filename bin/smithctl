@@ -25,7 +25,7 @@ args = ARGV
 
 command || (puts "usage #{File.basename($0)} <command> opts]"; exit 2)
 
-Smith.start do
+Smith.start(:quiet => true) do
   control = Smith::SmithControl.new
   control.send_command(command, args) do |header,payload|
     puts payload if payload
