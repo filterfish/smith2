@@ -10,7 +10,7 @@ require 'securerandom'
 require 'dm-yaml-adapter'
 require 'extlib/string'
 require 'extlib/inflection'
-require 'daemons/pidfile_mp'
+require 'daemons/pidfile'
 
 require_relative 'smith/config'
 require_relative 'smith/logger'
