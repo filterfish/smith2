@@ -45,3 +45,12 @@
   receive messages from.
 
 * Have an errback if publish_and_receive times out.
+
+* Add a message retry mechanism.
+
+* Name reply queues based on the agent name.
+
+* Delete queue should be part of smithctl. As should pop queue.
+
+* smithctl message should have some sort of printf formating string
+  that can be used to construct the protocol buffer message.
