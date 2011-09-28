@@ -6,7 +6,7 @@ module Smith
 
       def initialize(queue_name, queue_opts={})
 
-        set_endpoint_options
+        set_endpoint_options(queue_opts)
 
         @channel = AMQP::Channel.new(Smith.connection)
 
@@ -20,7 +20,7 @@ module Smith
 
         normalised_queue_name = normalise(queue_name)
         @exchange = @channel.direct(normalised_queue_name, @exchange_options)
-        @queue = @channel.queue(normalised_queue_name, @queue_options.merge(queue_opts))
+        @queue = @channel.queue(normalised_queue_name, @queue_options)
 
         @queue.bind(@exchange, :routing_key => normalised_queue_name)
       end
@@ -53,7 +53,7 @@ module Smith
 
       protected
 
-      attr_accessor :exchange, :queue
+      attr_accessor :exchange, :queue, :queue_options
 
       def normalise(name)
         "#{Smith.config.smith.namespace}.#{name}"
@@ -65,10 +65,10 @@ module Smith
         "#{prefix}#{SecureRandom.hex(8)}#{suffix}"
       end
 
-      def set_endpoint_options
+      def set_endpoint_options(queue_opts)
         amqp_options = Smith.config.amqp
         @exchange_options = amqp_options.exchange._child
-        @queue_options = amqp_options.queue._child
+        @queue_options = amqp_options.queue._child.merge(queue_opts)
       end
     end
   end
