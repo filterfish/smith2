@@ -68,7 +68,7 @@ module Smith
     def alive?
       if self.pid
         begin
-          Process.kill(0, self.pid)
+          Process.kill(0, self.pid.to_i)
           true
         rescue Exception
           false
