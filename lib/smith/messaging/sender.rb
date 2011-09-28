@@ -3,7 +3,7 @@ module Smith
   module Messaging
     class Sender < Endpoint
 
-      def initialize(queue_name, encoder=Encoder, queue_opts={})
+      def initialize(queue_name, queue_opts={})
         super
         set_sender_options
         @queue_name = queue_name

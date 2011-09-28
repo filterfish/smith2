@@ -5,7 +5,7 @@ module Smith
 
       include Logger
 
-      def initialize(queue_name, encoder=Encoder, queue_opts={})
+      def initialize(queue_name, queue_opts={})
         super
         set_receiver_options
       end
