@@ -26,7 +26,6 @@ module Smith
 
       begin
         options, target = parse_options(clazz, args)
-        clazz.options_parser.banner("smithctl #{self.class.to_s.downcase} OPTIONS [Agents]")
 
         vars.merge(:options => options, :target => target).each do |k,v|
           clazz.instance_eval <<-EOM, __FILE__, __LINE__ + 1
