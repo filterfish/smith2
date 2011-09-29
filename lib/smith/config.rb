@@ -56,7 +56,7 @@ module Smith
       logging do
         trace true
         level :debug
-        default_pattern "[%d] %7l - %28c:%-3L - %m\n"
+        default_pattern "%d [%5p] %7l - %28c:%-3L - %m\n"
         default_date_pattern "%Y/%m/%d %H:%M:%S"
       end
 
