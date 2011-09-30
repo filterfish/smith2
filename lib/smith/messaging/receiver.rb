@@ -19,8 +19,12 @@ module Smith
           @queue.subscribe(options) do |metadata,payload|
             reply_payload = nil
             if payload
-              reply_payload = block.call(metadata, Payload.decode(payload, metadata.type))
+              decoded_payload = Payload.decode(payload, metadata.type)
+              logger.verbose("Received message on: #{@queue.name}: #{decoded_payload.inspect}")
+              reply_payload = block.call(metadata, decoded_payload)
               metadata.ack if options[:ack]
+            else
+              logger.verbose("Received null message on: #{@queue}")
             end
             reply_payload
           end
@@ -41,7 +45,7 @@ module Smith
             options = @receive_publish_options.merge(:routing_key => normalise(metadata.reply_to), :correlation_id => metadata.message_id).merge(opts)
             Sender.new(metadata.reply_to).publish(Payload.new.content(block.call(metadata, payload)), options)
           else
-            logger.warn("No reply_to queue set for: #{@queue.name}: #{metadata.exchange}")
+            logger.verbose("No reply_to queue set for: #{@queue.name}: #{metadata.exchange}. That's generally ok. Just sayin' that's all.")
             block.call(metadata, payload)
           end
         end
