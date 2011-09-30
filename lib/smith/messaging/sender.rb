@@ -19,6 +19,10 @@ module Smith
         message_id = random
         Receiver.new(message_id).subscribe do |metadata,payload|
           block.call(metadata, payload)
+          consumer = metadata.channel.consumers.each do |k,v|
+            logger.debug("Canceling: #{k}")
+            v.cancel
+          end
         end
 
         options = {:reply_to => message_id, :message_id => message_id}.merge(opts)
