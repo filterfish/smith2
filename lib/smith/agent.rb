@@ -103,7 +103,7 @@ module Smith
           send_keep_alive(queues('agent.keepalive', :sender))
         end
       else
-        logger.debug("Not initiating keep alive agent is not being monitored: #{@name}")
+        logger.info("Not initiating keep alive, agent is not being monitored: #{@name}")
       end
     end
 

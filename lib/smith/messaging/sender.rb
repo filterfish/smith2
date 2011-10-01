@@ -24,8 +24,9 @@ module Smith
           end
 
           block.call(metadata, payload)
+
           consumer = metadata.channel.consumers.each do |k,v|
-            logger.debug("Canceling: #{k}")
+            logger.verbose("Cancelling: #{k}")
             v.cancel
           end
         end
