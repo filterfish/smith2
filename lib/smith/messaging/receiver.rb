@@ -20,7 +20,7 @@ module Smith
             reply_payload = nil
             if payload
               decoded_payload = Payload.decode(payload, metadata.type)
-              logger.verbose("Received message on: #{@queue.name}: #{decoded_payload.inspect}")
+              logger.verbose("Received message on: #{@queue.name} #{options}: #{decoded_payload.inspect}")
               reply_payload = block.call(metadata, decoded_payload)
               metadata.ack if options[:ack]
             else

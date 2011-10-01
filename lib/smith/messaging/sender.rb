@@ -10,8 +10,8 @@ module Smith
       end
 
       def publish(message, opts={}, &block)
-        logger.verbose("Publishing to: #{@queue.name}: #{message.inspect}")
         options = @normal_publish_options.merge(:routing_key => @queue.name, :type => message.encoder.to_s).merge(opts)
+        logger.verbose("Publishing to: #{@queue.name} #{options}: #{message.inspect}")
         exchange.publish(message.encode, options, &block)
       end
 
