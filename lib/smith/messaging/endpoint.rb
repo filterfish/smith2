@@ -20,6 +20,8 @@ module Smith
 
         normalised_queue_name = normalise(queue_name)
         @exchange = @channel.direct(normalised_queue_name, @exchange_options)
+
+        logger.verbose("Creating queue: #{normalised_queue_name} with options: #{@queue_options}")
         @queue = @channel.queue(normalised_queue_name, @queue_options)
 
         @queue.bind(@exchange, :routing_key => normalised_queue_name)
