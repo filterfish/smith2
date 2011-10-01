@@ -15,13 +15,14 @@ module Smith
     end
 
     def setup_queues
-      Messaging::Receiver.new('agency.control').subscribe_and_reply do |header, payload|
-        begin
-          Command.run(payload.command, payload.args, :agency => self,  :agents => @agent_processes)
-        rescue Command::UnkownCommandError => e
-          logger.warn("Unknown command: #{payload.command}")
-          "Command not known: #{payload.command}"
-        end
+      Messaging::Receiver.new('agency.control').subscribe_and_reply do |header,payload,response|
+        ret = begin
+                Command.run(payload.command, payload.args, :agency => self,  :agents => @agent_processes)
+              rescue Command::UnkownCommandError => e
+                logger.warn("Unknown command: #{payload.command}")
+                "Command not known: #{payload.command}"
+              end
+        response.call(ret)
       end
 
       Messaging::Receiver.new('agent.lifecycle').subscribe do |header, payload|

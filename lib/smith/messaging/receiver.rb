@@ -38,12 +38,12 @@ module Smith
       # +subscribe_and_reply+ will automatically acknowledge the message unless
       # the options sets :ack to false. If the reply_to queue is not set a
       # +NoReplyTo+ exception is thrown.
-
       def subscribe_and_reply(opts={}, &block)
         reply_payload = subscribe(@receive_subscribe_options.merge(opts)) do |metadata,payload|
           if metadata.reply_to
-            options = @receive_publish_options.merge(:routing_key => normalise(metadata.reply_to), :correlation_id => metadata.message_id).merge(opts)
-            Sender.new(metadata.reply_to).publish(Payload.new.content(block.call(metadata, payload)), options)
+            options = @receive_publish_options.merge(:immediate => true, :mandatory => true, :routing_key => normalise(metadata.reply_to), :correlation_id => metadata.message_id).merge(opts)
+            responder = proc { |return_value| Sender.new(metadata.reply_to).publish(Payload.new.content(return_value), options) }
+            block.call(metadata, payload, responder)
           else
             logger.verbose("No reply_to queue set for: #{@queue.name}: #{metadata.exchange}. That's generally ok. Just sayin' that's all.")
             block.call(metadata, payload)
