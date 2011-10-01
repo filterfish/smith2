@@ -18,6 +18,11 @@ module Smith
       def publish_and_receive(message, opts={}, &block)
         message_id = random
         Receiver.new(message_id).subscribe do |metadata,payload|
+
+          if metadata.correlation_id != message_id
+            logger.error("Incorrect correlation_id: #{metadata.correlation_id}")
+          end
+
           block.call(metadata, payload)
           consumer = metadata.channel.consumers.each do |k,v|
             logger.debug("Canceling: #{k}")
