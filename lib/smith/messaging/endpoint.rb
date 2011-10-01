@@ -21,6 +21,20 @@ module Smith
         normalised_queue_name = normalise(queue_name)
         @exchange = @channel.direct(normalised_queue_name, @exchange_options)
 
+        exchange.on_return do |br, metadata, payload|
+          p = Payload.decode(payload.clone, :default)
+
+          puts "#####################################################################"
+          pp br
+          puts "#####################################################################"
+          pp metadata
+          puts "#####################################################################"
+          pp payload
+          puts "#####################################################################"
+
+          logger.error("#{p} was returned! reply_code = #{br.reply_code}, reply_text = #{br.reply_text}")
+        end
+
         logger.verbose("Creating queue: #{normalised_queue_name} with options: #{@queue_options}")
         @queue = @channel.queue(normalised_queue_name, @queue_options)
 
