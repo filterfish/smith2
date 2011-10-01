@@ -11,7 +11,7 @@ module Smith
             Smith.stop
             nil
           else
-            logger.warn("Agents are still running: #{running_agents.map(&:name).join(", ")}.") unless running_agents.empty?
+            logger.warn("Agents are still running: #{running_agents.map(&:name).join(", ")}.")
             logger.info("Agency not shutting down. Use force_stop if you really want to shut it down.")
             "Not shutting down, agents are still running: #{running_agents.map(&:name).join(", ")}."
           end
