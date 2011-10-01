@@ -78,13 +78,13 @@ module Smith
           logger.info("Connection to AMQP server restored")
         end
 
-        @connection.on_error do |conn, reason|
+        @connection.on_error do |connection, reason|
           case reason.reply_code
           when 320
             logger.warn("AMQP server shutdown. Waiting.")
           else
             if @handler
-              @handler.call(conn, reason)
+              @handler.call(connection, reason)
             else
               logger.error("AMQP Server error: #{reason.reply_code}: #{reason.reply_text}")
             end
