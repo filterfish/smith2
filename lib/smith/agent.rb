@@ -38,7 +38,7 @@ module Smith
     end
 
     def listen(queue, options={}, &block)
-      queues(queue, :receiver).receive(options) do |header,payload|
+      queues(queue, :receiver).subscribe(options) do |header,payload|
         block.call(header, payload)
       end
     end
