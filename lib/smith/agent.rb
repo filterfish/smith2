@@ -48,6 +48,14 @@ module Smith
       end
     end
 
+    def listen_and_reply(queue, options={}, &block)
+      queues(queue, :receiver).ready do |receiver|
+        receiver.subscribe_and_reply(options) do |metadata,payload,responder|
+          block.call(metadata, payload, responder)
+        end
+      end
+    end
+
     def install_signal_handler(signal, position=:end, &blk)
       raise ArgumentError, "Unknown position: #{position}" if ![:beginning, :end].include?(position)
 
