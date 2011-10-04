@@ -6,8 +6,8 @@ module Smith
 
     def initialize(opts={})
       super()
-      @path = (opts[:path].nil?) ? Smith.root_path.join('agents') : opts[:path]
-      operator ->(agent_name){AgentProcess.first(:name => agent_name) || AgentProcess.new(:name => agent_name, :path => @path)}
+      @paths = opts[:paths]
+      operator ->(agent_name){AgentProcess.first(:name => agent_name) || AgentProcess.new(:name => agent_name, :path => agent_path(agent_name))}
       populate
     end
 
@@ -27,6 +27,12 @@ module Smith
     # When we start load any new data from the db.
     def populate
       AgentProcess.all.each { |a| update(a.name, a) }
+    end
+
+    def agent_path(agent_name)
+      @paths.detect do |path|
+        Pathname.new(path).join("#{agent_name.snake_case}.rb").exist?
+      end
     end
   end
 end

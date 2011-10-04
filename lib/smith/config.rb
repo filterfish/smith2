@@ -11,7 +11,7 @@ module Smith
       # Options relating to agents only. Don't put agency stuff here.
       agents do
         # If this is a relative path then it's relative to Smith.root_path
-        default_path 'agents'
+        paths ['/home/rgh/dev/ruby/digivizer/agents', '/home/rgh/dev/rails/digivizer-fb-extractor/lib/agent']
       end
 
       # These directly translate to amqp options so

@@ -3,10 +3,14 @@ module Smith
   module Commands
     class Agents < Command
       def execute
-        agent_paths = Smith.agent_default_path.each_child.inject([]) do |acc,p|
-          acc.tap do |a|
-            a << Extlib::Inflection.camelize(p.basename('.rb')) unless p.directory?
-          end
+        agent_paths = Smith.agent_paths.inject([]) do |path_acc,path|
+          path_acc.tap do |a|
+            a << path.each_child.inject([]) do |agent_acc,p|
+                   agent_acc.tap do |b|
+                     b << Extlib::Inflection.camelize(p.basename('.rb')) if p.file? && p.basename('.rb').to_s.end_with?("agent")
+                  end
+                end
+          end.flatten
         end
 
         if agent_paths.empty?

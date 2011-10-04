@@ -21,7 +21,7 @@ module Smith
       # the agent without it actually raising the exception.
       Thread.abort_on_exception = true
       @agent_name = agent_name
-      @agent_filename = File.expand_path(File.join(path, "#{agent_name.snake_case}.rb"))
+      @agent_filename = Pathname.new(path).join("#{agent_name.snake_case}.rb").expand_path
     end
 
     def signal_handlers
@@ -35,6 +35,7 @@ module Smith
     end
 
     def load_agent
+      logger.debug("Loading #{@agent_name} from: #{@agent_filename.dirname}")
       load @agent_filename
       @agent = Kernel.const_get(@agent_name).new
     end

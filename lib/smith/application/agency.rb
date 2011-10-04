@@ -11,7 +11,7 @@ module Smith
     def initialize(opts={})
       DataMapper.setup(:default, "yaml:///var/tmp/smith")
 
-      @agent_processes = AgentCache.new(:path => opts.delete(:path))
+      @agent_processes = AgentCache.new(:paths => opts.delete(:paths))
     end
 
     def setup_queues

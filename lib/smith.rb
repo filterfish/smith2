@@ -37,12 +37,10 @@ module Smith
       Pathname.new(File.dirname(__FILE__) + '/..').expand_path
     end
 
-    def agent_default_path
-      p = Pathname.new(config.agents.default_path)
-      if p.absolute?
-        p
-      else
-        root_path.join(p)
+    def agent_paths
+      [config.agents.paths].flatten.map do |path|
+        p = Pathname.new(path)
+        (p.absolute?) ? p : root_path.join(p)
       end
     end
 
