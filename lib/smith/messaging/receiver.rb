@@ -21,12 +21,11 @@ module Smith
             if payload
               decoded_payload = Payload.decode(payload, metadata.type)
               logger.verbose("Received message on: #{@queue.name} #{options}: #{decoded_payload.inspect}")
-              reply_payload = block.call(metadata, decoded_payload)
+              block.call(metadata, decoded_payload)
               metadata.ack if options[:ack]
             else
               logger.verbose("Received null message on: #{@queue}")
             end
-            reply_payload
           end
         else
           logger.error("Queue is already subscribed too. Not listening on: #{queue_name}")
