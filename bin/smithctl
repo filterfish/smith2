@@ -23,6 +23,8 @@ args = ARGV
 
 command || (puts "usage #{File.basename($0)} <command> opts]"; exit 2)
 
+trap 'INT', proc { (Smith.running?) ? Smith.stop(true) : exit}
+
 Smith.start(:quiet => true) do
   control = Smith::SmithControl.new
   control.send_command(command, args) do |header,payload|
