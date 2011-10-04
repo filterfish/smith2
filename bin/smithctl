@@ -28,7 +28,7 @@ trap 'INT', proc { (Smith.running?) ? Smith.stop(true) : exit}
 Smith.start(:quiet => true) do
   control = Smith::SmithControl.new
   control.send_command(command, args) do |header,payload|
-    puts payload if payload
+    puts payload if payload && !payload.empty?
     Smith.stop(true)
   end
 end
