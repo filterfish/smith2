@@ -6,3 +6,5 @@
 
 * Ensure that if an agent is in a die/restart loop that when the agent
   is stopped it is removed from the run list.
+
+* Add check to see if the agent actually exists.

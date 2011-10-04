@@ -54,3 +54,6 @@
 
 * smithctl message should have some sort of printf formating string
   that can be used to construct the protocol buffer message.
+
+* See if Logging can take a proc/lambda. Some of the log messages are getting
+  quite big.
