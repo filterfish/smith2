@@ -82,7 +82,7 @@ module Smith
       private :merge_options
     end
 
-    private
+    protected
 
     def run_signal_handlers(sig, handlers)
       logger.debug("Running signal handlers for agent: #{name}: #{sig}")
