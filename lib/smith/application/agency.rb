@@ -15,31 +15,37 @@ module Smith
     end
 
     def setup_queues
-      Messaging::Receiver.new('agency.control').subscribe_and_reply do |header,payload,response|
-        ret = begin
-                Command.run(payload.command, payload.args, :agency => self,  :agents => @agent_processes)
-              rescue Command::UnkownCommandError => e
-                logger.warn("Unknown command: #{payload.command}")
-                "Command not known: #{payload.command}"
-              end
-        response.call(ret)
-      end
-
-      Messaging::Receiver.new('agent.lifecycle').subscribe do |header, payload|
-        case payload.state
-        when 'dead'
-          dead(payload)
-        when 'acknowledge_start'
-          acknowledge_start(payload)
-        when 'acknowledge_stop'
-          acknowledge_stop(payload)
-        else
-          logger.warn("Unkown command received on agent.lifecycle queue: #{payload.state.inspect}")
+      Messaging::Receiver.new('agency.control').ready do |receiver|
+        receiver.subscribe_and_reply do |header,payload,response|
+          ret = begin
+                  Command.run(payload.command, payload.args, :agency => self,  :agents => @agent_processes)
+                rescue Command::UnkownCommandError => e
+                  logger.warn("Unknown command: #{payload.command}")
+                  "Command not known: #{payload.command}"
+                end
+          response.call(ret)
         end
       end
 
-      Messaging::Receiver.new('agent.keepalive').subscribe do |header, agent_data|
-        keep_alive(agent_data)
+      Messaging::Receiver.new('agent.lifecycle').ready do |receiver|
+        receiver.subscribe do |header, payload|
+          case payload.state
+          when 'dead'
+            dead(payload)
+          when 'acknowledge_start'
+            acknowledge_start(payload)
+          when 'acknowledge_stop'
+            acknowledge_stop(payload)
+          else
+            logger.warn("Unkown command received on agent.lifecycle queue: #{payload.state.inspect}")
+          end
+        end
+      end
+
+      Messaging::Receiver.new('agent.keepalive').ready do |receiver|
+        receiver.subscribe do |header, agent_data|
+          keep_alive(agent_data)
+        end
       end
     end
 

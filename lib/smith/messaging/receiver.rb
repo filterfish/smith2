@@ -6,8 +6,8 @@ module Smith
       include Logger
 
       def initialize(queue_name, queue_opts={})
-        super
         set_receiver_options
+        super
       end
 
       # Subscribes to a queue and passes the headers and payload into the
@@ -36,18 +36,24 @@ module Smith
       # Subscribes to a queue, passing the headers and payload into the block,
       # and publishes the result of the block to the reply_to queue.
       # +subscribe_and_reply+ will automatically acknowledge the message unless
-      # the options sets :ack to false. If the reply_to queue is not set a
-      # +NoReplyTo+ exception is thrown.
+      # the options sets :ack to false.
       def subscribe_and_reply(opts={}, &block)
         reply_payload = subscribe(@receive_subscribe_options.merge(opts)) do |metadata,payload|
           if metadata.reply_to
-            options = @receive_publish_options.merge(:immediate => true, :mandatory => true, :routing_key => normalise(metadata.reply_to), :correlation_id => metadata.message_id).merge(opts)
-            responder = proc { |return_value| Sender.new(metadata.reply_to).publish(Payload.new.content(return_value), options) }
-            block.call(metadata, payload, responder)
+            options = @receive_publish_options.merge(:routing_key => normalise(metadata.reply_to), :correlation_id => metadata.message_id).merge(opts)
+            responder = proc do |return_value|
+              Sender.new(metadata.reply_to).ready do |sender|
+                sender.publish(Payload.new.content(return_value), options)
+              end
+            end
           else
-            logger.verbose("No reply_to queue set for: #{@queue.name}: #{metadata.exchange}. That's generally ok. Just sayin' that's all.")
-            block.call(metadata, payload)
+            # Null responder. If a call on the responder is made log a warning. Something is wrong.
+            responder = proc do |return_value|
+              logger.error("You are responding to a message that has no reply_to on queue: #{@queue.name}.")
+              logger.verbose("Queue options: #{metadata.exchange}.")
+            end
           end
+          block.call(metadata, payload, responder)
         end
       end
 
@@ -73,7 +79,7 @@ module Smith
 
         # We need the publish opts as weel.
         @normal_publish_options = Smith.config.amqp.publish._child
-        @receive_publish_options = Smith.config.amqp.publish._child.merge(:exclusive => true, :immediate => true)
+        @receive_publish_options = Smith.config.amqp.publish._child.merge(:exclusive => true, :immediate => true, :mandatory => true)
       end
     end
   end

@@ -4,9 +4,8 @@ module Smith
     class Sender < Endpoint
 
       def initialize(queue_name, queue_opts={})
-        super
         set_sender_options
-        @queue_name = queue_name
+        super
       end
 
       def publish(message, opts={}, &block)
@@ -17,22 +16,24 @@ module Smith
 
       def publish_and_receive(message, opts={}, &block)
         message_id = random
-        Receiver.new(message_id).subscribe do |metadata,payload|
+        Receiver.new(message_id).ready do |receiver|
+          receiver.subscribe do |metadata,payload|
 
-          if metadata.correlation_id != message_id
-            logger.error("Incorrect correlation_id: #{metadata.correlation_id}")
+            if metadata.correlation_id != message_id
+              logger.error("Incorrect correlation_id: #{metadata.correlation_id}")
+            end
+
+            block.call(metadata, payload)
+
+            consumer = metadata.channel.consumers.each do |k,v|
+              logger.verbose("Cancelling: #{k}")
+              v.cancel
+            end
           end
 
-          block.call(metadata, payload)
-
-          consumer = metadata.channel.consumers.each do |k,v|
-            logger.verbose("Cancelling: #{k}")
-            v.cancel
-          end
+          options = {:reply_to => message_id, :message_id => message_id}.merge(opts)
+          publish(message, @receive_publish_options.merge(options))
         end
-
-        options = {:reply_to => message_id, :message_id => message_id}.merge(opts)
-        publish(message, @receive_publish_options.merge(options))
       end
 
       private

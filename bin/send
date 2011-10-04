@@ -24,9 +24,11 @@ Smith.start do
 
   sender = Smith::Messaging::Sender.new(queue_name)
 
-  work = proc do |n, iter|
-    sender.publish(payload, :persistent => true, :nowait => false) do
-      iter.next
+  work = proc do |n,iter|
+    sender.ready do |s|
+      s.publish(Smith::Messaging::Payload.new.content(payload), :persistent => true, :nowait => false) do
+        iter.next
+      end
     end
   end
 

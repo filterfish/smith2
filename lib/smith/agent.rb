@@ -21,13 +21,16 @@ module Smith
       setup_control_queue
 
       EM.threadpool_size = 1 if @@threads
-      default_queue.subscribe(:ack => false) do |metadata,payload|
-        if @@threads
-          EM.defer do
+
+      default_queue.ready do |receiver|
+        receiver.subscribe(:ack => false) do |metadata,payload|
+          if @@threads
+            EM.defer do
+              @@task.call(payload)
+            end
+          else
             @@task.call(payload)
           end
-        else
-          @@task.call(payload)
         end
       end
 
@@ -38,8 +41,10 @@ module Smith
     end
 
     def listen(queue, options={}, &block)
-      queues(queue, :receiver).subscribe(options) do |header,payload|
-        block.call(header, payload)
+      queues(queue, :receiver).ready do |receiver|
+        receiver.subscribe(options) do |header,payload|
+          block.call(header, payload)
+        end
       end
     end
 
@@ -85,50 +90,52 @@ module Smith
     end
 
     def acknowledge_start
-      payload = Messaging::Payload.new(:agent_lifecycle).content(agent_options.merge(:state => 'acknowledge_start',
-                                                                                     :pid => $$.to_s,
-                                                                                     :name => self.class.to_s,
-                                                                                     :started_at => Time.now.utc.to_i.to_s))
-      Messaging::Sender.new('agent.lifecycle').publish(payload)
+      message = {:state => 'acknowledge_start', :pid => $$.to_s, :name => self.class.to_s, :started_at => Time.now.utc.to_i.to_s}
+      Messaging::Sender.new('agent.lifecycle').ready do |sender|
+        sender.publish(Messaging::Payload.new(:agent_lifecycle).content(agent_options.merge(message)))
+      end
     end
 
     def acknowledge_stop(&block)
-      payload = Messaging::Payload.new(:agent_lifecycle).content(:state => 'acknowledge_stop', :pid => $$.to_s, :name => self.class.to_s)
-      Messaging::Sender.new('agent.lifecycle').publish(payload, :persistent => true, &block)
+      message = {:state => 'acknowledge_stop', :pid => $$.to_s, :name => self.class.to_s}
+      Messaging::Sender.new('agent.lifecycle').ready do |sender|
+        sender.publish(Messaging::Payload.new(:agent_lifecycle).content(message), :persistent => true, &block)
+      end
     end
 
     def start_keep_alive
       if agent_options[:monitor]
         EventMachine::add_periodic_timer(1) do
-          send_keep_alive(queues('agent.keepalive', :sender))
+          message = {:name => self.class.to_s, :pid => $$.to_s, :time => Time.now.utc.to_i.to_s}
+          queues('agent.keepalive', :sender).ready do |sender|
+            sender.consumers? do |sender|
+              sender.publish(Messaging::Payload.new(:agent_keepalive).content(message), :durable => false)
+            end
+          end
         end
       else
         logger.info("Not initiating keep alive, agent is not being monitored: #{@name}")
       end
     end
 
-    def send_keep_alive(queue)
-      queue.consumers? do |queue|
-        queue.publish(Messaging::Payload.new(:agent_keepalive).content(:name => self.class.to_s, :pid => $$.to_s, :time => Time.now.utc.to_i.to_s), :durable => false)
-      end
-    end
-
     def setup_control_queue
-      control_queue.subscribe do |header, payload|
-        logger.debug("Command received on agent control queue: #{payload.command} #{payload.options}")
+      control_queue.ready do |receiver|
+        receiver.subscribe do |header, payload|
+          logger.debug("Command received on agent control queue: #{payload.command} #{payload.options}")
 
-        case payload.command
-        when 'stop'
-          acknowledge_stop { Smith.stop }
-        when 'log_level'
-          begin
-            logger.info("Setting log level to #{payload.options} for: #{name}")
-            log_level(payload.options)
-          rescue ArgumentError => e
-            logger.error("Incorrect log level: #{payload.options}")
+          case payload.command
+          when 'stop'
+            acknowledge_stop { Smith.stop }
+          when 'log_level'
+            begin
+              logger.info("Setting log level to #{payload.options} for: #{name}")
+              log_level(payload.options)
+            rescue ArgumentError => e
+              logger.error("Incorrect log level: #{payload.options}")
+            end
+          else
+            logger.warn("Unknown command: #{payload.command} -> #{payload.options.inspect}")
           end
-        else
-          logger.warn("Unknown command: #{payload.command} -> #{payload.options.inspect}")
         end
       end
     end
@@ -146,11 +153,13 @@ module Smith
     end
 
     def default_queue
+      # FIXME. This debug should go in the block.
       logger.debug("Setting up default queue: #{agent_queue_name}") unless @queues.exist?(agent_queue_name)
       queues(agent_queue_name, :receiver)
     end
 
     def control_queue
+      # FIXME. This debug should go in the block.
       logger.debug("Setting up control queue: #{agent_control_queue_name}") unless @queues.exist?(agent_control_queue_name)
       queues(agent_control_queue_name, :receiver)
     end

@@ -82,7 +82,9 @@ module Smith
 
     def send_dead_message
       logger.debug("Sending dead message to agency: #{@agent_name}")
-      Messaging::Sender.new('agent.lifecycle').publish(Messaging::Payload.new(:agent_lifecycle).content(:state => 'dead', :name => @agent_name))
+      Messaging::Sender.new('agent.lifecycle').ready do |sender|
+        sender.publish(Messaging::Payload.new(:agent_lifecycle).content(:state => 'dead', :name => @agent_name))
+      end
     end
 
     def unlink_pid_file

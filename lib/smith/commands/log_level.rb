@@ -39,7 +39,9 @@ module Smith
       private
 
       def send_agent_control_message(agent, message)
-        Messaging::Sender.new(agent.control_queue_name).publish(Messaging::Payload.new(:agent_command).content(message))
+        Messaging::Sender.new(agent.control_queue_name).ready do |sender|
+          sender.publish(Messaging::Payload.new(:agent_command).content(message))
+        end
       end
     end
   end

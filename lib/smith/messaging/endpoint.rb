@@ -5,40 +5,36 @@ module Smith
       include Logger
 
       def initialize(queue_name, queue_opts={})
+        set_endpoint_options(queue_name, queue_opts)
+      end
 
-        set_endpoint_options(queue_opts)
+      def ready(&blk)
+        AMQP::Channel.new(Smith.connection) do |channel|
 
-        @channel = AMQP::Channel.new(Smith.connection)
+          # Set up QOS. If you do not do this then the subscribe in receive_message
+          # will get overwelmd and the whole thing will collapse in on itself.
+          channel.prefetch(1)
 
-        # Set up QOS. If you do not do this then the subscribe in receive_message
-        # will get overwelmd and the whole thing will collapse in on itself.
-        @channel.prefetch(1)
+          # Set up auto-recovery. This will ensure that the AMQP gem reconnects each
+          # channel and sets up the various exchanges & queues.
+          channel.auto_recovery = true
 
-        # Set up auto-recovery. This will ensure that the AMQP gem reconnects each
-        # channel and sets up the various exchanges & queues.
-        @channel.auto_recovery = true
+          channel.direct(@queue_name, @exchange_options) do |exchange|
+            @exchange = exchange
 
-        normalised_queue_name = normalise(queue_name)
-        @exchange = @channel.direct(normalised_queue_name, @exchange_options)
+            exchange.on_return do |br, metadata, payload|
+              logger.error("#{Payload.decode(payload.clone, :default)} was returned! reply_code = #{br.reply_code}, reply_text = #{br.reply_text}")
+            end
 
-        exchange.on_return do |br, metadata, payload|
-          p = Payload.decode(payload.clone, :default)
+            logger.verbose("Creating queue: #{@queue_name} with options: #{@queue_options}")
 
-          puts "#####################################################################"
-          pp br
-          puts "#####################################################################"
-          pp metadata
-          puts "#####################################################################"
-          pp payload
-          puts "#####################################################################"
-
-          logger.error("#{p} was returned! reply_code = #{br.reply_code}, reply_text = #{br.reply_text}")
+            channel.queue(@queue_name, @queue_options) do |queue|
+              @queue = queue
+              queue.bind(exchange, :routing_key => @queue_name)
+              blk.call(self)
+            end
+          end
         end
-
-        logger.verbose("Creating queue: #{normalised_queue_name} with options: #{@queue_options}")
-        @queue = @channel.queue(normalised_queue_name, @queue_options)
-
-        @queue.bind(@exchange, :routing_key => normalised_queue_name)
       end
 
       def number_of_messages
@@ -81,7 +77,8 @@ module Smith
         "#{prefix}#{SecureRandom.hex(8)}#{suffix}"
       end
 
-      def set_endpoint_options(queue_opts)
+      def set_endpoint_options(queue_name, queue_opts)
+        @queue_name = normalise(queue_name)
         amqp_options = Smith.config.amqp
         @exchange_options = amqp_options.exchange._child
         @queue_options = amqp_options.queue._child.merge(queue_opts)
