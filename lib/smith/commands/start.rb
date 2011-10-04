@@ -6,11 +6,17 @@ module Smith
         if target.empty?
           "Start what? No agent specified."
         else
-          target.each do |agent|
+          a = target.map do |agent|
             agents[agent].name = agent
-            agents[agent].start
-          end
-          nil
+            if agents[agent].path
+              agents[agent].start
+              nil
+            else
+              "Unknown agent: #{agents[agent].name}".tap do |m|
+                logger.error(m)
+              end
+            end
+          end.compact.join("\n")
         end
       end
     end
