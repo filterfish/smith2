@@ -13,14 +13,14 @@ module Smith
       @signal_handlers = Hash.new { |h,k| h[k] = Array.new }
       @queues = Cache.new
       @queues.operator ->(name, option=nil){(option == :sender) ? Messaging::Sender.new(name) : Messaging::Receiver.new(name)}
-    end
-
-    def run
-      raise ArgumentError, "You need to call Agent.task(&block)" if @@task.nil?
 
       setup_control_queue
 
       EM.threadpool_size = 1 if @@threads
+    end
+
+    def run
+      raise ArgumentError, "You need to call Agent.task(&block)" if @@task.nil?
 
       default_queue.ready do |receiver|
         receiver.subscribe(:ack => false) do |metadata,payload|
