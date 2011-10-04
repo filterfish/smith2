@@ -57,3 +57,6 @@
 
 * See if Logging can take a proc/lambda. Some of the log messages are getting
   quite big.
+
+* Have an option to not ack the pop-queue command. See Receiver#pop for a more
+  details description.
