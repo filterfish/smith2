@@ -16,7 +16,7 @@ module Smith
 
       setup_control_queue
 
-      EM.threadpool_size = 1 if @@threads
+      EM.threadpool_size = 1
     end
 
     def run
