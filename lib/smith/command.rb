@@ -34,7 +34,7 @@ module Smith
           EOM
         end
 
-        clazz.execute.tap {|ret| logger.debug(ret) if ret }
+        clazz.execute.tap {|ret| logger.debug(ret) if ret && !ret.empty? }
       rescue Trollop::CommandlineError => e
         parser_help(clazz, :prefix => "Error: #{e.message}.\n")
       rescue Trollop::HelpNeeded
