@@ -93,14 +93,17 @@ module Smith
       end
     end
 
-    def stop(immediately=false)
+    def stop(immediately=false, &blk)
       if immediately
         connection.close { EM.stop { logger.debug("Reactor Stopped") } }
       else
         if running?
           EM.add_timer(1) do
             connection.close do
-              EM.stop { logger.debug("Reactor Stopped") }
+              EM.stop do
+                logger.debug("Reactor Stopped")
+                blk.call if blk
+              end
             end
           end
         else
