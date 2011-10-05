@@ -60,3 +60,8 @@
 
 * Have an option to not ack the pop-queue command. See Receiver#pop for a more
   details description.
+
+* Have a SMITH_LOAD_PATH environment variable that overrides the path set up in
+  the config
+
+* Have a path where encoder files can be loaded from.

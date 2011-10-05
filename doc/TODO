@@ -8,3 +8,5 @@
   is stopped it is removed from the run list.
 
 * Add check to see if the agent actually exists.
+
+* Add kill all to the kill option. Like stop all.
