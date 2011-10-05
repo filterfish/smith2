@@ -43,7 +43,7 @@ module Smith
             options = @receive_publish_options.merge(:routing_key => normalise(metadata.reply_to), :correlation_id => metadata.message_id).merge(opts)
             responder = proc do |return_value|
               Sender.new(metadata.reply_to).ready do |sender|
-                sender.publish(Payload.new.content(return_value), options)
+                sender.publish(Payload.new(:default).content(return_value), options)
               end
             end
           else
