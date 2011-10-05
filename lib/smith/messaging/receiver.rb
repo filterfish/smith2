@@ -16,6 +16,7 @@ module Smith
       def subscribe(opts={}, &block)
         if !@queue.subscribed?
           options = @normal_subscribe_options.merge(opts)
+          logger.debug("Subscribed to: #{queue.name}")
           @queue.subscribe(options) do |metadata,payload|
             reply_payload = nil
             if payload
