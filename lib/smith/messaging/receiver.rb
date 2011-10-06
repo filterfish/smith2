@@ -10,6 +10,10 @@ module Smith
         super
       end
 
+      def queue_name
+        denormalise(@queue.name)
+      end
+
       # Subscribes to a queue and passes the headers and payload into the
       # block. +subscribe+ will automatically acknowledge the message unless
       # the options sets :ack to false.
