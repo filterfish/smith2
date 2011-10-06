@@ -49,6 +49,20 @@ module Smith
         end
       end
 
+      def messages?(blk=nil, err=proc {logger.debug("No messages on #{@queue.name}")})
+        number_of_messages do |n|
+          if n > 0
+            if blk.respond_to? :call
+              blk.call(self)
+            else
+              yield self
+            end
+          else
+            err.call
+          end
+        end
+      end
+
       def consumers?(blk=nil, err=proc {logger.debug("Nothing listening on #{@queue.name}")})
         number_of_consumers do |n|
           if n > 0
@@ -66,6 +80,10 @@ module Smith
       protected
 
       attr_accessor :exchange, :queue, :queue_options
+
+      def denormalise(name)
+        name.sub(/#{Regexp.escape("#{Smith.config.smith.namespace}.")}/, '')
+      end
 
       def normalise(name)
         "#{Smith.config.smith.namespace}.#{name}"
