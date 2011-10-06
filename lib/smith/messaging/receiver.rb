@@ -72,7 +72,7 @@ module Smith
         @queue.pop(@normal_pop_options.merge(opts)) do |metadata, payload|
           if payload
             block.call(metadata, Payload.decode(payload, metadata.type))
-            metadata.ack if options[:ack]
+            metadata.ack
           end
         end
       end
