@@ -104,7 +104,7 @@ module Smith
         end
 
         def value(value=nil, &blk)
-          value ||= blk.call
+          value ||= ((blk) ? blk.call : nil)
           @responders.each {|responder| responder.call(value) }
         end
       end
