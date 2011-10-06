@@ -53,7 +53,7 @@ module Smith
               logger.verbose("Queue options: #{metadata.exchange}.")
             end
           end
-          block.call(metadata, payload, responder)
+          block.call(metadata, payload, Responder.new(responder))
         end
       end
 
@@ -84,6 +84,25 @@ module Smith
         # We need the publish opts as weel.
         @normal_publish_options = Smith.config.amqp.publish._child
         @receive_publish_options = Smith.config.amqp.publish._child.merge(:exclusive => true, :immediate => true, :mandatory => true)
+      end
+
+      # Class that gets passed into and subscribe_and_reply blocks
+      # and allows the block to call the responder using either a
+      # block or value. It should make for a cleaner API.
+      class Responder
+        def initialize(responder=nil)
+          @responders = []
+          @responders << responder if responder
+        end
+
+        def add(responder)
+          @responders.insert(0, responder)
+        end
+
+        def value(value=nil, &blk)
+          value ||= blk.call
+          @responders.each {|responder| responder.call(value) }
+        end
       end
     end
   end
