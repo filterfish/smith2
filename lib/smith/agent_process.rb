@@ -145,7 +145,7 @@ module Smith
       if agent_process.pid
         logger.info("Sending kill signal: #{agent_process.name}(#{agent_process.pid})")
         begin
-          Process.kill('TERM', agent_process.pid)
+          Process.kill('TERM', agent_process.pid.to_i)
         rescue
           logger.error("Process does not exist. PID is stale: #{agent_process.pid}: #{agent_process.name}")
         end
