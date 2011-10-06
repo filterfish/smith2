@@ -13,14 +13,13 @@ module Smith
     # +vars+ variables to be passed in to the command. This
     # takes the form of a hash and accessor methods are generated
     # named after the key of the hash.
-    # +opts+ options for the Command class. At the moment
-    # only :auto_load is supported.
-    #
-    def self.run(command, args, vars, opts={})
+    def self.run(command, args, vars)
       target ||= []
+      # Change _ to - underscores look so ugly as a command name.
+      command.gsub!(/-/, '_')
       logger.debug("Agency command: #{command}#{(target.empty?) ? '' : " #{target.join(', ')}"}.")
 
-      load_command(command) unless opts[:auto_load] == false
+      load_command(command)
 
       clazz = Commands.const_get(Extlib::Inflection.camelize(command)).new(target)
 
@@ -34,7 +33,8 @@ module Smith
           EOM
         end
 
-        clazz.execute.tap {|ret| logger.debug(ret) if ret && !ret.empty? }
+        clazz.execute
+
       rescue Trollop::CommandlineError => e
         parser_help(clazz, :prefix => "Error: #{e.message}.\n")
       rescue Trollop::HelpNeeded
