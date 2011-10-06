@@ -5,33 +5,35 @@ module Smith
       def execute
         level = target.shift
 
-        if level.nil?
-          "No log level. You must specify a log level and a target"
-        else
-          case target.first
-          when 'all'
-            agents.state(:running).each do |agent|
-              send_agent_control_message(agent, :command => 'log_level', :options => level)
-            end
-            nil
-          when 'agency'
-            begin
-              logger.info("Setting agency log level to: #{level}")
-              log_level(level)
-              nil
-            rescue ArgumentError
-              logger.error("Incorrect log level: #{level}")
-              nil
-            end
-          when nil
-            "No target. You must specify one of the following: 'agency', 'all' or a list of agents"
+        responder.value do
+          if level.nil?
+            "No log level. You must specify a log level and a target"
           else
-            target.each do |agent|
-              if agents[agent].running?
-                send_agent_control_message(agents[agent], :command => 'log_level', :options => level)
+            case target.first
+            when 'all'
+              agents.state(:running).each do |agent|
+                send_agent_control_message(agent, :command => 'log_level', :options => level)
               end
+              nil
+            when 'agency'
+              begin
+                logger.info("Setting agency log level to: #{level}")
+                log_level(level)
+                nil
+              rescue ArgumentError
+                logger.error("Incorrect log level: #{level}")
+                nil
+              end
+            when nil
+              "No target. You must specify one of the following: 'agency', 'all' or a list of agents"
+            else
+              target.each do |agent|
+                if agents[agent].running?
+                  send_agent_control_message(agents[agent], :command => 'log_level', :options => level)
+                end
+              end
+              nil
             end
-            nil
           end
         end
       end

@@ -6,7 +6,7 @@ module Smith
         target.each do |agent_name|
           agents[agent_name].kill
         end
-        nil
+        responder.value
       end
     end
   end

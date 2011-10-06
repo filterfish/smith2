@@ -13,11 +13,7 @@ module Smith
           end.flatten
         end
 
-        if agent_paths.empty?
-          "No agents available."
-        else
-          "Agents available: #{agent_paths.sort.join(", ")}."
-        end
+        responder.value((agent_paths.empty?) ? "No agents available." : "Agents available: #{agent_paths.sort.join(", ")}.")
       end
     end
   end

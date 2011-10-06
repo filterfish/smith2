@@ -3,25 +3,27 @@ module Smith
   module Commands
     class List < Command
       def execute
-        if options[:all]
-          if agents.empty?
-            "No agents running."
-          else
-            if options[:long]
-              tabulate(long_format(agents), :header => "total #{agents.count}")
+        responder.value do
+          if options[:all]
+            if agents.empty?
+              "No agents running."
             else
-              tabulate(short_format(agents))
+              if options[:long]
+                tabulate(long_format(agents), :header => "total #{agents.count}")
+              else
+                tabulate(short_format(agents))
+              end
             end
-          end
-        else
-          running_agents = agents.state(:running)
-          if running_agents.empty?
-            "No agents running."
           else
-            if options[:long]
-              tabulate(long_format(running_agents), :header => "total #{running_agents.count}")
+            running_agents = agents.state(:running)
+            if running_agents.empty?
+              "No agents running."
             else
-              tabulate(short_format(running_agents))
+              if options[:long]
+                tabulate(long_format(running_agents), :header => "total #{running_agents.count}")
+              else
+                tabulate(short_format(running_agents))
+              end
             end
           end
         end
@@ -39,7 +41,7 @@ module Smith
 
       def long_format(agents)
         agents.map do |a|
-          [a.name, a.state, a.pid, (a.started_at) ? format_time(a.started_at) : '', (a.alive?) ? '' : "(agent dead)"]
+          [a.pid, (a.started_at) ? format_time(a.started_at) : '', a.state, (a.alive?) ? '' : "(agent dead)", a.name]
         end
       end
 
