@@ -9,30 +9,19 @@ module Smith
       end
 
       def ready(&blk)
-        AMQP::Channel.new(Smith.connection) do |channel|
+        Smith.channel.direct(@queue_name, @exchange_options) do |exchange|
+          @exchange = exchange
 
-          # Set up QOS. If you do not do this then the subscribe in receive_message
-          # will get overwelmd and the whole thing will collapse in on itself.
-          channel.prefetch(1)
+          exchange.on_return do |basic_return, metadata, payload|
+            logger.error("#{Payload.decode(payload.clone, :default)} was returned! reply_code = #{basic_return.reply_code}, reply_text = #{basic_return.reply_text}")
+          end
 
-          # Set up auto-recovery. This will ensure that the AMQP gem reconnects each
-          # channel and sets up the various exchanges & queues.
-          channel.auto_recovery = true
+          logger.verbose("Creating queue: #{@queue_name} with options: #{@queue_options}")
 
-          channel.direct(@queue_name, @exchange_options) do |exchange|
-            @exchange = exchange
-
-            exchange.on_return do |br, metadata, payload|
-              logger.error("#{Payload.decode(payload.clone, :default)} was returned! reply_code = #{br.reply_code}, reply_text = #{br.reply_text}")
-            end
-
-            logger.verbose("Creating queue: #{@queue_name} with options: #{@queue_options}")
-
-            channel.queue(@queue_name, @queue_options) do |queue|
-              @queue = queue
-              queue.bind(exchange, :routing_key => @queue_name)
-              blk.call(self)
-            end
+          Smith.channel.queue(@queue_name, @queue_options) do |queue|
+            @queue = queue
+            queue.bind(exchange, :routing_key => @queue_name)
+            blk.call(self)
           end
         end
       end

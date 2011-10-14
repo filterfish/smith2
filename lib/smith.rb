@@ -20,9 +20,9 @@ module Smith
 
   class << self
 
-    def connection
-      raise RuntimeError, "You must run this in a Smith.start block" if @connection.nil?
-      @connection
+    def channel
+      raise RuntimeError, "You must run this in a Smith.start block" if @channel.nil?
+      @channel
     end
 
     def on_error=(handler)
@@ -61,22 +61,22 @@ module Smith
       AMQP.start(connection_settings) do |connection|
         @connection = connection
 
-        @connection.on_connection do
-          broker = @connection.broker.properties
-          endpoint = @connection.broker_endpoint
+        connection.on_connection do
+          broker = connection.broker.properties
+          endpoint = connection.broker_endpoint
           logger.debug("Connected to: AMQP Broker: #{endpoint}, (#{broker['product']}/v#{broker['version']})") unless opts[:quiet]
         end
 
-        @connection.on_tcp_connection_loss do |connection, settings|
+        connection.on_tcp_connection_loss do |connection, settings|
           logger.error("TCP connection error. Attempting restart")
-          @connection.reconnect
+          connection.reconnect
         end
 
-        @connection.after_recovery do
+        connection.after_recovery do
           logger.info("Connection to AMQP server restored")
         end
 
-        @connection.on_error do |connection, reason|
+        connection.on_error do |connection, reason|
           case reason.reply_code
           when 320
             logger.warn("AMQP server shutdown. Waiting.")
@@ -89,17 +89,28 @@ module Smith
           end
         end
 
-        block.call
+        AMQP::Channel.new(connection) do |channel,ok|
+          @channel = channel
+          # Set up QOS. If you do not do this then the subscribe in receive_message
+          # will get overwelmd and the whole thing will collapse in on itself.
+          channel.prefetch(1)
+
+          # Set up auto-recovery. This will ensure that the AMQP gem reconnects each
+          # channel and sets up the various exchanges & queues.
+          channel.auto_recovery = true
+
+          block.call
+        end
       end
     end
 
     def stop(immediately=false, &blk)
       if immediately
-        connection.close { EM.stop { logger.debug("Reactor Stopped") } }
+        @connection.close { EM.stop { logger.debug("Reactor Stopped") } }
       else
         if running?
           EM.add_timer(1) do
-            connection.close do
+            @connection.close do
               EM.stop do
                 logger.debug("Reactor Stopped")
                 blk.call if blk

@@ -3,6 +3,7 @@ module Smith
   module Commands
     class Agents < Command
       def execute
+        # FIXME make sure that if the path doesn't exist don't blow up.
         agent_paths = Smith.agent_paths.inject([]) do |path_acc,path|
           path_acc.tap do |a|
             a << path.each_child.inject([]) do |agent_acc,p|
