@@ -136,13 +136,14 @@ module Smith
             acknowledge_stop { Smith.stop }
           when 'log_level'
             begin
-              logger.info("Setting log level to #{payload.options} for: #{name}")
-              log_level(payload.options)
+              level = payload.options.first
+              logger.info("Setting log level to #{level} for: #{name}")
+              log_level(level)
             rescue ArgumentError => e
-              logger.error("Incorrect log level: #{payload.options}")
+              logger.error("Incorrect log level: #{level}")
             end
           else
-            logger.warn("Unknown command: #{payload.command} -> #{payload.options.inspect}")
+            logger.warn("Unknown command: #{level} -> #{level.inspect}")
           end
         end
       end

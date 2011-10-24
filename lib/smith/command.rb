@@ -36,9 +36,9 @@ module Smith
         clazz.execute
 
       rescue Trollop::CommandlineError => e
-        parser_help(clazz, :prefix => "Error: #{e.message}.\n")
+        vars[:responder].value(parser_help(clazz, :prefix => "Error: #{e.message}.\n"))
       rescue Trollop::HelpNeeded
-        parser_help(clazz)
+        vars[:responder].value(parser_help(clazz))
       end
     end
 
