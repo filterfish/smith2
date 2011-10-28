@@ -95,6 +95,14 @@ module Smith
           # will get overwelmd and the whole thing will collapse in on itself.
           channel.prefetch(1)
 
+          # Log the error and stop the agency when there are channel errors.
+          # TODO Add recovery instead of stopping the agency.
+          channel.on_error do |ch,channel_close|
+            logger.fatal("Channel level exception: #{channel_close.reply_text}. Class id: #{channel_close.class_id}, Method id: #{channel_close.method_id}, Status code : #{channel_close.reply_code}")
+            logger.fatal("Agency is exiting")
+            Smith.stop(true)
+          end
+
           # Set up auto-recovery. This will ensure that the AMQP gem reconnects each
           # channel and sets up the various exchanges & queues.
           channel.auto_recovery = true
