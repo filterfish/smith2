@@ -16,6 +16,7 @@ module Smith
 
       # These directly translate to amqp options so
       # only put options that amqp understands.
+      # WARNING: UNDER NO CIRCUMSTANCES CHANGE ack TO false.
       amqp do
         publish do
           ack         true
