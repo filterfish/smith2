@@ -23,7 +23,7 @@ module Smith
       raise ArgumentError, "You need to call Agent.task(&block)" if @@task.nil?
 
       default_queue.ready do |receiver|
-        receiver.subscribe(:ack => false) do |metadata,payload|
+        receiver.subscribe(:ack => false) do |metadata,payload,responder|
           if @@threads
             EM.defer do
               @@task.call(payload)
@@ -42,8 +42,8 @@ module Smith
 
     def listen(queue, options={}, &block)
       queues(queue, :receiver).ready do |receiver|
-        receiver.subscribe(options) do |header,payload|
-          block.call(header, payload)
+        receiver.subscribe(options) do |header,payload,responder|
+          block.call(header, payload, responder)
         end
       end
     end
