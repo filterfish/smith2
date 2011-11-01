@@ -21,7 +21,7 @@ module Smith
 
       load_command(command)
 
-      clazz = Commands.const_get(Extlib::Inflection.camelize(command)).new(target)
+      clazz = Commands.const_get(Extlib::Inflection.camelize(command)).new
 
       begin
         options, target = parse_options(clazz, args)
