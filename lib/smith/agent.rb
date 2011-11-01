@@ -39,7 +39,7 @@ module Smith
       logger.info("Starting #{name}:[#{$$}]")
     end
 
-    def listen(queue, options={}, &block)
+    def subscribe(queue, options={}, &block)
       threads = options.delete(:threads)
       queues(queue, :type => :receiver, :threads => threads, :auto_delete => false).ready do |receiver|
         logger.debug("Queue handler for: #{queue} is #{(receiver.threads) ? "using" : "not using"} threading.")
@@ -49,7 +49,7 @@ module Smith
       end
     end
 
-    def listen_and_reply(queue, options={}, &block)
+    def subscribe_and_reply(queue, options={}, &block)
       threads = options.delete(:threads)
       queues(queue, :type => :receiver, :threads => threads, :auto_delete => false).ready do |receiver|
         logger.debug("Queue handler for: #{queue} is #{(receiver.threads) ? "using" : "not using"} threading.")
