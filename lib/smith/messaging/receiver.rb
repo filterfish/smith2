@@ -5,7 +5,12 @@ module Smith
 
       include Logger
 
-      def initialize(queue_name, queue_opts={})
+      attr_reader :auto_ack, :threads
+
+      def initialize(queue_name, opts={})
+        @auto_ack = opts.delete(:auto_ack) || true
+        @threads = opts.delete(:threads) || false
+
         set_receiver_options
         super
       end
@@ -18,23 +23,7 @@ module Smith
       # block. +subscribe+ will automatically acknowledge the message unless
       # the options sets :ack to false.
       def subscribe(opts={}, &block)
-        if !@queue.subscribed?
-          options = @normal_subscribe_options.merge(opts)
-          logger.debug("Subscribed to: #{queue.name}")
-          @queue.subscribe(options) do |metadata,payload|
-            reply_payload = nil
-            if payload
-              decoded_payload = Payload.decode(payload, metadata.type)
-              logger.verbose("Received message on: #{@queue.name} #{options}: #{decoded_payload.inspect}")
-              block.call(metadata, decoded_payload)
-              metadata.ack if options[:ack]
-            else
-              logger.verbose("Received null message on: #{@queue}")
-            end
-          end
-        else
-          logger.error("Queue is already subscribed too. Not listening on: #{queue_name}")
-        end
+        _subscrible(@queue, @normal_subscribe_options.merge(opts), @threads, @auto_ack, &block)
       end
 
       # Subscribes to a queue, passing the headers and payload into the block,
@@ -42,7 +31,7 @@ module Smith
       # +subscribe_and_reply+ will automatically acknowledge the message unless
       # the options sets :ack to false.
       def subscribe_and_reply(opts={}, &block)
-        reply_payload = subscribe(@receive_subscribe_options.merge(opts)) do |metadata,payload|
+        _subscrible(@queue, @receive_subscribe_options.merge(opts), false, false) do |metadata,payload|
           if metadata.reply_to
             options = @receive_publish_options.merge(:routing_key => normalise(metadata.reply_to), :correlation_id => metadata.message_id).merge(opts)
             responder = proc do |return_value|
@@ -58,7 +47,29 @@ module Smith
               logger.verbose("Queue options: #{metadata.exchange}.")
             end
           end
-          block.call(metadata, payload, Responder.new(responder))
+
+          threading(@threads, @auto_ack, metadata) do
+            block.call(metadata, payload, Responder.new(responder))
+          end
+        end
+      end
+
+      def _subscrible(queue, opts, threads, auto_ack, &block)
+        if !@queue.subscribed?
+          logger.verbose("Subscribing to: #{queue.name} #{queue.opts}")
+          queue.subscribe(opts) do |metadata,payload|
+            if payload
+              decoded_payload = Payload.decode(payload, metadata.type)
+              logger.verbose("Received message on: #{queue.name} #{opts}: #{decoded_payload.inspect}")
+              threading(threads, auto_ack, metadata) do
+                block.call(metadata, decoded_payload)
+              end
+            else
+              logger.verbose("Received null message on: #{queue}")
+            end
+          end
+        else
+          logger.error("Queue is already subscribed too. Not listening on: #{queue_name}")
         end
       end
 
@@ -73,12 +84,30 @@ module Smith
         @queue.pop(@normal_pop_options.merge(opts)) do |metadata, payload|
           if payload
             block.call(metadata, Payload.decode(payload, metadata.type))
-            metadata.ack
           end
+          metadata.ack if @auto_ack
         end
       end
 
       private
+
+      # Controls whether to use threads or not. Given that I need to ack in the
+      # thread (TODO check this) I also need to pass in a flag to say whether
+      # to auto ack or not. This is because it can get called twice and we don't
+      # want to ack more than once or an error will be thrown.
+      def threading(threads, auto_ack, metadata, &block)
+        logger.verbose("Threads: #{threads}")
+        logger.verbose("auto_ack: #{auto_ack}")
+        if threads
+          EM.defer do
+            block.call
+            metadata.ack if auto_ack
+          end
+        else
+          block.call
+          metadata.ack if auto_ack
+        end
+      end
 
       def set_receiver_options
         @normal_pop_options = Smith.config.amqp.pop._child
@@ -95,6 +124,8 @@ module Smith
       # and allows the block to call the responder using either a
       # block or value. It should make for a cleaner API.
       class Responder
+        include Smith::Logger
+
         def initialize(responder=nil)
           @responders = []
           @responders << responder if responder
@@ -105,6 +136,7 @@ module Smith
         end
 
         def value(value=nil, &blk)
+          logger.verbose("Running responders: #{@responders.inspect}")
           value ||= ((blk) ? blk.call : nil)
           @responders.each {|responder| responder.call(value) }
         end
