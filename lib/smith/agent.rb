@@ -26,15 +26,10 @@ module Smith
     def run
       raise ArgumentError, "You need to call Agent.task(&block)" if @@task.nil?
 
+      logger.debug("Setting up default queue: #{agent_queue_name}")
       default_queue.ready do |receiver|
-        receiver.subscribe(:ack => false) do |metadata,payload,responder|
-          if @@threads
-            EM.defer do
-              @@task.call(payload)
-            end
-          else
-            @@task.call(payload)
-          end
+        receiver.subscribe do |metadata,payload,responder|
+          @@task.call(payload, responder)
         end
       end
 
@@ -45,7 +40,9 @@ module Smith
     end
 
     def listen(queue, options={}, &block)
-      queues(queue, :receiver).ready do |receiver|
+      threads = options.delete(:threads)
+      queues(queue, :type => :receiver, :threads => threads).ready do |receiver|
+        logger.debug("Queue handler for: #{queue} is #{(receiver.threads) ? "using" : "not using"} threading.")
         receiver.subscribe(options) do |header,payload,responder|
           block.call(header, payload, responder)
         end
@@ -53,7 +50,9 @@ module Smith
     end
 
     def listen_and_reply(queue, options={}, &block)
-      queues(queue, :receiver).ready do |receiver|
+      threads = options.delete(:threads)
+      queues(queue, :type => :receiver, :threads => threads).ready do |receiver|
+        logger.debug("Queue handler for: #{queue} is #{(receiver.threads) ? "using" : "not using"} threading.")
         receiver.subscribe_and_reply(options) do |metadata,payload,responder|
           block.call(metadata, payload, responder)
         end
@@ -119,7 +118,7 @@ module Smith
       if agent_options[:monitor]
         EventMachine::add_periodic_timer(1) do
           message = {:name => self.class.to_s, :pid => $$.to_s, :time => Time.now.utc.to_i.to_s}
-          queues('agent.keepalive', :sender).ready do |sender|
+          queues('agent.keepalive').ready do |sender|
             sender.consumers? do |sender|
               sender.publish(Messaging::Payload.new(:agent_keepalive).content(message), :durable => false)
             end
@@ -131,6 +130,7 @@ module Smith
     end
 
     def setup_control_queue
+      logger.debug("Setting up control queue: #{agent_control_queue_name}")
       control_queue.ready do |receiver|
         receiver.subscribe do |header, payload|
           logger.debug("Command received on agent control queue: #{payload.command} #{payload.options}")
