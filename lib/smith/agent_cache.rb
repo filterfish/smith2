@@ -7,7 +7,9 @@ module Smith
     def initialize(opts={})
       super()
       @paths = opts[:paths]
-      operator ->(agent_name){AgentProcess.first(:name => agent_name) || AgentProcess.new(:name => agent_name, :path => agent_path(agent_name))}
+
+      operator ->(agent_name, options={}) { AgentProcess.first(:name => agent_name) || AgentProcess.new(:name => agent_name, :path => agent_path(agent_name)) }
+
       populate
     end
 

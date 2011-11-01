@@ -12,7 +12,11 @@ module Smith
       @name = self.class.to_s
       @signal_handlers = Hash.new { |h,k| h[k] = Array.new }
       @queues = Cache.new
-      @queues.operator ->(name, option=nil){(option == :sender) ? Messaging::Sender.new(name) : Messaging::Receiver.new(name)}
+      @queues.operator proc { |name, options|
+        # Default to creating a Sender.
+        type = options.delete(:type) || :sender
+        (type == :sender) ? Messaging::Sender.new(name, options) : Messaging::Receiver.new(name, options)
+      }
 
       setup_control_queue
 
@@ -157,20 +161,16 @@ module Smith
       @@agent_options
     end
 
-    def queues(queue_name, option=nil)
-      @queues.entry(queue_name, option)
+    def queues(queue_name, options={})
+      @queues.entry(queue_name, options)
     end
 
-    def default_queue
-      # FIXME. This debug should go in the block.
-      logger.debug("Setting up default queue: #{agent_queue_name}") unless @queues.exist?(agent_queue_name)
-      queues(agent_queue_name, :receiver)
+    def default_queue(options={})
+      queues(agent_queue_name, {:type => :receiver}.merge(options))
     end
 
     def control_queue
-      # FIXME. This debug should go in the block.
-      logger.debug("Setting up control queue: #{agent_control_queue_name}") unless @queues.exist?(agent_control_queue_name)
-      queues(agent_control_queue_name, :receiver)
+      queues(agent_control_queue_name, :type => :receiver)
     end
 
     def agent_control_queue_name
