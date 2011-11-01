@@ -59,6 +59,20 @@ module Smith
       end
     end
 
+    def publish(queue, payload, opts={}, &block)
+      queues(queue, :type => :sender, :auto_delete => false).ready do |sender|
+        sender.publish(payload, opts)
+      end
+    end
+
+    def publish_and_receive(queue, opts={}, payload, &block)
+      queues(queue, :type => :sender, :auto_delete => false).ready do |sender|
+        sender.publish_and_receive(payload, {:persistent => true, :nowait => false}.merge(opts)) do |metadata,payload|
+          block.call(metadata, payload, responder)
+        end
+      end
+    end
+
     def install_signal_handler(signal, position=:end, &blk)
       raise ArgumentError, "Unknown position: #{position}" if ![:beginning, :end].include?(position)
 
@@ -118,7 +132,7 @@ module Smith
       if agent_options[:monitor]
         EventMachine::add_periodic_timer(1) do
           message = {:name => self.class.to_s, :pid => $$.to_s, :time => Time.now.utc.to_i.to_s}
-          queues('agent.keepalive').ready do |sender|
+          queues('agent.keepalive', :type => :sender).ready do |sender|
             sender.consumers? do |sender|
               sender.publish(Messaging::Payload.new(:agent_keepalive).content(message), :durable => false)
             end
