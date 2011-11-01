@@ -17,7 +17,7 @@ module Smith
               end
             end
 
-            errback = proc { responder.value}
+            errback = proc {responder.value(nil)}
 
             receiver.messages?(callback, errback)
           end
