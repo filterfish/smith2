@@ -5,7 +5,7 @@ module Smith
       def execute
         case target.size
         when 0
-          responder.value("Remove what? No queue specified.")
+          responder.value("No queue specified. Please specify a queue.")
         when 1
           Messaging::Receiver.new(target.shift).ready do |receiver|
             callback = proc do
