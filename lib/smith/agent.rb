@@ -27,7 +27,7 @@ module Smith
       raise ArgumentError, "You need to call Agent.task(&block)" if @@task.nil?
 
       logger.debug("Setting up default queue: #{agent_queue_name}")
-      default_queue.ready do |receiver|
+      default_queue(:auto_delete => false).ready do |receiver|
         receiver.subscribe do |metadata,payload,responder|
           @@task.call(payload, responder)
         end
@@ -41,7 +41,7 @@ module Smith
 
     def listen(queue, options={}, &block)
       threads = options.delete(:threads)
-      queues(queue, :type => :receiver, :threads => threads).ready do |receiver|
+      queues(queue, :type => :receiver, :threads => threads, :auto_delete => false).ready do |receiver|
         logger.debug("Queue handler for: #{queue} is #{(receiver.threads) ? "using" : "not using"} threading.")
         receiver.subscribe(options) do |header,payload,responder|
           block.call(header, payload, responder)
@@ -51,7 +51,7 @@ module Smith
 
     def listen_and_reply(queue, options={}, &block)
       threads = options.delete(:threads)
-      queues(queue, :type => :receiver, :threads => threads).ready do |receiver|
+      queues(queue, :type => :receiver, :threads => threads, :auto_delete => false).ready do |receiver|
         logger.debug("Queue handler for: #{queue} is #{(receiver.threads) ? "using" : "not using"} threading.")
         receiver.subscribe_and_reply(options) do |metadata,payload,responder|
           block.call(metadata, payload, responder)
