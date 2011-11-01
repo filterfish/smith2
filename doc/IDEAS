@@ -55,13 +55,22 @@
 * smithctl message should have some sort of printf formating string
   that can be used to construct the protocol buffer message.
 
-* See if Logging can take a proc/lambda. Some of the log messages are getting
-  quite big.
+* See if Logging can take a proc/lambda. Some of the log messages
+  are getting quite big. It doesn't. I don't think it would be that
+  difficult to do: submit patch upstream.
 
 * Have an option to not ack the pop-queue command. See Receiver#pop for a more
-  details description.
+  detailed description. DONE (possibly)
 
 * Have a SMITH_LOAD_PATH environment variable that overrides the path set up in
   the config
 
 * Have a path where encoder files can be loaded from.
+
+* Have something monitor the agents' state machine for signs of problems.
+  For example if an agent is in the starting state for longer than a
+  minutes or so
+
+* Be able to change log level for individual loggers (ie per class).
+
+* Add to_s to the Encoders, so when I call inspect on the message it gives a proper represntation.
