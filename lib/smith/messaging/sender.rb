@@ -10,7 +10,7 @@ module Smith
 
       def publish(message, opts={}, &block)
         options = @normal_publish_options.merge(:routing_key => @queue.name, :type => message.encoder.to_s).merge(opts)
-        logger.verbose("Publishing to: #{@queue.name} #{options}: #{message.inspect}")
+        logger.verbose("Publishing to: #{@queue.name} #{@queue.opts}: #{message.inspect}")
         exchange.publish(message.encode, options, &block)
       end
 
@@ -23,9 +23,10 @@ module Smith
               logger.error("Incorrect correlation_id: #{metadata.correlation_id}")
             end
 
+            # TODO This should probably go in #threading (see Receiver#threading).
             block.call(metadata, payload)
 
-            consumer = metadata.channel.consumers.each do |k,v|
+            metadata.channel.consumers.each do |k,v|
               logger.verbose("Cancelling: #{k}")
               v.cancel
             end
