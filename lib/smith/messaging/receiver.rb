@@ -39,7 +39,6 @@ module Smith
                 sender.publish(Payload.new(:default).content(return_value), options)
               end
             end
-
           else
             # Null responder. If a call on the responder is made log a warning. Something is wrong.
             responder = proc do |return_value|

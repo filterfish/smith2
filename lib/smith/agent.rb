@@ -12,9 +12,8 @@ module Smith
       @name = self.class.to_s
       @signal_handlers = Hash.new { |h,k| h[k] = Array.new }
       @queues = Cache.new
-      @queues.operator proc { |name, options|
-        # Default to creating a Sender.
-        type = options.delete(:type) || :sender
+      @queues.operator ->(name, options={}) {
+        type = options.delete(:type) || :sender # Default to creating a Sender.
         (type == :sender) ? Messaging::Sender.new(name, options) : Messaging::Receiver.new(name, options)
       }
 
