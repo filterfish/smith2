@@ -8,11 +8,11 @@ module Smith
 
     include Logger
 
-    # Load and run the command specified. This method takes:
-    # +target+ which is either a list of agents or the agency
-    # +vars+ variables to be passed in to the command. This
-    # takes the form of a hash and accessor methods are generated
-    # named after the key of the hash.
+    # Load and run the command specified. This method takes: +target+
+    # which is either a list of agents or the agency +vars+ variables
+    # to be passed in to the command. This takes the form of a hash and
+    # accessor methods are generated named after the key of the hash.
+
     def self.run(command, args, vars)
       target ||= []
       # Change _ to - underscores look so ugly as a command name.

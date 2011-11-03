@@ -5,11 +5,11 @@ module Smith
 
       include Logger
 
-      attr_reader :auto_ack, :threads
+      attr_reader :auto_ack, :threading
 
       def initialize(queue_name, opts={})
         @auto_ack = opts.delete(:auto_ack) || true
-        @threads = opts.delete(:threads) || false
+        @threading = opts.delete(:threading) || false
 
         set_receiver_options
         super
@@ -23,7 +23,7 @@ module Smith
       # block. +subscribe+ will automatically acknowledge the message unless
       # the options sets :ack to false.
       def subscribe(opts={}, &block)
-        _subscrible(@queue, @normal_subscribe_options.merge(opts), @threads, @auto_ack, &block)
+        _subscrible(@queue, @normal_subscribe_options.merge(opts), @threading, @auto_ack, &block)
       end
 
       # Subscribes to a queue, passing the headers and payload into the block,
@@ -47,20 +47,20 @@ module Smith
             end
           end
 
-          threading(@threads, @auto_ack, metadata) do
+          thread(@threading, @auto_ack, metadata) do
             block.call(metadata, payload, Responder.new(responder))
           end
         end
       end
 
-      def _subscrible(queue, opts, threads, auto_ack, &block)
+      def _subscrible(queue, opts, threading, auto_ack, &block)
         if !@queue.subscribed?
           logger.verbose("Subscribing to: #{queue.name} #{queue.opts}")
           queue.subscribe(opts) do |metadata,payload|
             if payload
               decoded_payload = Payload.decode(payload, metadata.type)
               logger.verbose("Received message on: #{queue.name} #{opts}: #{decoded_payload.inspect}")
-              threading(threads, auto_ack, metadata) do
+              thread(threading, auto_ack, metadata) do
                 block.call(metadata, decoded_payload)
               end
             else
@@ -94,10 +94,10 @@ module Smith
       # thread (TODO check this) I also need to pass in a flag to say whether
       # to auto ack or not. This is because it can get called twice and we don't
       # want to ack more than once or an error will be thrown.
-      def threading(threads, auto_ack, metadata, &block)
-        logger.verbose("Threads: #{threads}")
+      def thread(threading, auto_ack, metadata, &block)
+        logger.verbose("Threads: #{threading}")
         logger.verbose("auto_ack: #{auto_ack}")
-        if threads
+        if threading
           EM.defer do
             block.call
             metadata.ack if auto_ack

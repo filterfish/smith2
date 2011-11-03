@@ -39,9 +39,9 @@ module Smith
     end
 
     def subscribe(queue, options={}, &block)
-      threads = options.delete(:threads)
-      queues(queue, :type => :receiver, :threads => threads, :auto_delete => false).ready do |receiver|
-        logger.debug("Queue handler for #{queue} is #{(receiver.threads) ? "using" : "not using"} threading.")
+      threading = options.delete(:threading)
+      queues(queue, :type => :receiver, :threading => threading, :auto_delete => false).ready do |receiver|
+        logger.debug("Queue handler for #{queue} is #{(receiver.threading) ? "using" : "not using"} threading.")
         receiver.subscribe(options) do |header,payload,responder|
           block.call(header, payload, responder)
         end
@@ -49,9 +49,9 @@ module Smith
     end
 
     def subscribe_and_reply(queue, options={}, &block)
-      threads = options.delete(:threads)
-      queues(queue, :type => :receiver, :threads => threads, :auto_delete => false).ready do |receiver|
-        logger.debug("Queue handler for #{queue} is #{(receiver.threads) ? "using" : "not using"} threading.")
+      threading = options.delete(:threading)
+      queues(queue, :type => :receiver, :threading => threading, :auto_delete => false).ready do |receiver|
+        logger.debug("Queue handler for #{queue} is #{(receiver.threading) ? "using" : "not using"} threading.")
         receiver.subscribe_and_reply(options) do |metadata,payload,responder|
           block.call(metadata, payload, responder)
         end
@@ -84,7 +84,8 @@ module Smith
 
     class << self
       def task(opts={}, &blk)
-        @@threads = opts[:threads] || false
+        # TODO is this neeeded? I think not.
+        @@threading = opts[:threading] || false
         @@task = blk
       end
 
