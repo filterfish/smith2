@@ -29,6 +29,7 @@ module Smith
         vars.merge(:options => options, :target => target).each do |k,v|
           clazz.instance_eval <<-EOM, __FILE__, __LINE__ + 1
             instance_variable_set(:"@#{k}", v)
+            def #{k}=(z); @#{k} = z; end
             def #{k}; @#{k}; end
           EOM
         end
