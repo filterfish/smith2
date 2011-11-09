@@ -22,7 +22,7 @@ module Smith
               return
             end
           rescue RuntimeError => e
-            responder.value(e)
+            responder.value(e.message)
             return
           end
         end
