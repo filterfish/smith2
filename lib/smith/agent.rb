@@ -172,7 +172,7 @@ module Smith
     end
 
     def agent_options
-      @@agent_options
+      @@agent_options._child
     end
 
     def queues(queue_name, options={})
