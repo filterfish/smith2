@@ -8,8 +8,8 @@ module Smith
         required :state, :string, 1
         required :name, :string, 2
         optional :pid, :string, 3
-        optional :monitor, :string, 4
-        optional :singleton, :string, 5
+        optional :monitor, :bool, 4
+        optional :singleton, :bool, 5
         optional :started_at, :string, 6
       end
     end
