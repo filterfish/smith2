@@ -23,7 +23,7 @@ module Smith
       # block. +subscribe+ will automatically acknowledge the message unless
       # the options sets :ack to false.
       def subscribe(opts={}, &block)
-        _subscrible(@queue, @normal_subscribe_options.merge(opts), @threading, @auto_ack, &block)
+        _subscribe(@queue, @normal_subscribe_options.merge(opts), @threading, @auto_ack, &block)
       end
 
       # Subscribes to a queue, passing the headers and payload into the block,
@@ -31,7 +31,7 @@ module Smith
       # +subscribe_and_reply+ will automatically acknowledge the message unless
       # the options sets :ack to false.
       def subscribe_and_reply(opts={}, &block)
-        _subscrible(@queue, @receive_subscribe_options.merge(opts), false, false) do |metadata,payload|
+        _subscribe(@queue, @receive_subscribe_options.merge(opts), false, false) do |metadata,payload|
           responder = Responder.new
           if metadata.reply_to
             options = @receive_publish_options.merge(:routing_key => normalise(metadata.reply_to), :correlation_id => metadata.message_id).merge(opts)
@@ -54,7 +54,7 @@ module Smith
         end
       end
 
-      def _subscrible(queue, opts, threading, auto_ack, &block)
+      def _subscribe(queue, opts, threading, auto_ack, &block)
         if !@queue.subscribed?
           logger.verbose("Subscribing to: #{queue.name} #{queue.opts}")
           queue.subscribe(opts) do |metadata,payload|
