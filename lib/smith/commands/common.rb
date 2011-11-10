@@ -1,3 +1,4 @@
+# -*- encoding: utf-8 -*-
 module Smith
   module Commands
     module Common
