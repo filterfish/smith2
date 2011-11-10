@@ -32,23 +32,24 @@ module Smith
       # the options sets :ack to false.
       def subscribe_and_reply(opts={}, &block)
         _subscrible(@queue, @receive_subscribe_options.merge(opts), false, false) do |metadata,payload|
+          responder = Responder.new
           if metadata.reply_to
             options = @receive_publish_options.merge(:routing_key => normalise(metadata.reply_to), :correlation_id => metadata.message_id).merge(opts)
-            responder = proc do |return_value|
+            responder.callback do |return_value|
               Sender.new(metadata.reply_to).ready do |sender|
                 sender.publish(Payload.new(:default).content(return_value), options)
               end
             end
           else
             # Null responder. If a call on the responder is made log a warning. Something is wrong.
-            responder = proc do |return_value|
+            responder.callback do |return_value|
               logger.error("You are responding to a message that has no reply_to on queue: #{@queue.name}.")
               logger.verbose("Queue options: #{metadata.exchange}.")
             end
           end
 
           thread(@threading, @auto_ack, metadata) do
-            block.call(metadata, payload, Responder.new(responder))
+            block.call(metadata, payload, responder)
           end
         end
       end
@@ -114,31 +115,9 @@ module Smith
         @receive_pop_options = Smith.config.amqp.pop._child.merge(:immediate => true, :mandatory => true)
         @receive_subscribe_options = Smith.config.amqp.subscribe._child.merge(:immediate => true, :mandatory => true)
 
-        # We need the publish opts as weel.
+        # We need the publish opts as well.
         @normal_publish_options = Smith.config.amqp.publish._child
         @receive_publish_options = Smith.config.amqp.publish._child.merge(:exclusive => true, :immediate => true, :mandatory => true)
-      end
-
-      # Class that gets passed into and subscribe_and_reply blocks
-      # and allows the block to call the responder using either a
-      # block or value. It should make for a cleaner API.
-      class Responder
-        include Smith::Logger
-
-        def initialize(responder=nil)
-          @responders = []
-          @responders << responder if responder
-        end
-
-        def add(responder)
-          @responders.insert(0, responder)
-        end
-
-        def value(value=nil, &blk)
-          logger.verbose("Running responders: #{@responders.inspect}")
-          value ||= ((blk) ? blk.call : nil)
-          @responders.each {|responder| responder.call(value) }
-        end
       end
     end
   end
