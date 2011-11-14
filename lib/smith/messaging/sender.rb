@@ -19,8 +19,7 @@ module Smith
 
       def publish_and_receive(message, opts={}, &block)
         message_id = random
-
-        Receiver.new(message_id, :auto_ack => @auto_ack, :threading => @threading).ready do |receiver|
+        Receiver.new(message_id).ready do |receiver|
           receiver.subscribe do |metadata,payload,responder|
 
             if metadata.correlation_id != message_id
