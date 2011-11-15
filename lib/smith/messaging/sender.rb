@@ -39,6 +39,10 @@ module Smith
             end
           end
 
+          # Do not move this outside the ready block. If you do this it is
+          # possible (in fact likely) that you will lose messages. The reason
+          # is that a message can be published and responded to before the
+          # receive queue is set up.
           options = {:reply_to => message_id, :message_id => message_id}.merge(opts)
           _publish(message, @receive_publish_options.merge(options))
         end
