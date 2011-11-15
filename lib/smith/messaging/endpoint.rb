@@ -68,7 +68,7 @@ module Smith
 
       protected
 
-      attr_accessor :exchange, :queue, :queue_options
+      attr_accessor :exchange, :queue, :queue_name, :queue_options
 
       def denormalise(name)
         name.sub(/#{Regexp.escape("#{Smith.config.smith.namespace}.")}/, '')
