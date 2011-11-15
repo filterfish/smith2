@@ -27,12 +27,15 @@ module Smith
               logger.error("Incorrect correlation_id: #{metadata.correlation_id}")
             end
 
-            # TODO This should probably go in #threading (see Receiver#threading).
             block.call(metadata, payload)
 
+            # Cancel the receive queue. Queues get left behind because the reply queue is
+            # still listening. By cancel'ling the consumer it releases the queue and exchange.
             metadata.channel.consumers.each do |k,v|
-              logger.verbose("Cancelling: #{k}")
-              v.cancel
+              if k.start_with?(receiver.queue_name)
+                logger.verbose("Cancelling: #{k}")
+                v.cancel
+              end
             end
           end
 
