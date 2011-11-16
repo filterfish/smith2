@@ -27,6 +27,8 @@ module Smith
               logger.error("Incorrect correlation_id: #{metadata.correlation_id}")
             end
 
+            cancel_timeout
+
             block.call(metadata, payload)
 
             # Cancel the receive queue. Queues get left behind because the reply queue is
@@ -53,7 +55,15 @@ module Smith
         exchange.publish(message.encode, {:routing_key => queue.name, :type => message.encoder.to_s}.merge(opts), &block)
       end
 
+      def timeout(timeout, &block)
+        @timeout = EventMachine::Timer.new(timeout, block)
+      end
+
       private
+
+      def cancel_timeout
+        @timeout.cancel if @timeout
+      end
 
       def set_sender_options
         @normal_publish_options = Smith.config.amqp.publish._child
