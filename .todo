@@ -82,3 +82,7 @@
   queues per process.
 
 * Have message oounters for every agent.
+
+* Save all protocol buffer files in a known place which the agency can
+  compile before sending any messages. This solves the problem of how
+  to load user supplied protocol buffer files. Make the path configurable

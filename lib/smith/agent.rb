@@ -1,4 +1,5 @@
 # -*- encoding: utf-8 -*-
+
 module Smith
   class Agent
 
@@ -40,7 +41,7 @@ module Smith
 
     def subscribe(queue, options={}, &block)
       threading = options.delete(:threading)
-      queues(queue, :type => :receiver, :threading => threading, :auto_delete => false).ready do |receiver|
+      queue(queue, :type => :receiver, :threading => threading, :auto_delete => false).ready do |receiver|
         logger.debug("Queue handler for #{queue} is #{(receiver.threading) ? "using" : "not using"} threading.")
         receiver.subscribe(options) do |header,payload,responder|
           block.call(header, payload, responder)
@@ -50,7 +51,7 @@ module Smith
 
     def subscribe_and_reply(queue, options={}, &block)
       threading = options.delete(:threading)
-      queues(queue, :type => :receiver, :threading => threading, :auto_delete => false).ready do |receiver|
+      queue(queue, :type => :receiver, :threading => threading, :auto_delete => false).ready do |receiver|
         logger.debug("Queue handler for #{queue} is #{(receiver.threading) ? "using" : "not using"} threading.")
         receiver.subscribe_and_reply(options) do |metadata,payload,responder|
           block.call(metadata, payload, responder)
@@ -59,13 +60,13 @@ module Smith
     end
 
     def publish(queue, payload, opts={}, &block)
-      queues(queue, :type => :sender, :auto_delete => false).ready do |sender|
+      queue(queue, :type => :sender, :auto_delete => false).ready do |sender|
         sender.publish(payload, opts)
       end
     end
 
     def publish_and_receive(queue, opts={}, payload, &block)
-      queues(queue, :type => :sender, :auto_delete => false).ready do |sender|
+      queue(queue, :type => :sender, :auto_delete => false).ready do |sender|
         sender.publish_and_receive(payload, {:persistent => true, :nowait => false}.merge(opts)) do |metadata,payload|
           block.call(metadata, payload, responder)
         end
@@ -114,35 +115,6 @@ module Smith
       handlers.each { |handler| handler.call(sig) }
     end
 
-    def acknowledge_start
-      message = {:state => 'acknowledge_start', :pid => $$.to_s, :name => self.class.to_s, :started_at => Time.now.utc.to_i.to_s}
-      Messaging::Sender.new('agent.lifecycle').ready do |sender|
-        sender.publish(Messaging::Payload.new(:agent_lifecycle).content(agent_options.merge(message)))
-      end
-    end
-
-    def acknowledge_stop(&block)
-      message = {:state => 'acknowledge_stop', :pid => $$.to_s, :name => self.class.to_s}
-      Messaging::Sender.new('agent.lifecycle').ready do |sender|
-        sender.publish(Messaging::Payload.new(:agent_lifecycle).content(message), :persistent => true, &block)
-      end
-    end
-
-    def start_keep_alive
-      if agent_options[:monitor]
-        EventMachine::add_periodic_timer(1) do
-          message = {:name => self.class.to_s, :pid => $$.to_s, :time => Time.now.utc.to_i.to_s}
-          queues('agent.keepalive', :type => :sender).ready do |sender|
-            sender.consumers? do |sender|
-              sender.publish(Messaging::Payload.new(:agent_keepalive).content(message), :durable => false)
-            end
-          end
-        end
-      else
-        logger.info("Not initiating keep alive, agent is not being monitored: #{@name}")
-      end
-    end
-
     def setup_control_queue
       logger.debug("Setting up control queue: #{agent_control_queue_name}")
       control_queue.ready do |receiver|
@@ -167,6 +139,35 @@ module Smith
       end
     end
 
+    def acknowledge_start
+      message = {:state => 'acknowledge_start', :pid => $$.to_s, :name => self.class.to_s, :started_at => Time.now.utc.to_i.to_s}
+      Messaging::Sender.new('agent.lifecycle').ready do |sender|
+        sender.publish(Messaging::Payload.new(:agent_lifecycle).content(agent_options.merge(message)))
+      end
+    end
+
+    def acknowledge_stop(&block)
+      message = {:state => 'acknowledge_stop', :pid => $$.to_s, :name => self.class.to_s}
+      Messaging::Sender.new('agent.lifecycle').ready do |sender|
+        sender.publish(Messaging::Payload.new(:agent_lifecycle).content(message), :persistent => true, &block)
+      end
+    end
+
+    def start_keep_alive
+      if agent_options[:monitor]
+        EventMachine::add_periodic_timer(1) do
+          message = {:name => self.class.to_s, :pid => $$.to_s, :time => Time.now.utc.to_i.to_s}
+          queue('agent.keepalive', :type => :sender).ready do |sender|
+            sender.consumers? do |sender|
+              sender.publish(Messaging::Payload.new(:agent_keepalive).content(message), :durable => false)
+            end
+          end
+        end
+      else
+        logger.info("Not initiating keep alive, agent is not being monitored: #{@name}")
+      end
+    end
+
     def message_opts(options={})
       options.merge(@default_message_options)
     end
@@ -175,16 +176,20 @@ module Smith
       @@agent_options._child
     end
 
-    def queues(queue_name, options={})
+    def queues
+      @queues
+    end
+
+    def queue(queue_name, options={})
       @queues.entry(queue_name, options)
     end
 
     def default_queue(options={})
-      queues(agent_queue_name, {:type => :receiver}.merge(options))
+      queue(agent_queue_name, {:type => :receiver}.merge(options))
     end
 
     def control_queue
-      queues(agent_control_queue_name, :type => :receiver)
+      queue(agent_control_queue_name, :type => :receiver)
     end
 
     def agent_control_queue_name
