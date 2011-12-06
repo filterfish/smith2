@@ -1,0 +1,4 @@
+message AgentCommand {
+  required string command = 1;
+  repeated string options = 2;
+}

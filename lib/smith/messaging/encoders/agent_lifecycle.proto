@@ -1,0 +1,8 @@
+message AgentLifecycle {
+  required string state = 1;
+  required string name = 2;
+  optional string pid = 3;
+  optional bool monitor = 4;
+  optional bool singleton = 5;
+  optional string started_at = 6;
+}

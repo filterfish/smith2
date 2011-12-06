@@ -1,0 +1,7 @@
+message AgentStats {
+  message AgentStat {
+    required string queue_name = 1;
+    required string queue_depth = 2;
+  }
+  repeated AgentStat stats = 1;
+}
