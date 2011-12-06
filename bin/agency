@@ -22,20 +22,33 @@ module Smith
       @compiler.compile
 
       @agency = Agency.new(:paths => Smith.agent_paths)
+
+      # Setup signal handlers to clean up.
+      %w{TERM INT QUIT}.each do |sig|
+        trap sig, proc { puts "Shutting down"; Smith.stop }
+      end
     end
 
     def run
       Smith.start do
+
+        # This block is here so the that the shutdown hook added in
+        # Smith.start runs last. Yes I know this is leaky but that's how
+        # it is at the moment.
+
+        Smith.shutdown_hook do
+          # TODO put this as a command line option
+          if false
+            @compiler.clear_cache
+          end
+        end
+
         logger.info("Starting #{File.basename($0)}")
         @agency.setup_queues
         @agency.start_monitoring
       end
     end
   end
-end
-
-%w{TERM INT QUIT}.each do |sig|
-  trap sig, proc { puts "Shutting down"; Smith.stop(true) }
 end
 
 agency_runner = Smith::AgencyRunner.new(root_path)
