@@ -105,6 +105,9 @@ module Smith
           end
         end
 
+        # This will be the last thing run by the reactor.
+        shutdown_hook { logger.debug("Reactor Stopped") }
+
         AMQP::Channel.new(connection) do |channel,ok|
           @channel = channel
           # Set up QOS. If you do not do this then the subscribe in receive_message
@@ -128,23 +131,24 @@ module Smith
       end
     end
 
+    def shutdown_hook(&block)
+      EM.add_shutdown_hook(&block)
+    end
+
     def stop(immediately=false, &blk)
-      if immediately
-        @connection.close { EM.stop { logger.debug("Reactor Stopped") } }
-      else
-        if running?
-          EM.add_timer(1) do
-            @connection.close do
-              EM.stop do
-                logger.debug("Reactor Stopped")
-                blk.call if blk
-              end
-            end
-          end
+      shutdown_hook(&blk) if blk
+
+      if running?
+        if immediately
+          @connection.close { EM.stop_event_loop }
         else
-          logger.fatal("Eventmachine is not running, exiting with prejudice")
-          exit!
+          EM.add_timer(1) do
+            @connection.close { EM.stop_event_loop }
+          end
         end
+      else
+        logger.fatal("Eventmachine is not running, exiting with prejudice")
+        exit!
       end
     end
 
