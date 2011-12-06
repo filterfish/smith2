@@ -38,9 +38,25 @@ module Smith
     end
 
     def agent_paths
-      [config.agents.paths].flatten.map do |path|
-        p = Pathname.new(path)
-        (p.absolute?) ? p : root_path.join(p)
+      path_to_pathnames(config.agency.agent_path)
+    end
+
+    def pb_path
+      path_to_pathnames(config.agency.protocol_buffer_path)
+    end
+
+    # Return the protocol cache path. If it's not specified in the config
+    # generate a temporary path.
+    def pb_cache_path
+      if Smith.config.agency._has_key?(:protocol_buffer_cache_path)
+        Pathname.new(Smith.config.agency.protocol_buffer_cache_path)
+      else
+        pre_existing_cache_dir = Pathname.glob(Pathname.new(Dir.tmpdir).join("smith-pb*"))
+        if pre_existing_cache_dir.empty?
+          Pathname.new(Dir.mktmpdir("smith-pb-"))
+        else
+          pre_existing_cache_dir.first
+        end
       end
     end
 
@@ -157,6 +173,14 @@ module Smith
         logger.info(" Setting: %-7s%s" %  [k, v])
       end
       EM.stop
+    end
+
+    def path_to_pathnames(path)
+      path ||= []
+      path.split(':').map do |path|
+        p = Pathname.new(path)
+        (p.absolute?) ? p : root_path.join(p)
+      end
     end
   end
 end

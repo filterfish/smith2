@@ -8,6 +8,7 @@ root_path = Pathname.new('__FILE__').join('..').expand_path
 $:.unshift(root_path.join('lib'))
 
 require 'smith'
+require 'smith/protocol_buffer_compiler'
 require 'smith/application/agency'
 
 module Smith
@@ -16,6 +17,10 @@ module Smith
     include Logger
 
     def initialize(root)
+
+      @compiler = ProtocolBufferCompiler.new
+      @compiler.compile
+
       @agency = Agency.new(:paths => Smith.agent_paths)
     end
 
