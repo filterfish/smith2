@@ -48,7 +48,7 @@ module Smith
     # Return the protocol cache path. If it's not specified in the config
     # generate a temporary path.
     def pb_cache_path
-      if Smith.config.agency._has_key?(:protocol_buffer_cache_path)
+      @pb_cache_path ||= if Smith.config.agency._has_key?(:protocol_buffer_cache_path)
         Pathname.new(Smith.config.agency.protocol_buffer_cache_path)
       else
         pre_existing_cache_dir = Pathname.glob(Pathname.new(Dir.tmpdir).join("smith-pb*"))
@@ -197,9 +197,6 @@ require_relative 'smith/agent_monitoring'
 require_relative 'smith/command'
 require_relative 'smith/messaging/encoders/default'
 require_relative 'smith/messaging/encoders/agency_command'
-require_relative 'smith/messaging/encoders/agent_command'
-require_relative 'smith/messaging/encoders/agent_lifecycle'
-require_relative 'smith/messaging/encoders/agent_keepalive'
 require_relative 'smith/messaging/payload'
 require_relative 'smith/messaging/endpoint'
 require_relative 'smith/messaging/exceptions'
