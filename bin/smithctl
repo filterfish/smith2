@@ -11,9 +11,17 @@ module Smith
       EM.add_timer(2) { puts "Timeout. Is the agency still running"; Smith.stop(true) }
 
       Messaging::Sender.new('agency.control').ready do |sender|
-        payload = Messaging::Payload.new(:agency_command).content(:command => command, :args => args)
-        callback = proc { |sender| sender.publish_and_receive(payload, :persistent => true, &blk) }
-        errback = proc { puts "Agency not running"; Smith.stop(true) }
+
+        payload = ACL::Payload.new(:agency_command).content(:command => command, :args => args)
+
+        callback = proc do |sender|
+          sender.publish_and_receive(payload, :persistent => true, &blk)
+        end
+
+        errback = proc do puts "Agency not running"
+          Smith.stop(true)
+        end
+
         sender.consumers?(callback, errback)
       end
     end
