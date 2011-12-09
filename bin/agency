@@ -21,6 +21,9 @@ module Smith
       @compiler = ProtocolBufferCompiler.new
       @compiler.compile
 
+      # Set the load path for the protocol buffer files.
+      $: << Smith.pb_cache_path
+
       @agency = Agency.new(:paths => Smith.agent_paths)
 
       # Setup signal handlers to clean up.
