@@ -28,7 +28,7 @@ module Smith
 
       # Setup signal handlers to clean up.
       %w{TERM INT QUIT}.each do |sig|
-        trap sig, proc { puts "Shutting down"; Smith.stop }
+        trap sig, proc { puts "Shutting down"; @agency.stop }
       end
     end
 

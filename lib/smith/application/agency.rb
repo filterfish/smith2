@@ -57,6 +57,12 @@ module Smith
       @agent_monitor.start_monitoring
     end
 
+    # Stop the agency. This will wait for one second to ensure
+    # that any messages are flushed.
+    def stop
+      Smith.stop(true)
+    end
+
     private
 
     def acknowledge_start(agent_data)
