@@ -9,8 +9,8 @@ module Smith
     include Logger
 
     def initialize(force=false)
-      @output_path = Smith.pb_cache_path
-      @command = "protoc --beefcake_out #{@output_path.realpath} -I%s %s"
+      @cache_path = Smith.pb_cache_path
+      @command = "sh -c \"BEEFCAKE_NAMESPACE=Smith::ACL protoc --beefcake_out #{@cache_path.realpath} -I%s %s\""
     end
 
     def compile
@@ -19,7 +19,7 @@ module Smith
         results = {}
         path_glob(path) do |p|
           if should_compile?(p)
-            logger.info("Compiling: #{p} into #{@output_path}")
+            logger.info("Compiling: #{p} into #{@cache_path}")
             results[p.to_s] = `#{@command % [path.realpath, p]}`
           end
         end
@@ -27,7 +27,11 @@ module Smith
         #pp results
         #logger.info(compiler_output)
       end
-      @output_path
+      @cache_path
+    end
+
+    def cache_path
+      @cache_path.to_s
     end
 
     # Clears the Protocol Buffer cache. If protocol_buffer_cache_path si
@@ -37,12 +41,12 @@ module Smith
     def clear_cache
       logger.info("Clearing the Protocol Buffer cache: #{Smith.pb_cache_path}")
 
-      Pathname.glob(@output_path.join("*")).each do |path|
+      Pathname.glob(@cache_path.join("*")).each do |path|
         path.unlink
       end
 
       unless Smith.config.agency._has_key?(:protocol_buffer_cache_path)
-        @output_path.rmdir
+        @cache_path.rmdir
       end
     end
 
@@ -50,7 +54,7 @@ module Smith
 
     # Returns true if the .proto file is newer that the .pb.rb file
     def should_compile?(file)
-      cached_file = @output_path.join(file.basename).sub_ext(".pb.rb")
+      cached_file = @cache_path.join(file.basename).sub_ext(".pb.rb")
       if cached_file.exist?
         if file.mtime > cached_file.mtime
           true

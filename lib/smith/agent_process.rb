@@ -128,7 +128,7 @@ module Smith
 
     def self.stop(agent_process)
       Messaging::Sender.new(agent_process.control_queue_name).ready do |sender|
-        callback = proc {|sender| sender.publish(Messaging::Payload.new(:agent_command).content(:command => 'stop')) }
+        callback = proc {|sender| sender.publish(ACL::Payload.new(:agent_command).content(:command => 'stop')) }
         errback = proc do
           logger.warn("Agent is not listening. Setting state to dead.")
           agent_process.no_process_running

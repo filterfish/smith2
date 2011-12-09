@@ -9,7 +9,7 @@ class TestAgent < Smith::Agent
     end
 
     subscribe('agent.fast_test', :threads => false) do |metadata,payload|
-      publish('agent.barf', Smith::Messaging::Payload.new(:default).content("hey!"))
+      publish('agent.barf', Smith::ACL::Payload.new(:default).content("hey!"))
     end
 
     acknowledge_start

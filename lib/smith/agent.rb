@@ -142,14 +142,14 @@ module Smith
     def acknowledge_start
       message = {:state => 'acknowledge_start', :pid => $$.to_s, :name => self.class.to_s, :started_at => Time.now.utc.to_i.to_s}
       Messaging::Sender.new('agent.lifecycle').ready do |sender|
-        sender.publish(Messaging::Payload.new(:agent_lifecycle).content(agent_options.merge(message)))
+        sender.publish(ACL::Payload.new(:agent_lifecycle).content(agent_options.merge(message)))
       end
     end
 
     def acknowledge_stop(&block)
       message = {:state => 'acknowledge_stop', :pid => $$.to_s, :name => self.class.to_s}
       Messaging::Sender.new('agent.lifecycle').ready do |sender|
-        sender.publish(Messaging::Payload.new(:agent_lifecycle).content(message), :persistent => true, &block)
+        sender.publish(ACL::Payload.new(:agent_lifecycle).content(message), :persistent => true, &block)
       end
     end
 
@@ -159,7 +159,7 @@ module Smith
           message = {:name => self.class.to_s, :pid => $$.to_s, :time => Time.now.utc.to_i.to_s}
           queue('agent.keepalive', :type => :sender).ready do |sender|
             sender.consumers? do |sender|
-              sender.publish(Messaging::Payload.new(:agent_keepalive).content(message), :durable => false)
+              sender.publish(ACL::Payload.new(:agent_keepalive).content(message), :durable => false)
             end
           end
         end

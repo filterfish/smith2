@@ -32,7 +32,7 @@ module Smith
             options = @receive_publish_options.merge(:routing_key => normalise(metadata.reply_to), :correlation_id => metadata.message_id).merge(opts)
             responder.callback do |return_value|
               Sender.new(metadata.reply_to).ready do |sender|
-                sender.publish(Payload.new(:default).content(return_value), options)
+                sender.publish(ACL::Payload.new(:default).content(return_value), options)
               end
             end
           else
@@ -53,7 +53,7 @@ module Smith
           queue.subscribe(opts) do |metadata,payload|
             responder = Responder.new
             if payload
-              decoded_payload = Payload.decode(payload, metadata.type)
+              decoded_payload = ACL::Payload.decode(payload, metadata.type)
               logger.verbose("Received message on: #{queue.name} #{opts}: #{decoded_payload.inspect}")
               thread(metadata) do
                 block.call(metadata, decoded_payload, responder)
@@ -77,7 +77,7 @@ module Smith
       def pop(opts={}, &block)
         @queue.pop(@normal_pop_options.merge(opts)) do |metadata, payload|
           if payload
-            block.call(metadata, Payload.decode(payload, metadata.type))
+            block.call(metadata, ACL::Payload.decode(payload, metadata.type))
           end
           metadata.ack if @auto_ack
         end

@@ -24,7 +24,7 @@ payload = ARGV[1]
 Smith.start do
   Smith::Messaging::Sender.new(queue_name, :auto_delete => opts[:dynamic]).ready do |s|
     work = proc do |n,iter|
-      s.publish(Smith::Messaging::Payload.new.content(payload), :persistent => true, :nowait => false) do
+      s.publish(Smith::ACL::Payload.new.content(payload), :persistent => true, :nowait => false) do
         iter.next
       end
     end
