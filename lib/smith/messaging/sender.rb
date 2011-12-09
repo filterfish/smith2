@@ -51,8 +51,8 @@ module Smith
       end
 
       def _publish(message, opts={}, &block)
-        logger.verbose("Publishing to: #{queue.name} #{queue.opts}: #{message.inspect}")
-        exchange.publish(message.encode, {:routing_key => queue.name, :type => message.encoder.to_s}.merge(opts), &block)
+        logger.verbose("Publishing to: #{queue.name} #{queue.opts}: #{message.inspect} of type #{message.type}")
+        exchange.publish(message.encode, {:routing_key => queue.name, :type => message.type}.merge(opts), &block)
       end
 
       def timeout(timeout, &block)
