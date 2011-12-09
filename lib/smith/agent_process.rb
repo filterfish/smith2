@@ -116,7 +116,7 @@ module Smith
 
         bootstraper = File.expand_path(File.join(File.dirname(__FILE__), 'bootstrap.rb'))
 
-        exec('ruby', bootstraper, agent_process.path, agent_process.name)
+        exec('ruby', bootstraper, agent_process.path, agent_process.name, Smith.pb_cache_path.to_s)
       end
 
       # We don't want any zombies.
