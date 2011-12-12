@@ -8,9 +8,9 @@ require 'smith'
 module Smith
   class SmithControl
     def send_command(command, args, &blk)
-      EM.add_timer(2) { puts "Timeout. Is the agency still running"; Smith.stop(true) }
-
       Messaging::Sender.new('agency.control').ready do |sender|
+
+        sender.timeout(2) { puts "Timeout. Is the agency still running"; Smith.stop(true) }
 
         payload = ACL::Payload.new(:agency_command).content(:command => command, :args => args)
 

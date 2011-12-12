@@ -55,15 +55,7 @@ module Smith
         exchange.publish(message.encode, {:routing_key => queue.name, :type => message.type}.merge(opts), &block)
       end
 
-      def timeout(timeout, &block)
-        @timeout = EventMachine::Timer.new(timeout, block)
-      end
-
       private
-
-      def cancel_timeout
-        @timeout.cancel if @timeout
-      end
 
       def set_sender_options
         @normal_publish_options = Smith.config.amqp.publish._child
