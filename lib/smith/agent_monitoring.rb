@@ -17,16 +17,16 @@ module Smith
             when 'running'
               if agent_process.last_keep_alive
                 if agent_process.last_keep_alive > agent_process.started_at
-                  if (Time.now.utc - agent_process.last_keep_alive) > 10
+                  if (Time.now.utc.to_i - agent_process.last_keep_alive) > 10
                     logger.fatal("Agent not responding: #{agent_process.name}")
                     agent_process.no_process_running
                   end
                 else
-                  logger.warn("Discarding keep_alives with timestamp before agent started: #{agent_process.started_at} > #{agent_process.last_keep_alive}")
+                  logger.warn("Discarding keep_alives with timestamp before agent started: #{Time.at(agent_process.started_at)} > #{Time.at(agent_process.last_keep_alive)}")
                 end
               end
             when 'starting'
-              if (Time.now.utc - agent_process.started_at) > 10
+              if (Time.now.utc.to_i - agent_process.started_at) > 10
                 logger.error("No response from agent for > 10 seconds. Agent probably didn't start")
                 agent_process.not_responding
               else
@@ -37,7 +37,7 @@ module Smith
             when 'dead'
               logger.info("Restarting dead agent: #{agent_process.name}")
               Messaging::Sender.new('agency.control').ready do |sender|
-                sender.publish(ACL::Payload.new(:agency_command).content(:command => :start, :options => [agent_process.name]))
+                sender.publish(ACL::Payload.new(:agency_command).content(:command => 'start', :args => [agent_process.name]))
               end
             when 'unknown'
               logger.info("Agent is in an unknown state: #{agent_process.name}")

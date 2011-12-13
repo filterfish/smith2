@@ -16,7 +16,7 @@ module Smith
     property :name,             String, :required => true
     property :state,            String, :required => true
     property :pid,              String
-    property :started_at,       Time
+    property :started_at,       Integer
     property :last_keep_alive,  Integer
     property :monitor,          Boolean
     property :singleton,        Boolean
