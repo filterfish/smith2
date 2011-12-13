@@ -18,8 +18,8 @@ module Smith
           else
             load "#{e}.pb.rb"
             logger.debug("#{class_name} Loaded from #{e}.pb.rb")
-            ACL.const_get(class_name) do |clazz|
-              @@pb_classes << class_name
+            ACL.const_get(class_name).tap do |clazz|
+              @@pb_classes[e] = clazz
             end
           end
         end
