@@ -89,3 +89,9 @@
 
 * Set default config for all options that make sense (which I think is
   all of tthem).
+
+
+* Think about a generator to write the directory structure and what that
+directory
+structer might
+look like. 
