@@ -95,4 +95,5 @@
 * I've added a method called add_agent_load_path to the bootstrapper. When
   thinking about the above make sure you check whether that method fits.
 
-* Add an option to the agency to specify a different config file.
+* Add an option to the agency to specify a different config file. Also
+check the local directory to see if there is a config there.
