@@ -4,7 +4,7 @@
 require 'pp'
 require 'pathname'
 
-root_path = Pathname.new('__FILE__').join('..').expand_path
+root_path = Pathname.new(__FILE__).dirname.join('..').expand_path
 $:.unshift(root_path.join('lib'))
 
 require 'smith'
