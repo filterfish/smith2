@@ -96,4 +96,7 @@
   thinking about the above make sure you check whether that method fits.
 
 * Add an option to the agency to specify a different config file. Also
-check the local directory to see if there is a config there.
+  check the local directory to see if there is a config there.
+
+* Think about how to make ./bin/send a general tool. Maybe write some rake
+  tasks.
