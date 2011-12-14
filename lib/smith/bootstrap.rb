@@ -36,6 +36,7 @@ module Smith
 
     def load_agent
       logger.debug("Loading #{@agent_name} from: #{@agent_filename.dirname}")
+      add_agent_load_path
       load @agent_filename
       @agent = Kernel.const_get(@agent_name).new
     end
@@ -100,6 +101,25 @@ module Smith
         str << exception.backtrace[0..-1].join("\n\t")
       end
       str
+    end
+
+    # Add the ../lib to the load path. This assumes the directory
+    # structure is:
+    #
+    # $ROOT_PATH/agents
+    #        .../lib
+    #
+    # where $ROOT_PATH can be anywhere.
+    #
+    # This needs to be better thought out.
+    # TODO think this through some more.
+    def add_agent_load_path
+      path = @agent_filename.dirname.dirname.join('lib')
+      # The load path may be a pathname or a string. Change to strings.
+      unless $:.detect { |p| p.to_s == path.to_s }
+        logger.debug("Adding #{path} to load path")
+        $: << path
+      end
     end
   end
 end
