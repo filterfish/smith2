@@ -37,8 +37,14 @@ module Smith
         @clazz = encoder_class(encoder)
       end
 
-      def content(content)
-        @encoder = @clazz.send(:new, content)
+      def content(*content, &block)
+        if content.empty?
+          raise ArgumentError, "No block given" if block.nil?
+          @encoder = @clazz.send(:new)
+          block.call(@encoder)
+        else
+          @encoder = @clazz.send(:new, content.first)
+        end
         self
       end
 
