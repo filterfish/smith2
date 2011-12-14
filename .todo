@@ -100,3 +100,7 @@
 
 * Think about how to make ./bin/send a general tool. Maybe write some rake
   tasks.
+
+* Add some code to check the message type. At least for internal smith code. In
+  the case of agency.control if the message is not AgencyCommand the agency will
+  crash.
