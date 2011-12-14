@@ -104,3 +104,5 @@
 * Add some code to check the message type. At least for internal smith code. In
   the case of agency.control if the message is not AgencyCommand the agency will
   crash.
+
+* Make an equivalent of ripl-rails: ripl-smith
