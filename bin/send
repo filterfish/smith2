@@ -3,36 +3,62 @@
 
 $:.unshift(File.dirname(__FILE__) + '/../lib')
 
+require 'pp'
 require 'smith'
 require 'trollop'
+require 'multi_json'
+
+def json_to_payload(data, type)
+  Smith::ACL::Payload.new(type.to_sym).content do |m|
+    data.each do |k,v|
+      m.send("#{k}=".to_sym, v)
+    end
+  end
+end
 
 parser = Trollop::Parser.new do
-  banner "usage: #{$0} OPTIONS <queue> <payload>"
+  banner "usage: #{$0} OPTIONS <queue> <file>"
 
-  opt :number,    "the number of times to send the message", :type => :integer, :default => 1, :short => :n
-  opt :dynamic,   "send message to a dynamic queue", :type => :boolean, :default => false, :short => :d
+  opt :type,          "message type", :type => :string, :default => 'default', :short => :t
+  opt :json,          "supply the json  as a string", :type => :string, :short => :j
+  opt :number,        "the number of times to send the message", :type => :integer, :default => 1, :short => :n
+  opt :auto_delete,   "send message to a dynamic queue", :type => :boolean, :default => false, :short => :a
+  opt :durable,       "send message to a durable queue", :type => :boolean, :default => true, :short => :d
 end
 
 opts = Trollop::with_standard_exception_handling parser do
-  raise Trollop::HelpNeeded if ARGV.size < 2
-  parser.parse ARGV
+  parser.parse(ARGV).tap do |o|
+    raise Trollop::HelpNeeded if ARGV.size < 2 && !(ARGV.size == 1 && o.json_given)
+  end
 end
 
 queue_name = ARGV[0]
-payload = ARGV[1]
+file = ARGV[1]
+
+json_data = (opts.json_given) ? opts[:json] : Pathname.new(file).read
 
 Smith.start do
-  Smith::Messaging::Sender.new(queue_name, :auto_delete => opts[:dynamic]).ready do |s|
-    work = proc do |n,iter|
-      s.publish(Smith::ACL::Payload.new.content(payload), :persistent => true, :nowait => false) do
-        iter.next
+  $: << Smith.pb_cache_path
+
+  begin
+    payload = json_to_payload(MultiJson.decode(json_data, :symbolize_keys => true), opts[:type])
+
+    Smith::Messaging::Sender.new(queue_name, :auto_delete => opts[:auto_delete], :durable => opts[:durable]).ready do |sender|
+      work = proc do |n,iter|
+        sender.publish(payload, :persistent => true, :nowait => false) do
+          iter.next
+        end
       end
-    end
 
-    done = proc do
-      Smith.stop(true)
-    end
+      done = proc do
+        Smith.stop(true)
+      end
 
-    EM::Iterator.new(0..opts[:number] - 1).each(work, done)
+      EM::Iterator.new(0..opts[:number] - 1).each(work, done)
+
+    end
+  rescue MultiJson::DecodeError => e
+    puts e.message
+    Smith.stop(true)
   end
 end
