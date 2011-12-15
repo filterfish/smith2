@@ -7,10 +7,12 @@ module Smith
 
     @@agent_options = Smith.config.agent
 
-    attr_accessor :name
+    attr_reader :name, :pid
 
     def initialize(options={})
       @name = self.class.to_s
+      @pid = $$
+
       @signal_handlers = Hash.new { |h,k| h[k] = Array.new }
       @queues = Cache.new
       @queues.operator ->(name, options={}) {
@@ -36,7 +38,7 @@ module Smith
       acknowledge_start
       start_keep_alive
 
-      logger.info("Starting #{name}:[#{$$}]")
+      logger.info("Starting #{name}:[#{pid}]")
     end
 
     def subscribe(queue, options={}, &block)
