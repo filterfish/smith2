@@ -90,7 +90,9 @@
   all of tthem).
 
 * Think about a generator to write the directory structure and what that
-  directory structer might look like.
+  directory structer might look like. Change Smith.root to the root of directory
+  structure. You will need to think about what to do with the agent_path (ie the
+  fact that multiple paths are alllowed).
 
 * I've added a method called add_agent_load_path to the bootstrapper. When
   thinking about the above make sure you check whether that method fits.
@@ -106,3 +108,7 @@
   crash.
 
 * Make an equivalent of ripl-rails: ripl-smith
+
+* command line options to pass to the agency:
+
+  * environment.
