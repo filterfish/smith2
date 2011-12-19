@@ -21,6 +21,9 @@ module Smith
       }
 
       setup_control_queue
+      #setup_stats
+
+      @start_time = Time.now
 
       EM.threadpool_size = 1
     end
@@ -136,6 +139,24 @@ module Smith
             end
           else
             logger.warn("Unknown command: #{level} -> #{level.inspect}")
+          end
+        end
+      end
+    end
+
+    def setup_stats_queue
+      Messaging::Sender.new('agent.stats').ready do |sender|
+        EventMachine.add_timer(2) do
+          sender.consumers? do |consumers|
+            if consumers > 0
+              payload = ACL::Payload.new(:agent_stats) do |p|
+                p.pid = self.pid
+                p.rss = (File.read("/proc/#{pid}/statm").split[1].to_i * 4) / 1024 # This assums the page size is 4K & is MB
+                p.up_time = (Time.now - @start_time).to_i
+              end
+
+              sender.publish(payload)
+            end
           end
         end
       end
