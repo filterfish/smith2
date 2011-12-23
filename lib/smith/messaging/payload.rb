@@ -4,7 +4,7 @@ module Smith
 
     module ClassMethods
       def encoder_class(e)
-        @@pb_classes ||= {:default => Default, :agency_command => AgencyCommand}
+        @@pb_classes ||= {:default => Default}
 
         e = e.to_sym
 

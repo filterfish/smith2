@@ -2,8 +2,8 @@
 require 'amqp'
 require 'tmpdir'
 require 'logging'
-require 'beefcake'
 require 'pathname'
+require 'fileutils'
 require 'optimism'
 require 'dm-core'
 require 'securerandom'
@@ -51,11 +51,12 @@ module Smith
       @pb_cache_path ||= if Smith.config.agency._has_key?(:protocol_buffer_cache_path)
         Pathname.new(Smith.config.agency.protocol_buffer_cache_path)
       else
-        pre_existing_cache_dir = Pathname.glob(Pathname.new(Dir.tmpdir).join("smith-pb*"))
-        if pre_existing_cache_dir.empty?
-          Pathname.new(Dir.mktmpdir("smith-pb-"))
+        cache_dir = Pathname.new(ENV['HOME']).join('.smith').join('pb')
+        if cache_dir.exist?
+          cache_dir
         else
-          pre_existing_cache_dir.first
+          FileUtils.mkdir_p(cache_dir)
+          cache_dir
         end
       end
     end
@@ -196,7 +197,6 @@ require_relative 'smith/agent_process'
 require_relative 'smith/agent_monitoring'
 require_relative 'smith/command'
 require_relative 'smith/messaging/encoders/default'
-require_relative 'smith/messaging/encoders/agency_command'
 require_relative 'smith/messaging/payload'
 require_relative 'smith/messaging/endpoint'
 require_relative 'smith/messaging/exceptions'
