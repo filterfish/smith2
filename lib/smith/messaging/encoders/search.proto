@@ -1,3 +1,4 @@
+package Smith.ACL;
 message SearchResponse {
   message Result {
     required string url = 1;

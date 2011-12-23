@@ -1,3 +1,4 @@
+package Smith.ACL;
 message AgentKeepalive {
   required string name = 1;
   optional string pid = 2;

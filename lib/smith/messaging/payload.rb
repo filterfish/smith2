@@ -55,12 +55,16 @@ module Smith
 
       # Encode the message, returning the encoded data.
       def encode
-        @encoder.encode
+        @encoder.serialize_to_string
+      end
+
+      def initialized?
+        @encoder.initialized?
       end
 
       # Decode the message using the specified decoder.
       def self.decode(payload, decoder=:default)
-        encoder_class(decoder).decode(payload)
+        encoder_class(decoder).new.parse_from_string(payload)
       end
     end
   end

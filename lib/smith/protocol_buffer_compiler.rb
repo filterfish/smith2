@@ -1,7 +1,6 @@
 # -*- encoding: utf-8 -*-
 require 'pp'
-require 'state_machine'
-require 'dm-observer'
+require 'protobuf/compiler/compiler'
 
 module Smith
   class ProtocolBufferCompiler
@@ -10,7 +9,6 @@ module Smith
 
     def initialize(force=false)
       @cache_path = Smith.pb_cache_path
-      @command = "sh -c \"BEEFCAKE_NAMESPACE=Smith::ACL protoc --beefcake_out #{@cache_path.realpath} -I%s %s\""
     end
 
     def compile
@@ -20,7 +18,8 @@ module Smith
         path_glob(path) do |p|
           if should_compile?(p)
             logger.info("Compiling: #{p} into #{@cache_path}")
-            results[p.to_s] = `#{@command % [path.realpath, p]}`
+            # TODO put some error handling here.
+            Protobuf::Compiler.compile(p.basename, p.dirname, @cache_path)
           end
         end
 

@@ -11,11 +11,16 @@ module Smith
         @message = message
       end
 
-      def encode
+      # Always return true. There is no validation.
+      def initialized?
+        true
+      end
+
+      def serialize_to_string
         Marshal.dump(@message)
       end
 
-      def self.decode(message)
+      def parse_from_string(message)
         Marshal.load(message)
       end
 
