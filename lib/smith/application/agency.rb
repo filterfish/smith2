@@ -19,7 +19,9 @@ module Smith
         receiver.subscribe_and_reply do |header,payload,responder|
 
           # Add a logger proc to the responder chain.
-          responder.callback {|ret| logger.debug(ret) if ret && !ret.empty?}
+          responder.callback do |ret|
+            logger.debug(ret) if ret && !ret.empty?
+          end
 
           begin
             Command.run(payload.command, payload.args, :agency => self,  :agents => @agent_processes, :responder => responder)

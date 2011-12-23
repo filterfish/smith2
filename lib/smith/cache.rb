@@ -25,7 +25,7 @@ module Smith
     end
 
     def each
-        @cache.each_value { |v| yield v }
+      @cache.each_value { |v| yield v }
     end
 
     def empty?
