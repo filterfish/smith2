@@ -24,6 +24,10 @@ module Smith
         Marshal.load(message)
       end
 
+      def to_s
+        @message.inspect
+      end
+
       def method_missing(method, args)
         index = method.to_s.sub(/=$/, '').to_sym
         @message[index] = args

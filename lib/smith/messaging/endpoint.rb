@@ -4,23 +4,27 @@ module Smith
     class Endpoint
       include Logger
 
-      def initialize(queue_name, queue_opts={})
-        set_endpoint_options(queue_name, queue_opts)
+      def initialize(queue_name, options)
+        @denomalized_queue_name = queue_name
+        @queue_name = normalise(queue_name)
+        @message_counts = Hash.new(0)
+        @options = options
       end
 
       def ready(&blk)
-        Smith.channel.direct(@queue_name, @exchange_options) do |exchange|
+        Smith.channel.direct(@queue_name, options.exchange) do |exchange|
           @exchange = exchange
 
           exchange.on_return do |basic_return, metadata, payload|
-            logger.error("#{Payload.decode(payload.clone, :default)} was returned! reply_code = #{basic_return.reply_code}, reply_text = #{basic_return.reply_text}")
+            logger.error("#{ACL::Payload.decode(payload.clone, metadata.type)} was returned! reply_code = #{basic_return.reply_code}, reply_text = #{basic_return.reply_text}")
           end
 
-          logger.verbose("Creating queue: #{@queue_name} with options: #{@queue_options}")
+          logger.verbose("Creating queue: [queue]:#{denomalized_queue_name} [options]:#{options.queue}")
 
-          Smith.channel.queue(@queue_name, @queue_options) do |queue|
+          Smith.channel.queue(queue_name, options.queue) do |queue|
             @queue = queue
-            queue.bind(exchange, :routing_key => @queue_name)
+            @options.queue_name = queue_name
+            queue.bind(exchange, :routing_key => queue_name)
             blk.call(self)
           end
         end
@@ -38,7 +42,7 @@ module Smith
         end
       end
 
-      def messages?(blk=nil, err=proc {logger.debug("No messages on #{@queue.name}")})
+      def messages?(blk=nil, err=proc {logger.debug("No messages on #{@denomalized_queue_name}")})
         number_of_messages do |n|
           if n > 0
             if blk.respond_to? :call
@@ -52,7 +56,7 @@ module Smith
         end
       end
 
-      def consumers?(blk=nil, err=proc {logger.debug("Nothing listening on #{@queue.name}")})
+      def consumers?(blk=nil, err=proc {logger.debug("Nothing listening on #{@denomalized_queue_name}")})
         number_of_consumers do |n|
           if n > 0
             if blk.respond_to? :call
@@ -74,7 +78,7 @@ module Smith
 
       protected
 
-      attr_accessor :exchange, :queue, :queue_name, :queue_options
+      attr_accessor :exchange, :queue, :queue_name, :denomalized_queue_name, :options
 
       def denormalise(name)
         name.sub(/#{Regexp.escape("#{Smith.config.smith.namespace}.")}/, '')
@@ -92,13 +96,6 @@ module Smith
 
       def random(prefix = '', suffix = '')
         "#{prefix}#{SecureRandom.hex(8)}#{suffix}"
-      end
-
-      def set_endpoint_options(queue_name, queue_opts)
-        @queue_name = normalise(queue_name)
-        amqp_options = Smith.config.amqp
-        @exchange_options = amqp_options.exchange._child
-        @queue_options = amqp_options.queue._child.merge(queue_opts)
       end
     end
   end

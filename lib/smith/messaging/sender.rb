@@ -3,21 +3,19 @@ module Smith
   module Messaging
     class Sender < Endpoint
 
-      def initialize(queue_name, queue_opts={})
+      def initialize(queue_name, opts={})
 
         # These should probably go into the endpoint.
-        @auto_ack = queue_opts.delete(:auto_ack) || true
-        @threading = queue_opts.delete(:threading) || false
-
-        set_sender_options
-        super
+        @auto_ack = opts.delete(:auto_ack) || true
+        @threading = opts.delete(:threading) || false
+        super(queue_name, AmqpOptions.new(opts))
       end
 
-      def publish(message, opts={}, &block)
-        _publish(message, @normal_publish_options.merge(opts), &block)
+      def publish(message, &block)
+        _publish(message, options.publish(:type => message.type) , &block)
       end
 
-      def publish_and_receive(message, opts={}, &block)
+      def publish_and_receive(message, &block)
         message_id = random
         Receiver.new(message_id).ready do |receiver|
           receiver.subscribe do |metadata,payload,responder|
@@ -44,21 +42,16 @@ module Smith
           # possible (in fact likely) that you will lose messages. The reason
           # is that a message can be published and responded to before the
           # receive queue is set up.
-          options = {:reply_to => message_id, :message_id => message_id}.merge(opts)
-          _publish(message, @receive_publish_options.merge(options))
+          _publish(message, options.publish(:reply_to => message_id, :message_id => message_id, :type => message.type))
         end
-      end
-
-      def _publish(message, opts={}, &block)
-        logger.verbose("Publishing to: #{queue.name} #{queue.opts}: #{message.inspect} of type #{message.type}")
-        exchange.publish(message.encode, {:routing_key => queue.name, :type => message.type}.merge(opts), &block)
       end
 
       private
 
-      def set_sender_options
-        @normal_publish_options = Smith.config.amqp.publish._child
-        @receive_publish_options = Smith.config.amqp.publish._child.merge(:exclusive => true)
+      def _publish(message, opts, &block)
+        update_counter(queue)
+        logger.verbose("Publishing to: [queue]:#{denomalized_queue_name} [message]: #{message} [options]:#{opts}")
+        exchange.publish(message.encode, opts, &block)
       end
     end
   end

@@ -15,25 +15,23 @@ module Smith
     end
 
     def setup_queues
-      Messaging::Receiver.new('agency.control').ready do |receiver|
-        receiver.subscribe_and_reply do |header,payload,responder|
+      Messaging::Receiver.new('agency.control', :strict => true).ready do |receiver|
+        receiver.subscribe do |metadata,payload|
+          receiver.reply(metadata) do |responder|
+            # Add a logger proc to the responder chain.
+            responder.callback { |ret| logger.debug(ret) if ret && !ret.empty? }
 
-          # Add a logger proc to the responder chain.
-          responder.callback do |ret|
-            logger.debug(ret) if ret && !ret.empty?
-          end
-
-          begin
-            Command.run(payload.command, payload.args, :agency => self,  :agents => @agent_processes, :responder => responder)
-          rescue Command::UnkownCommandError => e
-            responder.callback {|ret| logger.warn(ret) if ret && !ret.empty?}
-            responder.value("Unknown command: #{payload.command}")
+            begin
+              Command.run(payload.command, payload.args, :agency => self,  :agents => @agent_processes, :responder => responder)
+            rescue Command::UnkownCommandError => e
+              responder.value("Unknown command: #{payload.command}")
+            end
           end
         end
       end
 
       Messaging::Receiver.new('agent.lifecycle').ready do |receiver|
-        receiver.subscribe do |header, payload|
+        receiver.subscribe do |metadata, payload|
           case payload.state
           when 'dead'
             dead(payload)
@@ -48,7 +46,7 @@ module Smith
       end
 
       Messaging::Receiver.new('agent.keepalive').ready do |receiver|
-        receiver.subscribe do |header, agent_data|
+        receiver.subscribe do |metadata, agent_data|
           keep_alive(agent_data)
         end
       end

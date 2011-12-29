@@ -8,14 +8,14 @@ require 'smith'
 module Smith
   class SmithControl
     def send_command(command, args, &blk)
-      Messaging::Sender.new('agency.control').ready do |sender|
+      Messaging::Sender.new('agency.control', :persistent => true,  :strict => true).ready do |sender|
 
         sender.timeout(2) { puts "Timeout. Is the agency still running"; Smith.stop(true) }
 
         payload = ACL::Payload.new(:agency_command).content(:command => command, :args => args)
 
         callback = proc do |sender|
-          sender.publish_and_receive(payload, :persistent => true, &blk)
+          sender.publish_and_receive(payload, &blk)
         end
 
         errback = proc do puts "Agency not running"

@@ -9,7 +9,7 @@ module Smith
         e = e.to_sym
 
         if @@pb_classes.include?(e)
-          logger.debug("Using: #{e}") if logger.level = :debug
+          logger.verbose("Using: #{e}") if logger.level == :verbose
           @@pb_classes[e]
         else
           class_name = Extlib::Inflection.camelize(e)
@@ -48,7 +48,7 @@ module Smith
         self
       end
 
-      # The type of encoder as a string
+      # The type of encoder.
       def type
         @type.to_s
       end
@@ -60,6 +60,10 @@ module Smith
 
       def initialized?
         @encoder.initialized?
+      end
+
+      def to_s
+        "#{@type.to_s}: #{@encoder.inspect}"
       end
 
       # Decode the message using the specified decoder.

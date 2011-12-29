@@ -10,61 +10,52 @@ module Smith
       def initialize(queue_name, opts={})
         @auto_ack = opts.delete(:auto_ack) || true
         @threading = opts.delete(:threading) || false
-
-        set_receiver_options
-        super
+        super(queue_name, AmqpOptions.new(opts))
       end
 
       # Subscribes to a queue and passes the headers and payload into the
       # block. +subscribe+ will automatically acknowledge the message unless
       # the options sets :ack to false.
-      def subscribe(opts={}, &block)
-        _subscribe(@queue, @normal_subscribe_options.merge(opts), &block)
-      end
-
-      # Subscribes to a queue, passing the headers and payload into the block,
-      # and publishes the result of the block to the reply_to queue.
-      # +subscribe_and_reply+ will automatically acknowledge the message unless
-      # the options sets :ack to false.
-      def subscribe_and_reply(opts={}, &block)
-        _subscribe(@queue, @receive_subscribe_options.merge(opts)) do |metadata,payload,responder|
-          if metadata.reply_to
-            options = @receive_publish_options.merge(:routing_key => normalise(metadata.reply_to), :correlation_id => metadata.message_id).merge(opts)
-            responder.callback do |return_value|
-              Sender.new(metadata.reply_to).ready do |sender|
-                sender.publish(ACL::Payload.new(:default).content(return_value), options)
-              end
-            end
-          else
-            # Null responder. If a call on the responder is made log a warning. Something is wrong.
-            responder.callback do |return_value|
-              logger.error("You are responding to a message that has no reply_to on queue: #{@queue.name}.")
-              logger.verbose("Queue options: #{metadata.exchange}.")
-            end
-          end
-
-          block.call(metadata, payload, responder)
-        end
-      end
-
-      def _subscribe(queue, opts, &block)
+      def subscribe(&block)
         if !@queue.subscribed?
-          logger.verbose("Subscribing to: #{queue.name} #{queue.opts}")
+          opts = options.subscribe
+          logger.verbose("Subscribing to: [queue]:#{denomalized_queue_name} [options]:#{opts}")
           queue.subscribe(opts) do |metadata,payload|
-            responder = Responder.new
             if payload
-              decoded_payload = ACL::Payload.decode(payload, metadata.type)
-              logger.verbose("Received message on: #{queue.name} #{opts}: #{decoded_payload.inspect}")
+              message = ACL::Payload.decode(payload, metadata.type)
+              logger.verbose("Received message on: [queue]:#{denomalized_queue_name} [message]: #{message} [options]:#{opts}")
               thread(metadata) do
-                block.call(metadata, decoded_payload, responder)
+                block.call(metadata, message)
               end
             else
-              logger.verbose("Received null message on: #{queue}")
+              logger.verbose("Received null message on: #{denomalized_queue_name} [options]:#{opts}")
             end
           end
         else
-          logger.error("Queue is already subscribed too. Not listening on: #{denormalise(queue_name)}")
+          logger.error("Queue is already subscribed too. Not listening on: #{denormalise_queue_name}")
         end
+      end
+
+      # Reply to a message. If reply_to header is not set a error will be logged
+      def reply(metadata, &block)
+        responder = Responder.new
+        if metadata.reply_to
+          opts = options.publish(:correlation_id => metadata.message_id)
+          responder.callback do |return_value|
+            Sender.new(metadata.reply_to, opts).ready do |sender|
+              logger.verbose("Replying on: #{metadata.reply_to}") if logger.level == 0
+              sender.publish(ACL::Payload.new(:default).content(return_value))
+            end
+          end
+        else
+          # Null responder. If a call on the responder is made log a warning. Something is wrong.
+          responder.callback do |return_value|
+            logger.error("You are responding to a message that has no reply_to on queue: #{denomalized_queue_name}.")
+            logger.verbose("Queue options: #{metadata.exchange}.")
+          end
+        end
+
+        block.call(responder)
       end
 
       # pops a message off the queue and passes the headers and payload
@@ -101,17 +92,6 @@ module Smith
           block.call
           metadata.ack if @auto_ack
         end
-      end
-
-      def set_receiver_options
-        @normal_pop_options = Smith.config.amqp.pop._child
-        @normal_subscribe_options = Smith.config.amqp.subscribe._child
-        @receive_pop_options = Smith.config.amqp.pop._child.merge(:immediate => true, :mandatory => true)
-        @receive_subscribe_options = Smith.config.amqp.subscribe._child.merge(:immediate => true, :mandatory => true)
-
-        # We need the publish opts as well.
-        @normal_publish_options = Smith.config.amqp.publish._child
-        @receive_publish_options = Smith.config.amqp.publish._child.merge(:exclusive => true, :immediate => true, :mandatory => true)
       end
     end
   end
