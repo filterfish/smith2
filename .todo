@@ -27,6 +27,8 @@
 
     smithctl group start <group name> smithctl group stop <group name>
 
+  See "Agents should be namespace-able"
+
 * The list command should check to see if the agent is actually alive and
   add that information to the output.
 
@@ -112,3 +114,10 @@
 * command line options to pass to the agency:
 
   * environment.
+
+* Attach metadata to the agent so a sysadm can get an idea about what the agent
+  is for.
+
+* This command to smithctl to return the queue names the agent is using.
+
+* Add the ability ot clone an agent.
