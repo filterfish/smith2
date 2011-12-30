@@ -34,6 +34,9 @@ module Smith
             target.map do |agent|
               agents[agent].name = agent
               if agents[agent].path
+                if options[:kill]
+                  agents[agent].kill
+                end
                 agents[agent].start
                 nil
               else
@@ -50,6 +53,7 @@ module Smith
         command = self.class.to_s.split(/::/).last.downcase
         Trollop::Parser.new do
           banner  Command.banner(command)
+          opt     :kill,     "Reset the state of the agent before starting", :short => :k
           opt     :group,     "Start everything in the specified group", :type => :string, :short => :g
         end
       end
