@@ -49,7 +49,7 @@ module Smith
       private
 
       def _publish(message, opts, &block)
-        update_counter(queue)
+        increment_counter
         logger.verbose("Publishing to: [queue]:#{denomalized_queue_name} [message]: #{message} [options]:#{opts}")
         exchange.publish(message.encode, opts, &block)
       end

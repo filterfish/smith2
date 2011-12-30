@@ -4,6 +4,8 @@ module Smith
     class Endpoint
       include Logger
 
+      attr_accessor :denomalized_queue_name
+
       def initialize(queue_name, options)
         @denomalized_queue_name = queue_name
         @queue_name = normalise(queue_name)
@@ -42,6 +44,11 @@ module Smith
         end
       end
 
+      # Return the total number of messages sent or received for the named queue.
+      def counter
+        @message_counts[queue_name]
+      end
+
       def messages?(blk=nil, err=proc {logger.debug("No messages on #{@denomalized_queue_name}")})
         number_of_messages do |n|
           if n > 0
@@ -78,7 +85,11 @@ module Smith
 
       protected
 
-      attr_accessor :exchange, :queue, :queue_name, :denomalized_queue_name, :options
+      attr_accessor :exchange, :queue, :queue_name, :options
+
+      def increment_counter(value=1)
+        @message_counts[queue_name] += value
+      end
 
       def denormalise(name)
         name.sub(/#{Regexp.escape("#{Smith.config.smith.namespace}.")}/, '')

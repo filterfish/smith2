@@ -21,7 +21,7 @@ module Smith
       }
 
       setup_control_queue
-      #setup_stats
+      setup_stats_queue
 
       @start_time = Time.now
 
@@ -145,18 +145,20 @@ module Smith
     end
 
     def setup_stats_queue
-      Messaging::Sender.new('agent.stats').ready do |sender|
-        EventMachine.add_timer(2) do
+      Messaging::Sender.new('agent.stats', :durable => false, :auto_delete => false).ready do |sender|
+        EventMachine.add_periodic_timer(2) do
           sender.consumers? do |consumers|
-            if consumers > 0
-              payload = ACL::Payload.new(:agent_stats) do |p|
-                p.pid = self.pid
-                p.rss = (File.read("/proc/#{pid}/statm").split[1].to_i * 4) / 1024 # This assums the page size is 4K & is MB
-                p.up_time = (Time.now - @start_time).to_i
+            payload = ACL::Payload.new(:agent_stats).content do |p|
+              p.agent_name = self.name
+              p.pid = self.pid
+              p.rss = (File.read("/proc/#{pid}/statm").split[1].to_i * 4) / 1024 # This assums the page size is 4K & is MB
+              p.up_time = (Time.now - @start_time).to_i
+              queues.each do |q|
+                p.queues << ACL::AgentStats::QueueStats.new(:name => q.denomalized_queue_name, :type => q.class.to_s, :length => q.counter)
               end
-
-              sender.publish(payload)
             end
+
+            sender.publish(payload)
           end
         end
       end

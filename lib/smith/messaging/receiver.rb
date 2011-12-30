@@ -24,6 +24,7 @@ module Smith
             if payload
               message = ACL::Payload.decode(payload, metadata.type)
               logger.verbose("Received message on: [queue]:#{denomalized_queue_name} [message]: #{message} [options]:#{opts}")
+              increment_counter
               thread(metadata) do
                 block.call(metadata, message)
               end
