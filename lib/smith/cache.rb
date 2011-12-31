@@ -13,7 +13,15 @@ module Smith
     end
 
     def entry(name, options=nil)
-      @cache[name] ||= @operator.call(name, options)
+      if @cache[name]
+        @cache[name]
+      else
+        if @operator.respond_to?(:call)
+          @cache[name] = @operator.call(name, options)
+        else
+          nil
+        end
+      end
     end
 
     def entries
@@ -43,8 +51,6 @@ module Smith
     def to_s
       @cache.to_s
     end
-
-    protected
 
     def update(name, entry)
       @cache[name] = entry
