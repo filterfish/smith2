@@ -5,11 +5,9 @@ module Smith
 
       include Logger
 
-      attr_reader :auto_ack, :threading
-
       def initialize(queue_name, opts={})
-        @auto_ack = opts.delete(:auto_ack) || true
-        @threading = opts.delete(:threading) || false
+        @auto_ack = (opts.has_key?(:auto_ack)) ? opts.delete(:auto_ack) : true
+        @threading = (opts.has_key?(:threading)) ? opts.delete(:threading) : false
         super(queue_name, AmqpOptions.new(opts))
       end
 
@@ -75,6 +73,14 @@ module Smith
         end
       end
 
+      def threading?
+        @threading
+      end
+
+      def auto_ack?
+        @auto_ack
+      end
+
       private
 
       # Controls whether to use threads or not. Given that I need to ack in the
@@ -82,16 +88,16 @@ module Smith
       # to auto ack or not. This is because it can get called twice and we don't
       # want to ack more than once or an error will be thrown.
       def thread(metadata, &block)
-        logger.verbose("Threads: #{threading}")
-        logger.verbose("auto_ack: #{auto_ack}")
-        if @threading
+        logger.verbose("Threads: #{threading?}")
+        logger.verbose("auto_ack: #{auto_ack?}")
+        if threading?
           EM.defer do
             block.call
-            metadata.ack if @auto_ack
+            metadata.ack if auto_ack?
           end
         else
           block.call
-          metadata.ack if @auto_ack
+          metadata.ack if auto_ack?
         end
       end
     end

@@ -47,8 +47,8 @@ module Smith
     def subscribe(queue, options={}, &block)
       threading = options.delete(:threading)
       queue(queue, :type => :receiver, :threading => threading, :auto_delete => false).ready do |receiver|
-        logger.debug("Queue handler for #{queue} is #{(receiver.threading) ? "using" : "not using"} threads.")
-        receiver.subscribe(options) do |header,payload,responder|
+        logger.debug("Queue handler for #{queue}. threading: #{receiver.threading?} auto_ack: #{receiver.auto_ack?}")
+        receiver.subscribe do |header,payload,responder|
           block.call(header, payload, responder)
         end
       end
@@ -57,7 +57,7 @@ module Smith
     def subscribe_and_reply(queue, options={}, &block)
       threading = options.delete(:threading)
       queue(queue, :type => :receiver, :threading => threading, :auto_delete => false).ready do |receiver|
-        logger.debug("Queue handler for #{queue} is #{(receiver.threading) ? "using" : "not using"} threads.")
+        logger.debug("Queue handler for #{queue}. threading: #{receiver.threading?} auto_ack: #{receiver.auto_ack?}")
         receiver.subscribe_and_reply(options) do |metadata,payload,responder|
           block.call(metadata, payload, responder)
         end
