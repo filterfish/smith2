@@ -12,24 +12,26 @@ describe Smith::QueueFactory do
     end
 
     it 'should raise an exception when an incorrect queue type is instantiated' do
-      expect { factory.queue('random.queue.name', :pants) }.to raise_error(ArgumentError)
-    end
-
-    it 'should raise an exception when an already existing queue is instantiated' do
-      expect { factory.queue('random.queue.name', :pants) }.to raise_error(Exception)
+      expect { factory.create('random.queue.name', :pants) }.to raise_error(ArgumentError)
     end
 
     it 'should return all instantiated queues' do
 
       queues = {}
-      queues['random.receiver.queue.name'] = factory.queue('random.receiver.queue.name', :receiver)
-      queues['random.sender.queue.name'] = factory.queue('random.sender.queue.name', :sender)
+      queues['random.receiver.queue.name'] = factory.create('random.receiver.queue.name', :receiver)
+      queues['random.sender.queue.name'] = factory.create('random.sender.queue.name', :sender)
 
       factory.queues.size.should == 2
 
-      factory.queues do |queue|
-        queue.should == queues[queue.denomalized_queue_name]
+      factory.each_queue do |queue|
+        queue.should == factory.queues[queue.denomalized_queue_name]
       end
+    end
+
+    it 'should not return :dont_cache queues' do
+      factory.create('random.sender.queue.name', :sender, :dont_cache => true)
+
+      factory.queues.size.should == 0
     end
   end
 
@@ -37,7 +39,7 @@ describe Smith::QueueFactory do
     let(:factory) { Smith::QueueFactory.new }
 
     it 'should instantiate a queue with default options.' do
-      queue = factory.queue('random.queue.name', :sender)
+      queue = factory.create('random.queue.name', :sender)
       queue.should be_a_kind_of(Smith::Messaging::Sender)
       queue.send(:queue_name).should == 'smith.random.queue.name'
       queue.denomalized_queue_name.should == 'random.queue.name'
@@ -46,7 +48,7 @@ describe Smith::QueueFactory do
     end
 
     it 'should correctly set additional queue options' do
-      queue = factory.queue('random.queue.name', :receiver, :auto_delete => false)
+      queue = factory.create('random.queue.name', :receiver, :auto_delete => false)
 
       queue.send(:options).queue.should == Smith.config.amqp.queue._child.merge(:auto_delete => false)
     end
@@ -56,7 +58,7 @@ describe Smith::QueueFactory do
     let(:factory) { Smith::QueueFactory.new }
 
     it 'should instantiate a queue with default options.' do
-      queue = factory.queue('random.queue.name', :receiver)
+      queue = factory.create('random.queue.name', :receiver)
       queue.should be_a_kind_of(Smith::Messaging::Receiver)
       queue.send(:queue_name).should == 'smith.random.queue.name'
       queue.denomalized_queue_name.should == 'random.queue.name'
@@ -65,13 +67,13 @@ describe Smith::QueueFactory do
     end
 
     it 'should correctly set additional queue options' do
-      queue = factory.queue('random.queue.name', :receiver, :auto_delete => false)
+      queue = factory.create('random.queue.name', :receiver, :auto_delete => false)
 
       queue.send(:options).queue.should == Smith.config.amqp.queue._child.merge(:auto_delete => false)
     end
 
     it 'should correctly set endpoint options' do
-      queue = factory.queue('random.queue.name', :receiver, :threading => true, :auto_ack => false)
+      queue = factory.create('random.queue.name', :receiver, :threading => true, :auto_ack => false)
 
       queue.threading?.should == true
       queue.auto_ack?.should == false
