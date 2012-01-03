@@ -24,6 +24,8 @@ module Smith
       end
     end
 
+    alias :[] :entry
+
     def entries
       @cache.keys.map(&:to_s)
     end
