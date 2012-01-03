@@ -3,6 +3,10 @@ module Smith
   module Messaging
     class Sender < Endpoint
 
+      include Logger
+
+      attr_accessor :options
+
       def initialize(queue_name, opts={})
 
         # These should probably go into the endpoint.
@@ -11,15 +15,15 @@ module Smith
         super(queue_name, AmqpOptions.new(opts))
       end
 
-      def publish(message, &block)
-        _publish(message, options.publish(:type => message.type) , &block)
+      def publish(message, opts={}, &block)
+        _publish(message, options.publish({:type => message.type}, opts) , &block)
       end
 
       def publish_and_receive(message, &block)
         message_id = random
         Receiver.new(message_id).ready do |receiver|
-          receiver.subscribe do |metadata,payload,responder|
 
+          receiver.subscribe do |metadata,payload|
             if metadata.correlation_id != message_id
               logger.error("Incorrect correlation_id: #{metadata.correlation_id}")
             end

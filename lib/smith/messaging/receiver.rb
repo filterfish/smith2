@@ -5,10 +5,13 @@ module Smith
 
       include Logger
 
+      attr_accessor :options
+
       def initialize(queue_name, opts={})
         @auto_ack = (opts.has_key?(:auto_ack)) ? opts.delete(:auto_ack) : true
         @threading = (opts.has_key?(:threading)) ? opts.delete(:threading) : false
         super(queue_name, AmqpOptions.new(opts))
+        @payloads = {}
       end
 
       # Subscribes to a queue and passes the headers and payload into the
@@ -39,11 +42,13 @@ module Smith
       def reply(metadata, &block)
         responder = Responder.new
         if metadata.reply_to
-          opts = options.publish(:correlation_id => metadata.message_id)
           responder.callback do |return_value|
-            Sender.new(metadata.reply_to, opts).ready do |sender|
+            Sender.new(metadata.reply_to).ready do |sender|
               logger.verbose("Replying on: #{metadata.reply_to}") if logger.level == 0
-              sender.publish(ACL::Payload.new(:default).content(return_value))
+
+              # Cache the Payload, it does make a difference. TODO check this is valid.
+              payload = @payloads[:default] ||= ACL::Payload.new(:default)
+              sender.publish(payload.content(return_value), sender.options.publish(:correlation_id => metadata.message_id))
             end
           end
         else
