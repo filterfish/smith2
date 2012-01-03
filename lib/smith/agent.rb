@@ -7,18 +7,15 @@ module Smith
 
     @@agent_options = Smith.config.agent
 
-    attr_reader :name, :pid
+    attr_reader :factory, :name, :pid
 
     def initialize(options={})
       @name = self.class.to_s
       @pid = $$
 
+      @factory = QueueFactory.new
+
       @signal_handlers = Hash.new { |h,k| h[k] = Array.new }
-      @queues = Cache.new
-      @queues.operator ->(name, options={}) {
-        type = options.delete(:type) || :sender # Default to creating a Sender.
-        (type == :sender) ? Messaging::Sender.new(name, options) : Messaging::Receiver.new(name, options)
-      }
 
       setup_control_queue
       setup_stats_queue
@@ -26,17 +23,6 @@ module Smith
       @start_time = Time.now
 
       EM.threadpool_size = 1
-    end
-
-    def run
-      raise ArgumentError, "You need to call Agent.task(&block)" if @@task.nil?
-
-      logger.debug("Setting up default queue: #{agent_queue_name}")
-      default_queue(:auto_delete => false).ready do |receiver|
-        receiver.subscribe do |metadata,payload,responder|
-          @@task.call(payload, responder)
-        end
-      end
 
       acknowledge_start
       start_keep_alive
@@ -44,37 +30,13 @@ module Smith
       logger.info("Starting #{name}:[#{pid}]")
     end
 
-    def subscribe(queue, options={}, &block)
-      threading = options.delete(:threading)
-      queue(queue, :type => :receiver, :threading => threading, :auto_delete => false).ready do |receiver|
-        logger.debug("Queue handler for #{queue}. threading: #{receiver.threading?} auto_ack: #{receiver.auto_ack?}")
-        receiver.subscribe do |header,payload,responder|
-          block.call(header, payload, responder)
-        end
-      end
-    end
+    def run
+      raise ArgumentError, "You need to call Agent.task(&block)" if @@task.nil?
 
-    def subscribe_and_reply(queue, options={}, &block)
-      threading = options.delete(:threading)
-      queue(queue, :type => :receiver, :threading => threading, :auto_delete => false).ready do |receiver|
-        logger.debug("Queue handler for #{queue}. threading: #{receiver.threading?} auto_ack: #{receiver.auto_ack?}")
-        receiver.subscribe_and_reply(options) do |metadata,payload,responder|
-          block.call(metadata, payload, responder)
-        end
-      end
-    end
+      logger.debug("Setting up default queue: #{default_queue_name}")
 
-    def publish(queue, payload, opts={}, &block)
-      queue(queue, :type => :sender, :auto_delete => false).ready do |sender|
-        sender.publish(payload, opts)
-      end
-    end
-
-    def publish_and_receive(queue, opts={}, payload, &block)
-      queue(queue, :type => :sender, :auto_delete => false).ready do |sender|
-        sender.publish_and_receive(payload, {:persistent => true, :nowait => false}.merge(opts)) do |metadata,payload|
-          block.call(metadata, payload, responder)
-        end
+      subscribe(default_queue_name, :auto_delete => false) do |metadata,payload|
+        @@task.call(payload)
       end
     end
 
@@ -86,6 +48,14 @@ module Smith
       @signal_handlers.each do |sig, handlers|
         trap(sig, proc { |sig| run_signal_handlers(sig, handlers) })
       end
+    end
+
+    def receiver(queue_name, opts={})
+      queues.receiver(queue_name, opts) { |receiver| yield receiver }
+    end
+
+    def sender(queue_name, opts={})
+      queues.sender(queue_name, opts) { |sender| yield sender }
     end
 
     class << self
@@ -121,9 +91,9 @@ module Smith
     end
 
     def setup_control_queue
-      logger.debug("Setting up control queue: #{agent_control_queue_name}")
-      control_queue.ready do |receiver|
-        receiver.subscribe do |header, payload|
+      logger.debug("Setting up control queue: #{control_queue_name}")
+      receiver(control_queue_name) do |control_queue|
+        control_queue.subscribe do |header, payload|
           logger.debug("Command received on agent control queue: #{payload.command} #{payload.options}")
 
           case payload.command
@@ -145,46 +115,48 @@ module Smith
     end
 
     def setup_stats_queue
-      Messaging::Sender.new('agent.stats', :durable => false, :auto_delete => false).ready do |sender|
+      # instantiate this queue without using the factory so it doesn't show
+      # up in the stats.
+      sender('agent.stats', :dont_cache => true, :durable => false, :auto_delete => false) do |stats_queue|
         EventMachine.add_periodic_timer(2) do
-          sender.consumers? do |consumers|
+          stats_queue.consumers? do |consumers|
             payload = ACL::Payload.new(:agent_stats).content do |p|
               p.agent_name = self.name
               p.pid = self.pid
               p.rss = (File.read("/proc/#{pid}/statm").split[1].to_i * 4) / 1024 # This assums the page size is 4K & is MB
               p.up_time = (Time.now - @start_time).to_i
-              queues.each do |q|
+              factory.each_queue do |q|
                 p.queues << ACL::AgentStats::QueueStats.new(:name => q.denomalized_queue_name, :type => q.class.to_s, :length => q.counter)
               end
             end
 
-            sender.publish(payload)
+            stats_queue.publish(payload)
           end
         end
       end
     end
 
     def acknowledge_start
-      message = {:state => 'acknowledge_start', :pid => $$.to_s, :name => self.class.to_s, :started_at => Time.now.utc.to_i.to_s}
-      Messaging::Sender.new('agent.lifecycle').ready do |sender|
-        sender.publish(ACL::Payload.new(:agent_lifecycle).content(agent_options.merge(message)))
+      sender('agent.lifecycle', :dont_cache => true) do |ack_start_queue|
+        message = {:state => 'acknowledge_start', :pid => $$.to_s, :name => self.class.to_s, :started_at => Time.now.utc.to_i.to_s}
+        ack_start_queue.publish(ACL::Payload.new(:agent_lifecycle).content(agent_options.merge(message)))
       end
     end
 
     def acknowledge_stop(&block)
-      message = {:state => 'acknowledge_stop', :pid => $$.to_s, :name => self.class.to_s}
-      Messaging::Sender.new('agent.lifecycle').ready do |sender|
-        sender.publish(ACL::Payload.new(:agent_lifecycle).content(message), :persistent => true, &block)
+      sender('agent.lifecycle', :dont_cache => true) do |ack_stop_queue|
+        message = {:state => 'acknowledge_stop', :pid => $$.to_s, :name => self.class.to_s}
+        ack_stop_queue.publish(ACL::Payload.new(:agent_lifecycle).content(message), &block)
       end
     end
 
     def start_keep_alive
       if agent_options[:monitor]
         EventMachine::add_periodic_timer(1) do
-          message = {:name => self.class.to_s, :pid => $$.to_s, :time => Time.now.utc.to_i.to_s}
-          queue('agent.keepalive', :type => :sender).ready do |sender|
-            sender.consumers? do |sender|
-              sender.publish(ACL::Payload.new(:agent_keepalive).content(message), :durable => false)
+          sender('agent.keepalive', :dont_cache => true, :durable => false) do |keep_alive_queue|
+            message = {:name => self.class.to_s, :pid => $$.to_s, :time => Time.now.utc.to_i.to_s}
+            keep_alive_queue.consumers? do |sender|
+              keep_alive_queue.publish(ACL::Payload.new(:agent_keepalive).content(message))
             end
           end
         end
@@ -193,35 +165,19 @@ module Smith
       end
     end
 
-    def message_opts(options={})
-      options.merge(@default_message_options)
+    def queues
+      @factory
     end
 
     def agent_options
       @@agent_options._child
     end
 
-    def queues
-      @queues
+    def control_queue_name
+      "#{default_queue_name}.control"
     end
 
-    def queue(queue_name, options={})
-      @queues.entry(queue_name, options)
-    end
-
-    def default_queue(options={})
-      queue(agent_queue_name, {:type => :receiver}.merge(options))
-    end
-
-    def control_queue
-      queue(agent_control_queue_name, :type => :receiver)
-    end
-
-    def agent_control_queue_name
-      "#{agent_queue_name}.control"
-    end
-
-    def agent_queue_name
+    def default_queue_name
       "agent.#{name.sub(/Agent$/, '').snake_case}"
     end
   end
