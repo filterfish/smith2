@@ -121,3 +121,8 @@
 * This command to smithctl to return the queue names the agent is using.
 
 * Add the ability ot clone an agent.
+
+* Add the list of ACL classes that an agent can use. This would then allow the
+  agent to complain if an unknown ACL type was sent to the agent.
+
+* Add code to verify the protocl buffer payload. It should go in Sender#_publish
