@@ -7,6 +7,13 @@ require 'smith'
 
 module Smith
   class SmithControl
+
+    include Logger
+
+    def initialize
+      log_level(:info)
+    end
+
     def send_command(command, args, &blk)
       Messaging::Sender.new('agency.control', :persistent => true,  :strict => true).ready do |sender|
 
