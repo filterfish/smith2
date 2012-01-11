@@ -130,3 +130,5 @@
 * Checksum the messages.
 
 * Add a sent time to the message.
+
+* Add internationalisation. It will also make error messages more consistent.
