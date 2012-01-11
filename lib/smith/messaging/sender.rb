@@ -21,7 +21,7 @@ module Smith
 
       def publish_and_receive(message, &block)
         message_id = random
-        Receiver.new(message_id).ready do |receiver|
+        Receiver.new(message_id, :auto_delete => true).ready do |receiver|
 
           receiver.subscribe do |r|
             if r.metadata.correlation_id != message_id

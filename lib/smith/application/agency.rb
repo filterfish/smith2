@@ -15,7 +15,7 @@ module Smith
     end
 
     def setup_queues
-      Messaging::Receiver.new('agency.control', :strict => true).ready do |receiver|
+      Messaging::Receiver.new('agency.control', :auto_delete => true, :durable => false, :strict => true).ready do |receiver|
         receiver.subscribe do |r|
           r.reply do |responder|
             # Add a logger proc to the responder chain.
@@ -30,7 +30,7 @@ module Smith
         end
       end
 
-      Messaging::Receiver.new('agent.lifecycle').ready do |receiver|
+      Messaging::Receiver.new('agent.lifecycle', :durable => false, :auto_delete => true).ready do |receiver|
         receiver.subscribe do |r|
           case r.payload.state
           when 'dead'
@@ -45,7 +45,7 @@ module Smith
         end
       end
 
-      Messaging::Receiver.new('agent.keepalive').ready do |receiver|
+      Messaging::Receiver.new('agent.keepalive', :durable => false, :auto_delete => true).ready do |receiver|
         receiver.subscribe do |r|
           keep_alive(r.payload)
         end

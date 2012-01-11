@@ -96,7 +96,7 @@ module Smith
 
     def setup_control_queue
       logger.debug("Setting up control queue: #{control_queue_name}")
-      receiver(control_queue_name) do |r|
+      receiver(control_queue_name, :auto_delete => true, :durable => false) do |r|
         logger.debug("Command received on agent control queue: #{r.payload.command} #{r.payload.options}")
 
         case r.payload.command
@@ -139,14 +139,14 @@ module Smith
     end
 
     def acknowledge_start
-      sender('agent.lifecycle', :dont_cache => true) do |ack_start_queue|
+      sender('agent.lifecycle', :auto_delete => true, :durable => false, :dont_cache => true) do |ack_start_queue|
         message = {:state => 'acknowledge_start', :pid => $$.to_s, :name => self.class.to_s, :started_at => Time.now.utc.to_i.to_s}
         ack_start_queue.publish(ACL::Payload.new(:agent_lifecycle).content(agent_options.merge(message)))
       end
     end
 
     def acknowledge_stop(&block)
-      sender('agent.lifecycle', :dont_cache => true) do |ack_stop_queue|
+      sender('agent.lifecycle', :auto_delete => true, :durable => false, :dont_cache => true) do |ack_stop_queue|
         message = {:state => 'acknowledge_stop', :pid => $$.to_s, :name => self.class.to_s}
         ack_stop_queue.publish(ACL::Payload.new(:agent_lifecycle).content(message), &block)
       end
@@ -155,7 +155,7 @@ module Smith
     def start_keep_alive
       if agent_options[:monitor]
         EventMachine::add_periodic_timer(1) do
-          sender('agent.keepalive', :dont_cache => true, :durable => false) do |keep_alive_queue|
+          sender('agent.keepalive', :auto_delete => true, :durable => false, :dont_cache => true) do |keep_alive_queue|
             message = {:name => self.class.to_s, :pid => $$.to_s, :time => Time.now.utc.to_i.to_s}
             keep_alive_queue.consumers? do |sender|
               keep_alive_queue.publish(ACL::Payload.new(:agent_keepalive).content(message))
