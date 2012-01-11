@@ -22,7 +22,9 @@ module Smith
         payload = ACL::Payload.new(:agency_command).content(:command => command, :args => args)
 
         callback = proc do |sender|
-          sender.publish_and_receive(payload, &blk)
+          sender.publish_and_receive(payload) do |r|
+            blk.call(r.payload)
+          end
         end
 
         errback = proc do puts "Agency not running"
@@ -46,8 +48,8 @@ $: << Smith.pb_cache_path
 
 Smith.start(:quiet => true) do
   control = Smith::SmithControl.new
-  control.send_command(command, args) do |header,payload|
-    puts payload if payload && !payload.empty?
+  control.send_command(command, args) do |result|
+    puts result if result && !result.empty?
     Smith.stop(true)
   end
 end

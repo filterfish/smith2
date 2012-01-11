@@ -16,13 +16,13 @@ module Smith
 
     def setup_queues
       Messaging::Receiver.new('agency.control', :strict => true).ready do |receiver|
-        receiver.subscribe do |metadata,payload|
-          receiver.reply(metadata) do |responder|
+        receiver.subscribe do |r|
+          r.reply do |responder|
             # Add a logger proc to the responder chain.
             responder.callback { |ret| logger.debug(ret) if ret && !ret.empty? }
 
             begin
-              Command.run(payload.command, payload.args, :agency => self,  :agents => @agent_processes, :responder => responder)
+              Command.run(r.payload.command, r.payload.args, :agency => self,  :agents => @agent_processes, :responder => responder)
             rescue Command::UnkownCommandError => e
               responder.value("Unknown command: #{payload.command}")
             end
@@ -31,23 +31,23 @@ module Smith
       end
 
       Messaging::Receiver.new('agent.lifecycle').ready do |receiver|
-        receiver.subscribe do |metadata, payload|
-          case payload.state
+        receiver.subscribe do |r|
+          case r.payload.state
           when 'dead'
-            dead(payload)
+            dead(r.payload)
           when 'acknowledge_start'
-            acknowledge_start(payload)
+            acknowledge_start(r.payload)
           when 'acknowledge_stop'
-            acknowledge_stop(payload)
+            acknowledge_stop(r.payload)
           else
-            logger.warn("Unkown command received on agent.lifecycle queue: #{payload.state.inspect}")
+            logger.warn("Unkown command received on agent.lifecycle queue: #{r.payload.state.inspect}")
           end
         end
       end
 
       Messaging::Receiver.new('agent.keepalive').ready do |receiver|
-        receiver.subscribe do |metadata, agent_data|
-          keep_alive(agent_data)
+        receiver.subscribe do |r|
+          keep_alive(r.payload)
         end
       end
     end

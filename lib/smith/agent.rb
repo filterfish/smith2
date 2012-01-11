@@ -35,8 +35,8 @@ module Smith
 
       logger.debug("Setting up default queue: #{default_queue_name}")
 
-      subscribe(default_queue_name, :auto_delete => false) do |metadata,payload|
-        @@task.call(payload)
+      subscribe(default_queue_name, :auto_delete => false) do |r|
+        @@task.call(r.payload)
       end
     end
 
@@ -51,7 +51,11 @@ module Smith
     end
 
     def receiver(queue_name, opts={})
-      queues.receiver(queue_name, opts) { |receiver| yield receiver }
+      queues.receiver(queue_name, opts) do |receiver|
+        receiver.subscribe do |r|
+          yield r
+        end
+      end
     end
 
     def sender(queue_name, opts={})
@@ -92,24 +96,22 @@ module Smith
 
     def setup_control_queue
       logger.debug("Setting up control queue: #{control_queue_name}")
-      receiver(control_queue_name) do |control_queue|
-        control_queue.subscribe do |header, payload|
-          logger.debug("Command received on agent control queue: #{payload.command} #{payload.options}")
+      receiver(control_queue_name) do |r|
+        logger.debug("Command received on agent control queue: #{r.payload.command} #{r.payload.options}")
 
-          case payload.command
-          when 'stop'
-            acknowledge_stop { Smith.stop }
-          when 'log_level'
-            begin
-              level = payload.options.first
-              logger.info("Setting log level to #{level} for: #{name}")
-              log_level(level)
-            rescue ArgumentError => e
-              logger.error("Incorrect log level: #{level}")
-            end
-          else
-            logger.warn("Unknown command: #{level} -> #{level.inspect}")
+        case r.payload.command
+        when 'stop'
+          acknowledge_stop { Smith.stop }
+        when 'log_level'
+          begin
+            level = r.payload.options.first
+            logger.info("Setting log level to #{level} for: #{name}")
+            log_level(level)
+          rescue ArgumentError => e
+            logger.error("Incorrect log level: #{level}")
           end
+        else
+          logger.warn("Unknown command: #{level} -> #{level.inspect}")
         end
       end
     end

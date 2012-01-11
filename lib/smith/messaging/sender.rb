@@ -23,18 +23,18 @@ module Smith
         message_id = random
         Receiver.new(message_id).ready do |receiver|
 
-          receiver.subscribe do |metadata,payload|
-            if metadata.correlation_id != message_id
+          receiver.subscribe do |r|
+            if r.metadata.correlation_id != message_id
               logger.error("Incorrect correlation_id: #{metadata.correlation_id}")
             end
 
             cancel_timeout
 
-            block.call(metadata, payload)
+            block.call(r)
 
             # Cancel the receive queue. Queues get left behind because the reply queue is
             # still listening. By cancel'ling the consumer it releases the queue and exchange.
-            metadata.channel.consumers.each do |k,v|
+            r.metadata.channel.consumers.each do |k,v|
               if k.start_with?(receiver.queue_name)
                 logger.verbose("Cancelling: #{k}")
                 v.cancel
