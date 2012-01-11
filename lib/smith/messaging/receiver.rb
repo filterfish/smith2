@@ -10,8 +10,9 @@ module Smith
       def initialize(queue_name, opts={})
         @auto_ack = (opts.has_key?(:auto_ack)) ? opts.delete(:auto_ack) : true
         @threading = (opts.has_key?(:threading)) ? opts.delete(:threading) : false
+        @payload_type = (opts.key?(:payload_type)) ? [opts.delete(:payload_type)].flatten : []
+
         super(queue_name, AmqpOptions.new(opts))
-        @payloads = {}
       end
 
       # Subscribes to a queue and passes the headers and payload into the
@@ -23,11 +24,15 @@ module Smith
           logger.verbose("Subscribing to: [queue]:#{denomalized_queue_name} [options]:#{opts}")
           queue.subscribe(opts) do |metadata,payload|
             if payload
-              message = ACL::Payload.decode(payload, metadata.type)
-              logger.verbose("Received message on: [queue]:#{denomalized_queue_name} [message]: #{message} [options]:#{opts}")
-              increment_counter
-              thread(Reply.new(self, metadata, message)) do |reply|
-                block.call(reply)
+              if @payload_type.empty? || @payload_type.include?(metadata.type)
+                message = ACL::Payload.decode(payload, metadata.type)
+                logger.verbose("Received message on: [queue]:#{denomalized_queue_name} [message]: #{message} [options]:#{opts}")
+                increment_counter
+                thread(Reply.new(self, metadata, message)) do |reply|
+                  block.call(reply)
+                end
+              else
+                raise IncorrectPayloadType, "This queue can only accept the following payload types: #{@payload_type.to_a.to_s}"
               end
             else
               logger.verbose("Received null message on: #{denomalized_queue_name} [options]:#{opts}")

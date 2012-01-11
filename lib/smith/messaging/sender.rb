@@ -53,9 +53,14 @@ module Smith
       private
 
       def _publish(message, opts, &block)
-        increment_counter
         logger.verbose("Publishing to: [queue]:#{denomalized_queue_name} [message]: #{message} [options]:#{opts}")
-        exchange.publish(message.encode, opts, &block)
+        if message.initialized?
+          increment_counter
+          exchange.publish(message.encode, opts, &block)
+        else
+          logger.error("Payload contains required fields that are not set. Not sending message: #{message}")
+          raise IncompletePayload, "Message is incomplete: #{message.to_s}"
+        end
       end
     end
   end
