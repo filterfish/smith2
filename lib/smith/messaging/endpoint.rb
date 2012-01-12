@@ -72,7 +72,9 @@ module Smith
               yield self
             end
           else
-            err.call
+            if err.respond_to? :call
+              err.call
+            end
           end
         end
       end

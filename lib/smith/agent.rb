@@ -121,7 +121,7 @@ module Smith
       # up in the stats.
       sender('agent.stats', :dont_cache => true, :durable => false, :auto_delete => false) do |stats_queue|
         EventMachine.add_periodic_timer(2) do
-          stats_queue.consumers? do |consumers|
+          callback = proc do |consumers|
             payload = ACL::Payload.new(:agent_stats).content do |p|
               p.agent_name = self.name
               p.pid = self.pid
@@ -134,6 +134,9 @@ module Smith
 
             stats_queue.publish(payload)
           end
+
+          # The errback argument is set to nil so as to suppres the default message.
+          stats_queue.consumers?(callback, nil)
         end
       end
     end
