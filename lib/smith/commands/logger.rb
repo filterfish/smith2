@@ -27,7 +27,7 @@ module Smith
             else
               target.each do |agent|
                 if agents[agent].running?
-                  send_agent_control_message(agents[agent], :command => 'log_level', :options => options[:level])
+                  send_agent_control_message(agents[agent], :command => 'log_level', :options => [options[:level]])
                 end
               end
               nil
