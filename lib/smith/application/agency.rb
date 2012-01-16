@@ -24,7 +24,7 @@ module Smith
             begin
               Command.run(r.payload.command, r.payload.args, :agency => self,  :agents => @agent_processes, :responder => responder)
             rescue Command::UnkownCommandError => e
-              responder.value("Unknown command: #{payload.command}")
+              responder.value("Unknown command: #{r.payload.command}")
             end
           end
         end
