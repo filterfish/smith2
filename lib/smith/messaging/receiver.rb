@@ -73,8 +73,8 @@ module Smith
       # to auto ack or not. This is because it can get called twice and we don't
       # want to ack more than once or an error will be thrown.
       def thread(reply, &block)
-        logger.verbose("Threads: #{threading?}")
-        logger.verbose("auto_ack: #{auto_ack?}")
+        logger.verbose("Threads: [queue]: #{denomalized_queue_name}: #{threading?}")
+        logger.verbose("auto_ack: [queue]: #{denomalized_queue_name}: #{auto_ack?}")
         if threading?
           EM.defer do
             block.call(reply)
@@ -90,11 +90,23 @@ module Smith
 
         include Logger
 
+        attr_reader :metadata, :payload, :time
+
         def initialize(receiver, metadata, payload)
           @receiver = receiver
           @metadata = metadata
           @payload = payload
           @time = Time.now
+        end
+
+        # acknowledge the message.
+        def ack(multiple=false)
+          @metadata.ack(multiple)
+        end
+
+        # reject the message. Optionally requeuing it.
+        def reject(opts={})
+          @metadata.reject(opts)
         end
 
         # Reply to a message. If reply_to header is not set a error will be logged
@@ -104,14 +116,13 @@ module Smith
             responder.callback do |return_value|
               Sender.new(@metadata.reply_to, :auto_delete => true).ready do |sender|
                 logger.verbose("Replying on: #{@metadata.reply_to}") if logger.level == 0
-
                 sender.publish(ACL::Payload.new(:default).content(return_value), sender.options.publish(:correlation_id => @metadata.message_id))
               end
             end
           else
             # Null responder. If a call on the responder is made log a warning. Something is wrong.
             responder.callback do |return_value|
-              logger.error("You are responding to a message that has no reply_to on queue: #{denomalized_queue_name}.")
+              logger.error("You are responding to a message that has no reply_to on queue: #{queue_name}.")
               logger.verbose("Queue options: #{@metadata.exchange}.")
             end
           end
@@ -119,33 +130,13 @@ module Smith
           block.call(responder)
         end
 
-        # The associated message metadata.
-        def metadata
-          @metadata
-        end
-
-        # The decoded payload.
-        def payload
-          @payload
-        end
-
         # The payload type. This returns the protocol buffers class name as a string.
         def payload_type
           @metadata.type
         end
 
-        # Acknowledge the message.
-        def ack
-          @metadata.ack
-        end
-
         def queue_name
           @receiver.denomalized_queue_name
-        end
-
-        # The time the message was received.
-        def time
-          @time
         end
       end
     end
