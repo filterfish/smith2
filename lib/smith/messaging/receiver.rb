@@ -46,16 +46,15 @@ module Smith
       # pops a message off the queue and passes the headers and payload
       # into the block. +pop+ will automatically acknowledge the message
       # unless the options sets :ack to false.
-      # TODO there needs to be an option here that allows ack to be turned
-      # on but this method not actually run the ack. This is needed so that
-      # the pop-queue command can get a message of the queue without actually
-      # consuming it. This is mightly helpfull for your local BOFH.
-      def pop(opts={}, &block)
-        @queue.pop(@normal_pop_options.merge(opts)) do |metadata, payload|
+      def pop(&block)
+        opts = options.pop
+        @queue.pop(opts) do |metadata, payload|
+          message = ACL::Payload.decode(payload, metadata.type)
           if payload
-            block.call(metadata, ACL::Payload.decode(payload, metadata.type))
+            thread(Reply.new(self, metadata, message)) do |reply|
+              block.call(reply)
+            end
           end
-          metadata.ack if @auto_ack
         end
       end
 

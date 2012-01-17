@@ -19,6 +19,10 @@ module Smith
         merge(Smith.config.amqp.queue._child, @options, extra_opts)
       end
 
+      def pop(*extra_opts)
+        merge(Smith.config.amqp.pop._child, @options, extra_opts)
+      end
+
       def publish(*extra_opts)
         merge(Smith.config.amqp.publish._child, {:routing_key => queue_name}, extra_opts)
       end
