@@ -7,13 +7,17 @@ module Smith
         when 0
           responder.value("No queue specified. Please specify a queue.")
         when 1
-          Messaging::Receiver.new(target.shift).ready do |receiver|
+          Messaging::Receiver.new(target.shift, :auto_ack => false).ready do |receiver|
             callback = proc do
-              receiver.pop do |metadata,payload|
-                if !options[:remove]
-                  metadata.reject(:requeue => true)
+              receiver.pop do |r|
+                if options[:remove]
+                  logger.info("Removing message: #{r.metadata.delivery_tag}")
+                  r.ack
+                else
+                  logger.info("Requeuing message: #{r.metadata.delivery_tag}")
+                  r.reject(:requeue => true)
                 end
-                responder.value(payload)
+                responder.value(r.payload.to_s.strip)
               end
             end
 
