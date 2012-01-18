@@ -4,7 +4,7 @@ module Smith
     class Endpoint
       include Logger
 
-      attr_accessor :denomalized_queue_name
+      attr_accessor :denomalized_queue_name, :queue_name
 
       def initialize(queue_name, options)
         @denomalized_queue_name = queue_name
@@ -88,7 +88,7 @@ module Smith
 
       protected
 
-      attr_accessor :exchange, :queue, :queue_name, :options
+      attr_accessor :exchange, :queue, :options
 
       def increment_counter(value=1)
         @message_counts[queue_name] += value
