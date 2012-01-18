@@ -25,10 +25,8 @@ module Smith
           queue.subscribe(opts) do |metadata,payload|
             if payload
               if @payload_type.empty? || @payload_type.include?(metadata.type)
-                message = ACL::Payload.decode(payload, metadata.type)
-                logger.verbose("Received message on: [queue]:#{denomalized_queue_name} [message]: #{message} [options]:#{opts}")
-                increment_counter
-                thread(Reply.new(self, metadata, message)) do |reply|
+                thread(Reply.new(self, exchange, metadata, payload)) do |reply|
+                  increment_counter
                   block.call(reply)
                 end
               else
@@ -49,9 +47,8 @@ module Smith
       def pop(&block)
         opts = options.pop
         @queue.pop(opts) do |metadata, payload|
-          message = ACL::Payload.decode(payload, metadata.type)
           if payload
-            thread(Reply.new(self, metadata, message)) do |reply|
+            thread(Reply.new(self, exchange, metadata, payload)) do |reply|
               block.call(reply)
             end
           end
@@ -92,11 +89,15 @@ module Smith
 
         attr_reader :metadata, :payload, :time
 
-        def initialize(receiver, metadata, payload)
+        def initialize(receiver, exchange, metadata, undecoded_payload)
+          @undecoded_payload = undecoded_payload
           @receiver = receiver
+          @exchange = exchange
           @metadata = metadata
-          @payload = payload
           @time = Time.now
+
+          @payload = ACL::Payload.decode(undecoded_payload, metadata.type)
+          logger.verbose("Payload content: [queue]:#{denomalized_queue_name} [message]: #{payload.inspect.gsub(/\r|\n/n, ', ')}")
         end
 
         # acknowledge the message.
@@ -107,6 +108,29 @@ module Smith
         # reject the message. Optionally requeuing it.
         def reject(opts={})
           @metadata.reject(opts)
+        end
+
+        # Republish the message to the end of the same queue. This is useful
+        # for when the agent encounters an error and needs to requeue the message.
+        def requeue(&block)
+          # Fix up the options.
+          opts = metadata.channel.queues[normalised_queue_name].opts.tap do |o|
+            o.delete(:queue)
+            o.delete(:exchange)
+
+            o[:headers] = increment_retry_count(metadata.headers)
+            o[:routing_key] = normalised_queue_name
+            o[:type] = metadata.type
+          end
+
+          logger.verbose("Requeuing to: #{denomalized_queue_name}. [options]: #{opts}")
+          logger.verbose("Requeuing to: #{denomalized_queue_name}. [message]: #{ACL::Payload.decode(@undecoded_payload, metadata.type)}")
+
+          @exchange.publish(@undecoded_payload, opts)
+        end
+
+        def requeue_count
+          metadata.headers['retry'] || 0
         end
 
         # Reply to a message. If reply_to header is not set a error will be logged
@@ -122,7 +146,7 @@ module Smith
           else
             # Null responder. If a call on the responder is made log a warning. Something is wrong.
             responder.callback do |return_value|
-              logger.error("You are responding to a message that has no reply_to on queue: #{queue_name}.")
+              logger.error("You are responding to a message that has no reply_to on queue: #{denomalized_queue_name}.")
               logger.verbose("Queue options: #{@metadata.exchange}.")
             end
           end
@@ -135,8 +159,20 @@ module Smith
           @metadata.type
         end
 
-        def queue_name
+        def denomalized_queue_name
           @receiver.denomalized_queue_name
+        end
+
+        def normalised_queue_name
+          @receiver.queue_name
+        end
+
+        private
+
+        def increment_retry_count(headers)
+          headers.tap do |m|
+            m['retry'] = (m['retry']) ? m['retry'] + 1 : 1
+          end
         end
       end
     end
