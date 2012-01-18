@@ -134,3 +134,5 @@
 * Add internationalisation. It will also make error messages more consistent.
 
 * Make sure application specific queues don't have the smith namespace
+
+* Add the message id to all log messages
