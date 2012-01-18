@@ -53,6 +53,10 @@ module Smith
         @type.to_s
       end
 
+      def payload
+        @encoder
+      end
+
       # Encode the message, returning the encoded data.
       def encode
         @encoder.serialize_to_string
