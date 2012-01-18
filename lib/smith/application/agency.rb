@@ -30,7 +30,7 @@ module Smith
         end
       end
 
-      Messaging::Receiver.new('agent.lifecycle', :durable => false, :auto_delete => true).ready do |receiver|
+      Messaging::Receiver.new('agent.lifecycle', :auto_delete => true, :durable => false).ready do |receiver|
         receiver.subscribe do |r|
           case r.payload.state
           when 'dead'
@@ -45,7 +45,7 @@ module Smith
         end
       end
 
-      Messaging::Receiver.new('agent.keepalive', :durable => false, :auto_delete => true).ready do |receiver|
+      Messaging::Receiver.new('agent.keepalive', :auto_delete => true, :durable => false).ready do |receiver|
         receiver.subscribe do |r|
           keep_alive(r.payload)
         end
