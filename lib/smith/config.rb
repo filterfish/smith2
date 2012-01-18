@@ -3,9 +3,15 @@ module Smith
   class Config
 
     @@config = Optimism.new.tap do |o|
-      o.amqp.publish.ack = true
-      o.amqp.subscribe.ack = true
-      o.amqp.pop.ack = true
+      o.amqp do |a|
+        a.publish do |p|
+          p.ack = true
+          p.headers = {}
+        end
+
+        a.pop.ack = true
+        a.subscribe.ack = true
+      end
     end._merge!(Optimism.require_file(['/etc/smith/smithrc', "#{ENV['HOME']}/.smithrc"]))
 
     def self.get
