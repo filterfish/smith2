@@ -53,7 +53,8 @@ module Smith
       private
 
       def _publish(message, opts, &block)
-        logger.verbose("Publishing to: [queue]:#{denomalized_queue_name} [message]: #{message} [options]:#{opts}")
+        logger.verbose("Publishing to: #{denomalized_queue_name}. [options]: #{opts}")
+        logger.verbose("Publishing to: #{denomalized_queue_name}. [message]: #{message}")
         if message.initialized?
           increment_counter
           exchange.publish(message.encode, opts, &block)
