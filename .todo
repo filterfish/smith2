@@ -133,6 +133,12 @@
 
 * Add internationalisation. It will also make error messages more consistent.
 
-* Make sure application specific queues don't have the smith namespace
+* Make sure application specific queues don't have the smith namespace.
 
-* Add the message id to all log messages
+* Add the message id to all log messages.
+
+* Allow the agent to be configured so auto_ack is off. auto_ack is nice when
+  you are starting out but in high throughput applications it's unlikely to
+  be the right thing to do so the auto_ack => false in the queue declaration
+  is noisy.
+
