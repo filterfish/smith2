@@ -17,8 +17,9 @@ module Smith
         Smith.channel.direct(@queue_name, options.exchange) do |exchange|
           @exchange = exchange
 
-          exchange.on_return do |basic_return, metadata, payload|
-            logger.error("#{ACL::Payload.decode(payload.clone, metadata.type)} was returned! reply_code = #{basic_return.reply_code}, reply_text = #{basic_return.reply_text}")
+          exchange.on_return do |basic_return,metadata,payload|
+            logger.error("#{ACL::Payload.decode(payload.clone, metadata.type)} was returned! Exchange: #{reply_code.exchange}, reply_code = #{basic_return.reply_code}, reply_text = #{basic_return.reply_text}")
+            logger.error("Properties: #{metadata.properties}")
           end
 
           logger.verbose("Creating queue: [queue]:#{denomalized_queue_name} [options]:#{options.queue}")
