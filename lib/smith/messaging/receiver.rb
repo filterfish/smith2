@@ -116,7 +116,7 @@ module Smith
 
         # Republish the message to the end of the same queue. This is useful
         # for when the agent encounters an error and needs to requeue the message.
-        def requeue(&block)
+        def requeue(delay, &block)
           # Sort out the options.
           opts = @receiver.send(:queue).opts.tap do |o|
             o.delete(:queue)
@@ -130,7 +130,9 @@ module Smith
           logger.verbose("Requeuing to: #{denomalized_queue_name}. [options]: #{opts}")
           logger.verbose("Requeuing to: #{denomalized_queue_name}. [message]: #{ACL::Payload.decode(@undecoded_payload, metadata.type)}")
 
-          @receiver.send(:exchange).publish(@undecoded_payload, opts)
+          EM.add_timer(delay) do
+            @receiver.send(:exchange).publish(@undecoded_payload, opts)
+          end
         end
 
         def requeue_count
