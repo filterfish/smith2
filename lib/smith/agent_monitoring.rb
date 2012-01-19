@@ -36,8 +36,10 @@ module Smith
               logger.info("Agent is shutting down: #{agent_process.name}")
             when 'dead'
               logger.info("Restarting dead agent: #{agent_process.name}")
-              Messaging::Sender.new('agency.control', :auto_delete => true).ready do |sender|
-                sender.publish(ACL::Payload.new(:agency_command).content(:command => 'start', :args => [agent_process.name]))
+              Messaging::Sender.new('agency.control', :auto_delete => true, :durable => false, :strict => true).ready do |sender|
+                sender.publish_and_receive(ACL::Payload.new(:agency_command).content(:command => 'start', :args => [agent_process.name])) do |r|
+                  logger.debug("Agent restart message acknowledged: #{agent_process.name}")
+                end
               end
             when 'unknown'
               logger.info("Agent is in an unknown state: #{agent_process.name}")
