@@ -8,8 +8,6 @@ module Smith
       attr_accessor :options
 
       def initialize(queue_name, opts={})
-
-        # These should probably go into the endpoint.
         @auto_ack = opts.delete(:auto_ack) || true
         @threading = opts.delete(:threading) || false
         super(queue_name, AmqpOptions.new(opts))
@@ -24,9 +22,7 @@ module Smith
         Receiver.new(message_id, :auto_delete => true).ready do |receiver|
 
           receiver.subscribe do |r|
-            if r.metadata.correlation_id != message_id
-              logger.error("Incorrect correlation_id: #{metadata.correlation_id}")
-            end
+            raise "Incorrect correlation_id: #{metadata.correlation_id}" if r.metadata.correlation_id != message_id
 
             cancel_timeout
 
@@ -42,10 +38,8 @@ module Smith
             end
           end
 
-          # Do not move this outside the ready block. If you do this it is
-          # possible (in fact likely) that you will lose messages. The reason
-          # is that a message can be published and responded to before the
-          # receive queue is set up.
+          # DO NOT MOVE THIS OUTSIDE THE READY BLOCK: YOU WILL LOSE MESSAGES. The reason is
+          # that a message can be published and responded to before the receive queue is set up.
           _publish(message, options.publish(:reply_to => message_id, :message_id => message_id, :type => message.type))
         end
       end
@@ -59,7 +53,6 @@ module Smith
           increment_counter
           exchange.publish(message.encode, opts, &block)
         else
-          logger.error("Payload contains required fields that are not set. Not sending message: #{message}")
           raise IncompletePayload, "Message is incomplete: #{message.to_s}"
         end
       end
