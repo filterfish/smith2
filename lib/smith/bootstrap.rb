@@ -71,7 +71,7 @@ module Smith
 
     # Clean shutdown of the agent.
     def shutdown
-      logger.info("Agent stopped: #{@agent_name}")
+      @agent.stopped
       unlink_pid_file
       Smith.stop if Smith.running?
     end

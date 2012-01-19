@@ -44,6 +44,10 @@ module Smith
       logger.info("#{name}:[#{pid}] started.")
     end
 
+    def stopped
+      logger.info("#{name}:[#{pid}] stopped.")
+    end
+
     def install_signal_handler(signal, position=:end, &blk)
       raise ArgumentError, "Unknown position: #{position}" if ![:beginning, :end].include?(position)
 
