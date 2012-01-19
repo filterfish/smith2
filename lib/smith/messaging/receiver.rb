@@ -169,6 +169,10 @@ module Smith
           @metadata.reply_to
         end
 
+        def queue_name
+          normalised_queue_name
+        end
+
         private
 
         def denomalized_queue_name
