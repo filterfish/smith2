@@ -22,6 +22,14 @@ module Smith
 
       @start_time = Time.now
 
+      on_started do
+        logger.info("#{name}:[#{pid}] started.")
+      end
+
+      on_stopped do
+        logger.info("#{name}:[#{pid}] stopped.")
+      end
+
       EM.threadpool_size = 1
 
       acknowledge_start
@@ -40,12 +48,12 @@ module Smith
       end
     end
 
-    def started
-      logger.info("#{name}:[#{pid}] started.")
+    def on_started(&blk)
+      @on_started = blk
     end
 
-    def stopped
-      logger.info("#{name}:[#{pid}] stopped.")
+    def on_stopped(&blk)
+      Smith.shutdown_hook(&blk)
     end
 
     def install_signal_handler(signal, position=:end, &blk)
@@ -56,6 +64,10 @@ module Smith
       @signal_handlers.each do |sig, handlers|
         trap(sig, proc { |sig| run_signal_handlers(sig, handlers) })
       end
+    end
+
+    def started
+      @on_started.call
     end
 
     def receiver(queue_name, opts={})
