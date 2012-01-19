@@ -140,7 +140,7 @@ module Smith
         # Reply to a message. If reply_to header is not set a error will be logged
         def reply(&block)
           responder = Responder.new
-          if @metadata.reply_to
+          if reply_to
             responder.callback do |return_value|
               Sender.new(@metadata.reply_to, :auto_delete => true).ready do |sender|
                 logger.verbose("Replying on: #{@metadata.reply_to}") if logger.level == 0
@@ -163,6 +163,12 @@ module Smith
           @metadata.type
         end
 
+        def reply_to
+          @metadata.reply_to
+        end
+
+        private
+
         def denomalized_queue_name
           @receiver.denomalized_queue_name
         end
@@ -170,8 +176,6 @@ module Smith
         def normalised_queue_name
           @receiver.queue_name
         end
-
-        private
 
         def increment_retry_count(headers)
           headers.tap do |m|
