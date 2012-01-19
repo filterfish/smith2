@@ -26,10 +26,10 @@ module Smith
 
       acknowledge_start
       start_keep_alive
-
-      logger.info("Starting #{name}:[#{pid}]")
     end
 
+    # Overide this method to implement your own agent. You can use task but this may
+    # go away in the future. This method must not block.
     def run
       raise ArgumentError, "You need to call Agent.task(&block)" if @@task.nil?
 
@@ -38,6 +38,10 @@ module Smith
       subscribe(default_queue_name, :auto_delete => false) do |r|
         @@task.call(r.payload)
       end
+    end
+
+    def started
+      logger.info("#{name}:[#{pid}] started.")
     end
 
     def install_signal_handler(signal, position=:end, &blk)
