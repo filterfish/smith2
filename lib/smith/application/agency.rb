@@ -9,7 +9,7 @@ module Smith
     attr_reader :agents, :agent_processes
 
     def initialize(opts={})
-      DataMapper.setup(:default, "yaml:///var/cache/smith")
+      DataMapper.setup(:default, "yaml:///#{Smith.config.agency.cache_path}")
 
       @agent_processes = AgentCache.new(:paths => opts.delete(:paths))
     end
