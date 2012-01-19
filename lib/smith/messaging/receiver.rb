@@ -10,7 +10,7 @@ module Smith
       def initialize(queue_name, opts={})
         @auto_ack = (opts.has_key?(:auto_ack)) ? opts.delete(:auto_ack) : true
         @threading = (opts.has_key?(:threading)) ? opts.delete(:threading) : false
-        @payload_type = (opts.key?(:payload_type)) ? [opts.delete(:payload_type)].flatten : []
+        @payload_type = (opts.key?(:type)) ? [opts.delete(:type)].flatten : []
 
         super(queue_name, AmqpOptions.new(opts))
       end
@@ -24,7 +24,7 @@ module Smith
           logger.verbose("Subscribing to: [queue]:#{denomalized_queue_name} [options]:#{opts}")
           queue.subscribe(opts) do |metadata,payload|
             if payload
-              if @payload_type.empty? || @payload_type.include?(metadata.type)
+              if @payload_type.empty? || @payload_type.include?(metadata.type.to_sym)
                 thread(Reply.new(self, metadata, payload)) do |reply|
                   increment_counter
                   block.call(reply)
