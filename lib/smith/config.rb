@@ -14,6 +14,9 @@ module Smith
       end
     end._merge!(Optimism.require_file(['/etc/smith/smithrc', "#{ENV['HOME']}/.smithrc"]))
 
+    # I'm sure there's a better way of doing this ...
+    @@config.agency['protocol_buffer_cache_path'] = "#{@@config.agency.cache_path.to_s}#{File::SEPARATOR}pb"
+
     def self.get
       @@config
     end
