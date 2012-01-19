@@ -44,6 +44,7 @@ module Smith
     def start!
       write_pid_file
       @agent.run
+      @agent.started
     end
 
     # Exceptional shutdown of the agent. Note. Whenever this is
