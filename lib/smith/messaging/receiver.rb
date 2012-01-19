@@ -25,7 +25,7 @@ module Smith
           queue.subscribe(opts) do |metadata,payload|
             if payload
               if @payload_type.empty? || @payload_type.include?(metadata.type)
-                thread(Reply.new(self, exchange, metadata, payload)) do |reply|
+                thread(Reply.new(self, metadata, payload)) do |reply|
                   increment_counter
                   block.call(reply)
                 end
@@ -48,7 +48,7 @@ module Smith
         opts = options.pop
         @queue.pop(opts) do |metadata, payload|
           if payload
-            thread(Reply.new(self, exchange, metadata, payload)) do |reply|
+            thread(Reply.new(self, metadata, payload)) do |reply|
               block.call(reply)
             end
           end
@@ -83,16 +83,20 @@ module Smith
         end
       end
 
+      # I'm not terribly happy about this class. It's publicaly visable and it contains
+      # some gross violations of Ruby's protection mechanism. I suspect it's an indication
+      # of a more fundamental design flaw. I will leave it as is for the time being but
+      # this really needs to be reviewed. FIXME review this class.
       class Reply
 
         include Logger
 
         attr_reader :metadata, :payload, :time
 
-        def initialize(receiver, exchange, metadata, undecoded_payload)
+        def initialize(receiver, metadata, undecoded_payload)
           @undecoded_payload = undecoded_payload
           @receiver = receiver
-          @exchange = exchange
+          @exchange = receiver.send(:exchange)
           @metadata = metadata
           @time = Time.now
 
@@ -113,8 +117,8 @@ module Smith
         # Republish the message to the end of the same queue. This is useful
         # for when the agent encounters an error and needs to requeue the message.
         def requeue(&block)
-          # Fix up the options.
-          opts = metadata.channel.queues[normalised_queue_name].opts.tap do |o|
+          # Sort out the options.
+          opts = @receiver.send(:queue).opts.tap do |o|
             o.delete(:queue)
             o.delete(:exchange)
 
@@ -126,7 +130,7 @@ module Smith
           logger.verbose("Requeuing to: #{denomalized_queue_name}. [options]: #{opts}")
           logger.verbose("Requeuing to: #{denomalized_queue_name}. [message]: #{ACL::Payload.decode(@undecoded_payload, metadata.type)}")
 
-          @exchange.publish(@undecoded_payload, opts)
+          @receiver.send(:exchange).publish(@undecoded_payload, opts)
         end
 
         def requeue_count
