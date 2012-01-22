@@ -142,3 +142,4 @@
   be the right thing to do so the auto_ack => false in the queue declaration
   is noisy.
 
+* Make sure all time fields in pb files are integers.
