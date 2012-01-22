@@ -84,8 +84,6 @@ module Smith
 
     class << self
       def task(opts={}, &blk)
-        # TODO is this neeeded? I think not.
-        @@threading = opts[:threading] || false
         @@task = blk
       end
 
