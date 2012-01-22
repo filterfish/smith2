@@ -120,10 +120,7 @@
 
 * This command to smithctl to return the queue names the agent is using.
 
-* Add the ability ot clone an agent.
-
-* Add the list of ACL classes that an agent can use. This would then allow the
-  agent to complain if an unknown ACL type was sent to the agent.
+* Add the ability to clone an agent. See [It looks as if the agent lifecycles].
 
 * Add code to verify the protocl buffer payload. It should go in Sender#_publish
 
@@ -143,3 +140,8 @@
   is noisy.
 
 * Make sure all time fields in pb files are integers.
+
+* It looks as if the agent lifecycles are keyed on name (see
+  Agency#acknowledge_start & Agency#acknowledge_stop). This should be the pid
+  or maybe both but just using name I can't have more than one agent which
+  stops things like cloning.
