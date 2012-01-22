@@ -70,6 +70,7 @@ module Smith
         if agent_data.pid == agent_process.pid
           agent_process.monitor = agent_data.monitor
           agent_process.singleton = agent_data.singleton
+          agent_process.metadata = agent_data.metadata
           agent_process.acknowledge_start
         else
           logger.error("Agent reports different pid during acknowledge_start: #{agent_data.name}")
