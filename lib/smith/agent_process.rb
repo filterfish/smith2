@@ -18,6 +18,7 @@ module Smith
     property :pid,              String
     property :started_at,       Integer
     property :last_keep_alive,  Integer
+    property :metadata,         String
     property :monitor,          Boolean
     property :singleton,        Boolean
 
