@@ -1,3 +1,5 @@
+                          ~~~~~~~~ TODO  ~~~~~~~~
+
 * If an agent hasn't started after 20 seconds (ie there are no keep alives)
   set the state to dead.
 
@@ -12,14 +14,15 @@
   agents in a particular namespace. Consider using vhosts.
 
 * Allow an agent to verify that it's the same version as that on disc. Maybe
-  implement an autoload system. Look at shogun
+  implement an autoload system. Look at shogun(?)
 
 * Think about whether to not send messages to agents if they aren't alive.
   At the moment this is a little inconsistent: some command check to see it the
   agent is alive and others check to see if there is anything listening on the
   queue.
 
-* Have an option that shuts down all agents when the agency is closed.
+* Have an option that shuts down all agents when the agency is closed. Maybe a
+  -e option to stop
 
 * Have a config item where I can put a list of agents that I can then start
   (or stop or kill for that matter)all at the same time. For example the command
@@ -30,14 +33,14 @@
   See "Agents should be namespace-able"
 
 * The list command should check to see if the agent is actually alive and
-  add that information to the output.
+  add that information to the output. [done - check]
 
-* Have a flag for pop-queue that doesn't ack.
+* Have a flag for pop-queue that doesn't ack. [done]
 
 * Don't send messages to queues that don't exist [send, smithctl messages,
   pop-queue.
 
-* list commnd should display the state of the agent.
+* list commnd should display the state of the agent. [partially done]
 
 * Think about the idea of a run list. Or is this already implemented in
   the state machine.
@@ -45,13 +48,14 @@
 * Have a whitelist/blacklist mechanism listing agents that an agent can
   receive messages from.
 
-* Have an errback if publish_and_receive times out.
+* Have an errback if publish_and_receive times out. [done - check]
 
-* Add a message retry mechanism.
+* Add a message retry mechanism. [done]
 
-* Name reply queues based on the agent name.
+* Name reply queues based on the agent name. This would only work with the
+  default queue.
 
-* Delete queue should be part of smithctl. As should pop queue.
+* Delete queue should be part of smithctl.
 
 * smithctl message should have some sort of printf formating string
   that can be used to construct the protocol buffer message.
@@ -61,31 +65,31 @@
   do: submit patch upstream.
 
 * Have an option to not ack the pop-queue command. See Receiver#pop for a more
-  detailed description. DONE (possibly)
+  detailed description. [done]
 
 * Have a SMITH_LOAD_PATH environment variable that overrides the path set up in
   the config
 
-* Have a path where encoder files can be loaded from.
+* Have a path where encoder files can be loaded from. [done]
 
 * Have something monitor the agents' state machine for signs of problems.
   For example if an agent is in the starting state for longer than a minutes or
   so
 
-* Be able to change log level for individual loggers (ie per class).
+* Be able to change log level for individual loggers (ie per class). [done]
 
 * Add to_s to the Encoders, so when I call inspect on the message it
   gives a proper represntation.
 
-* Setup a dead letter queue in case of error.
+* Setup a dead letter queue in case of error. Have a look at the dead letter
+  stuff in rabbitmq.
 
-* The number of threads should be the same at the number of subscribed
+* The number of threads should be configurable programmatically
   queues per process.
 
-* Have message oounters for every agent.
+* Have message oounters for every agent. [partially done]
 
-* Set default config for all options that make sense (which I think is
-  all of tthem).
+* Set default config for all options that make sense (which is most of tthem).
 
 * Add checking to the config. For example the logging class can only accept File
   or Stdout appenders but this is not checked for.
@@ -98,46 +102,84 @@
 * I've added a method called add_agent_load_path to the bootstrapper. When
   thinking about the above make sure you check whether that method fits.
 
-* Add an option to the agency to specify a different config file. Also
-  check the local directory to see if there is a config there.
-
 * Think about how to make ./bin/send a general tool. Maybe write some rake
   tasks.
 
-* Add some code to check the message type. At least for internal smith code. In
-  the case of agency.control if the message is not AgencyCommand the agency will
-  crash.
-
 * Make an equivalent of ripl-rails: ripl-smith
 
-* command line options to pass to the agency:
+* Add command to smithctl to return the queue names an agent is using.
 
-  * environment.
+* Add the ability to clone an agent. See next point (It looks as if the agent
+  lifecycles ...).
 
-* This command to smithctl to return the queue names the agent is using.
+* It looks as if the agent lifecycles are keyed on name (see
+  Agency#acknowledge_start & Agency#acknowledge_stop). This should be the pid
+  or maybe both but just using name I can't have more than one agent which
+  stops things like cloning.
 
-* Add the ability to clone an agent. See [It looks as if the agent lifecycles].
+* Add code to verify the protocl buffer payload type. It should go in
+  Sender#_publish. [done - needs checking]
 
-* Add code to verify the protocl buffer payload. It should go in Sender#_publish
+* Message headers:
+  * sent time,
+  * message checksum.
 
-* Checksum the messages.
+* Add the message_id to all log messages.
 
-* Add a sent time to the message.
-
-* Add internationalisation. It will also make error messages more consistent.
+* Add i18n. It will also make error messages more consistent.
 
 * Make sure application specific queues don't have the smith namespace.
-
-* Add the message id to all log messages.
 
 * Allow the agent to be configured so auto_ack is off. auto_ack is nice when
   you are starting out but in high throughput applications it's unlikely to
   be the right thing to do so the auto_ack => false in the queue declaration
   is noisy.
 
+* Add command line options to the agency:
+  * dump the config.
+  * daemonise the agency (and create the pid file.)
+  * specify the pid file.
+  * specify the environment
+  * specify a different config file.
+
+  In fact look at smith1 agency to see what options it had.
+
+* Write a startup script.
+
+* Have an option to freeze an agent. Not sure of a use caes but it could be
+  quite useful. It might be quite complicated to implement though.
+
+* Clean up the pb cache handling. Have something like:
+
+    Smith.set_acl_path
+
+  oar maybe add it to the Smith run, Smith is usless without it.
+
+
+                          ~~~~~~~~ BUGS  ~~~~~~~~
+
+* Add the internal (to smith) pb directory to the pb load path.
+
+* Fix bug where I get an exception if the pb class has already been loaded:
+
+  /usr/local/ruby-1.9.3-p0/lib/ruby/gems/1.9.1/gems/ruby_protobuf-0.4.11/lib/protobuf/message/message.rb:43:in `define_field': Field tag 1 has already been used in Smith::ACL::AgencyCommand. (Protobuf::TagCollisionError)  
+          from /usr/local/ruby-1.9.3-p0/lib/ruby/gems/1.9.1/gems/ruby_protobuf-0.4.11/lib/protobuf/message/message.rb:23:in `required'
+          from /var/cache/smith/pb/agency_command.pb.rb:18:in `<class:AgencyCommand>'
+          from /var/cache/smith/pb/agency_command.pb.rb:16:in `<module:ACL>'
+          from /var/cache/smith/pb/agency_command.pb.rb:15:in `<module:Smith>'
+          from /var/cache/smith/pb/agency_command.pb.rb:14:in `<top (required)>'
+
+  In practice this only happens when a pb is compiled.
+
+* Fix force in protocol_buffer_compiler. There's no way to currently force the
+  recompilation the pb files.
+
+* Fix the incredably slow Payload creation time. It's about 500 times slower
+  than instantiating the protocol buffer itself.
+
 * Make sure all time fields in pb files are integers.
 
-* It looks as if the agent lifecycles are keyed on name (see
-  Agency#acknowledge_start & Agency#acknowledge_stop). This should be the pid
-  or maybe both but just using name I can't have more than one agent which
-  stops things like cloning.
+* Check queue/exchange leaks. The ones I know of at the moment are:
+  * if the publish_and_receive method is used and the message is not replied too
+    then there is a exchange/queue leak.
+  * I think there is another case but I cannot think of it.
