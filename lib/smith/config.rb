@@ -12,6 +12,13 @@ module Smith
         a.pop.ack = true
         a.subscribe.ack = true
       end
+      o.logging do |l|
+        l.trace = false
+        l.level = :debug
+        l.appender = 'Stdout'
+        l.default_pattern = '%d [%5p] %7l - %34c:%-3L - %m\\n'
+        l.default_date_pattern = '%Y/%m/%d %H:%M:%S.%N'
+      end
     end._merge!(Optimism.require_file(['/etc/smith/smithrc', "#{ENV['HOME']}/.smithrc"]))
 
     # I'm sure there's a better way of doing this ...
