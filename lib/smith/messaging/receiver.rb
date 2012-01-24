@@ -101,7 +101,7 @@ module Smith
           @time = Time.now
 
           @payload = ACL::Payload.decode(undecoded_payload, metadata.type)
-          logger.verbose("Payload content: [queue]:#{denomalized_queue_name} [message]: #{payload.inspect.gsub(/\r|\n/n, ', ')}")
+          logger.verbose("Payload content: [queue]:#{denomalized_queue_name} [message]: #{payload.inspect.to_s.gsub(/\r|\n/n, ', ')}")
         end
 
         # acknowledge the message.
