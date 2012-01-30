@@ -23,7 +23,7 @@ spec = Gem::Specification.new do |s|
   s.add_dependency "optimism", ">= 3.0.3"
   s.add_dependency "state_machine"
 
-  binaries = %w{agency send smithctl}
+  binaries = %w{agency smithctl smith-cat}
   libraries = Dir.glob("lib/**/*")
 
   s.executables = binaries
