@@ -155,6 +155,13 @@
 
   oar maybe add it to the Smith run, Smith is usless without it.
 
+* Have a pb cache reload mechanism at the moment you need to restart the agency.
+
+* Think about passing a class to the receiver. This might be a nice way of
+  structuring the message handlers.
+
+* Add support for connecting to rabbitmq using ssl with certificates, see
+    http://hg.rabbitmq.com/rabbitmq-auth-mechanism-ssl/file/default/README
 
                           ~~~~~~~~ BUGS  ~~~~~~~~
 
