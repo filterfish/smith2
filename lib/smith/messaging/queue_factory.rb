@@ -7,10 +7,11 @@ module Smith
     end
 
     def create(queue_name, type, opts={})
-      if @cache[queue_name]
-        @cache[queue_name]
+      key = "#{type}:#{queue_name}"
+      if @cache[key]
+        @cache[key]
       else
-        update_cache(queue_name, opts) do |o|
+        update_cache(key, opts) do |o|
           case type
           when :receiver
             Messaging::Receiver.new(queue_name, o)
@@ -28,13 +29,13 @@ module Smith
       create(queue_name, type, opts).ready { |queue| blk.call(queue) }
     end
 
-    # Convenience method that returns a Sender object. .ready is called by
+    # Convenience method that returns a Sender object. #ready is called by
     # this method.
     def sender(queue_name, opts={}, &blk)
       queue(queue_name, :sender, opts) { |sender| blk.call(sender) }
     end
 
-    # Convenience method that returns a Receiver object. .ready is called by
+    # Convenience method that returns a Receiver object. #ready is called by
     # this method.
     def receiver(queue_name, opts={}, &blk)
       queue(queue_name, :receiver, opts) { |receiver| blk.call(receiver) }
