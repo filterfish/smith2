@@ -8,28 +8,35 @@ module Smith
           responder.value("No queue specified. Please specify a queue.")
         when 1
           Messaging::Receiver.new(target.shift, :auto_ack => false).ready do |receiver|
-            count = 0
             callback = proc do
-
               work = proc do |n,iter|
                 receiver.pop do |r|
-                  if options[:remove]
-                    logger.info("Removing message: #{r.metadata.delivery_tag}")
-                    r.ack
-                  else
-                    logger.info("Requeuing message: #{r.metadata.delivery_tag}")
-                    r.reject(:requeue => true)
-                  end
-                  count += 1
+                  iter.return(r)
                 end
-                iter.next
               end
 
-              finished = proc do
-                responder.value("#{count} messages removed from: #{receiver.queue_name}")
+              finished = proc do |result|
+                responder.value do
+                  if options[:remove]
+                    logger.debug("Removing #{result.size} message from #{result.first.queue_name}")
+                    result.inject([]) do |a,r|
+                      a.tap do |acc|
+                        r.ack
+                        acc << {r.metadata.delivery_tag => r.payload.to_s.strip} if options[:print]
+                      end
+                    end
+                  else
+                    result.inject([]) do |a,r|
+                      a.tap do |acc|
+                        r.reject(:requeue => true)
+                        acc << {r.metadata.delivery_tag => r.payload.to_s.strip} if options[:print]
+                      end
+                    end
+                  end.join("\n")
+                end
               end
 
-              EM::Iterator.new(0..options[:number] - 1).each(work, finished)
+              EM::Iterator.new(0..options[:number] - 1).map(work, finished)
             end
 
             errback = proc {responder.value(nil)}
@@ -44,6 +51,7 @@ module Smith
       def options_parser
         Trollop::Parser.new do
           banner  Command.banner('pop-queue')
+          opt     :print,   "print the message", :short => :p
           opt     :remove,  "remove the message from the queue", :short => :r
           opt     :number,  "the number of messages to remove", :default =>1,  :short => :n
         end
