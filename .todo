@@ -163,6 +163,16 @@
 * Add support for connecting to rabbitmq using ssl with certificates, see
     http://hg.rabbitmq.com/rabbitmq-auth-mechanism-ssl/file/default/README
 
+* Fix incorrect message handling (if an acl gets sent to an agent that can't
+  hadle it). At the moment it doesn't catch the exception and the agent dies. It
+  should probably send it a dead letter queue. Either way at the moment the
+  message has to be manually removed from the queue.
+
+  It's actually a bit tricky to know what to do here: should I assume the agent
+  is correct and that the message is in error in which as the message should be
+  sent to the dead letter queue; or should I assume the message is correct and
+  the agent has a bug in which case the current behaviour is correct.
+
                           ~~~~~~~~ BUGS  ~~~~~~~~
 
 * Add the internal (to smith) pb directory to the pb load path.
