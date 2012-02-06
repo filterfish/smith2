@@ -173,6 +173,13 @@
   sent to the dead letter queue; or should I assume the message is correct and
   the agent has a bug in which case the current behaviour is correct.
 
+* Add warning that if there is an error of type:
+
+    Channel level exception: PRECONDITION_FAILED - unknown delivery tag 2. Class
+    id: 60, Method id: 80, Status code : 406
+
+  it probably means that you've already ack'ed the message.
+
                           ~~~~~~~~ BUGS  ~~~~~~~~
 
 * Add the internal (to smith) pb directory to the pb load path.
