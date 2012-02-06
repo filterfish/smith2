@@ -60,9 +60,7 @@
 * smithctl message should have some sort of printf formating string
   that can be used to construct the protocol buffer message.
 
-* See if Logging can take a proc/lambda. Some of the log messages
-  are getting quite big. It doesn't. I don't think it would be that difficult to
-  do: submit patch upstream.
+* Change all log messages to use the block form instead of the argument passing.
 
 * Have an option to not ack the pop-queue command. See Receiver#pop for a more
   detailed description. [done]
@@ -173,6 +171,15 @@
   sent to the dead letter queue; or should I assume the message is correct and
   the agent has a bug in which case the current behaviour is correct.
 
+* Add warning that if there is an error of type:
+
+    Channel level exception: PRECONDITION_FAILED - unknown delivery tag 2. Class
+    id: 60, Method id: 80, Status code : 406
+
+  it probably means that you've already ack'ed the message.
+
+* Sort the output of the agents commnd into alphabetical order.
+
                           ~~~~~~~~ BUGS  ~~~~~~~~
 
 * Add the internal (to smith) pb directory to the pb load path.
@@ -200,3 +207,5 @@
   * if the publish_and_receive method is used and the message is not replied too
     then there is a exchange/queue leak.
   * I think there is another case but I cannot think of it.
+
+* Start should check to see if the agent exists before starting it.
