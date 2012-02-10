@@ -178,6 +178,8 @@
 
   it probably means that you've already ack'ed the message.
 
+* Sort the output of the agents commnd into alphabetical order.
+
                           ~~~~~~~~ BUGS  ~~~~~~~~
 
 * Add the internal (to smith) pb directory to the pb load path.
