@@ -207,3 +207,5 @@
   * if the publish_and_receive method is used and the message is not replied too
     then there is a exchange/queue leak.
   * I think there is another case but I cannot think of it.
+
+* Start should check to see if the agent exists before starting it.
