@@ -19,7 +19,7 @@ module Smith
                 []
               end
             end
-          end
+          end.flatten
           (agent_paths.empty?) ? "No agents available." : "Agents available: #{agent_paths.sort.join(", ")}."
         end
       end
