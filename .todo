@@ -178,7 +178,7 @@
 
   it probably means that you've already ack'ed the message.
 
-* Sort the output of the agents commnd into alphabetical order.
+* Sort the output of the agents commnd into alphabetical order. [done]
 
 * Clean up some of the logging messages, for example:
 
