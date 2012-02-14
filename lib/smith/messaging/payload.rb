@@ -40,10 +40,10 @@ module Smith
       def content(*content, &block)
         if content.empty?
           raise ArgumentError, "No block given" if block.nil?
-          @encoder = @clazz.send(:new)
+          @encoder = @clazz.new
           block.call(@encoder)
         else
-          @encoder = @clazz.send(:new, content.first)
+          @encoder = @clazz.new(content.first)
         end
         self
       end
