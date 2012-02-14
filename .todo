@@ -180,6 +180,17 @@
 
 * Sort the output of the agents commnd into alphabetical order.
 
+* Clean up some of the logging messages, for example:
+
+  Messaging::Sender prints:
+    Publishing to: agency.control. [message]: [agency_command] -> {:command=>"list"}
+
+  where Receiver::Reply prints:
+    Payload content: [queue]: a1bf3328e2f3db87 [message]: [string] -> No agents running
+    
+  this is inconsistend.
+
+
                           ~~~~~~~~ BUGS  ~~~~~~~~
 
 * Add the internal (to smith) pb directory to the pb load path.
