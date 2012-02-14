@@ -57,17 +57,24 @@ module Smith
         @encoder
       end
 
+      # Returns a hash of the payload.
+      def to_hash
+        @encoder.to_hash
+      end
+
       # Encode the message, returning the encoded data.
       def encode
         @encoder.serialize_to_string
       end
 
+      # Returns true if the payload has all its required fields set.
       def initialized?
         @encoder.initialized?
       end
 
+      # Convert the payload to a pretty string.
       def to_s
-        "#{@type.to_s}: #{@encoder.inspect}"
+        "[#{type}] -> #{to_hash}"
       end
 
       # Decode the message using the specified decoder.
