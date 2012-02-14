@@ -11,7 +11,7 @@ module Smith
               if options[:long]
                 tabulate(long_format(agents), :header => "total #{agents.count}")
               else
-                tabulate(short_format(agents))
+                short_format(agents)
               end
             end
           else
@@ -22,7 +22,7 @@ module Smith
               if options[:long]
                 tabulate(long_format(running_agents), :header => "total #{running_agents.count}")
               else
-                tabulate(short_format(running_agents))
+                short_format(running_agents)
               end
             end
           end
@@ -46,7 +46,7 @@ module Smith
       end
 
       def short_format(agents)
-        agents.map { |a| [a.name] }
+        agents.map(&:name).sort.join(" ")
       end
 
       def format_time(t)
