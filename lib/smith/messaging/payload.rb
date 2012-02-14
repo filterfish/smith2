@@ -74,7 +74,7 @@ module Smith
 
       # Convert the payload to a pretty string.
       def to_s
-        "[#{type}] -> #{to_hash}"
+        "[#{type}] -> #{(@encoder.respond_to?(:to_hash)) ? @encoder.to_hash : @encoder.to_s}"
       end
 
       # Decode the message using the specified decoder.
