@@ -9,14 +9,13 @@ module Smith
         e = e.to_sym
 
         if @@pb_classes.include?(e)
-          logger.verbose("Using: #{e}") if logger.level == :verbose
           @@pb_classes[e]
         else
           class_name = Extlib::Inflection.camelize(e)
           if ACL.constants.include?(class_name)
             logger.error("Shouldn't get here.")
           else
-            load "#{e}.pb.rb"
+            require "#{e}.pb"
             logger.debug("#{class_name} Loaded from #{e}.pb.rb")
             ACL.const_get(class_name).tap do |clazz|
               @@pb_classes[e] = clazz
