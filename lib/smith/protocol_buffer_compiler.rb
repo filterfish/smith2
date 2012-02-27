@@ -8,23 +8,23 @@ module Smith
     include Logger
 
     def initialize(force=false)
+      # TODO Add the force code.
       @cache_path = Smith.pb_cache_path
     end
 
+    # Compile any protocol buffer files. This checks the timestamp
+    # to see if the file needs compiling.
     def compile
-      # Invoke protoc once per path item. This makes error reporting easier.
+      logger.debug("Protocol buffer cache path: #{@cache_path}")
       Smith.pb_path.each do |path|
         results = {}
         path_glob(path) do |p|
           if should_compile?(p)
-            logger.info("Compiling: #{p} into #{@cache_path}")
+            logger.info("Compiling: #{p}")
             # TODO put some error handling here.
             Protobuf::Compiler.compile(p.basename, p.dirname, @cache_path)
           end
         end
-
-        #pp results
-        #logger.info(compiler_output)
       end
       @cache_path
     end
