@@ -85,8 +85,10 @@ module Smith
         end
 
         connection.on_tcp_connection_loss do |connection, settings|
-          logger.error("TCP connection error. Attempting restart")
-          connection.reconnect
+          EM.next_tick do
+            logger.error("TCP connection error. Attempting restart")
+            connection.reconnect
+          end
         end
 
         connection.after_recovery do
