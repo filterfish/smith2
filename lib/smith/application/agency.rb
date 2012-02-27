@@ -40,7 +40,7 @@ module Smith
           when 'acknowledge_stop'
             acknowledge_stop(r.payload)
           else
-            logger.warn("Unkown command received on agent.lifecycle queue: #{r.payload.state.inspect}")
+            logger.warn("Unkown command received on agent.lifecycle queue: #{r.payload.state}")
           end
         end
       end
