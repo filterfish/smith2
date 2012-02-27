@@ -22,7 +22,7 @@
   queue.
 
 * Have an option that shuts down all agents when the agency is closed. Maybe a
-  -e option to stop
+  -e option to stop agency
 
 * Have a config item where I can put a list of agents that I can then start
   (or stop or kill for that matter)all at the same time. For example the command
@@ -191,6 +191,12 @@
   this is inconsistend.
 
 * Remove the commas in the agents command.
+
+* If nothing is listening on the reply queue to angency command then don't send
+  the message back and delete the queue. I think this is going to be quite hard
+  to do. I cound provide an option to Reply#reply but that smells.
+
+* Check all the commands for consistency.
 
                           ~~~~~~~~ BUGS  ~~~~~~~~
 
