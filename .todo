@@ -198,6 +198,11 @@
 
 * Check all the commands for consistency.
 
+* Add next_ticks around things like requeue and general recovery.
+
+* Put a lot more consideraton into recovery. Fox example the agency will die if
+  there is a queue error.
+
                           ~~~~~~~~ BUGS  ~~~~~~~~
 
 * Add the internal (to smith) pb directory to the pb load path.
