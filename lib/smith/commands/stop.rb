@@ -13,12 +13,12 @@ module Smith
         when 'agency'
           running_agents = agents.state(:running)
           if running_agents.empty?
-            logger.info("Agency shutting down.")
+            logger.info { "Agency shutting down." }
             Smith.stop
             responder.value
           else
-            logger.warn("Agents are still running: #{running_agents.map(&:name).join(", ")}.")
-            logger.info("Agency not shutting down. Use force_stop if you really want to shut it down.")
+            logger.warn { "Agents are still running: #{running_agents.map(&:name).join(", ")}." }
+            logger.info { "Agency not shutting down. Use force_stop if you really want to shut it down." }
             responder.value("Not shutting down, agents are still running: #{running_agents.map(&:name).join(", ")}.")
           end
         when 'all'
@@ -50,7 +50,7 @@ module Smith
                      agents[agent_name].stop
                      nil
             else
-              logger.warn("Agent not running: #{agent_name}")
+              logger.warn { "Agent not running: #{agent_name}" }
               agent_name
             end
           end

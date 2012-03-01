@@ -18,11 +18,11 @@ module Smith
           @exchange = exchange
 
           exchange.on_return do |basic_return,metadata,payload|
-            logger.error("#{ACL::Payload.decode(payload.clone, metadata.type)} was returned! Exchange: #{reply_code.exchange}, reply_code = #{basic_return.reply_code}, reply_text = #{basic_return.reply_text}")
-            logger.error("Properties: #{metadata.properties}")
+            logger.error { "#{ACL::Payload.decode(payload.clone, metadata.type)} was returned! Exchange: #{reply_code.exchange}, reply_code = #{basic_return.reply_code}, reply_text = #{basic_return.reply_text}" }
+            logger.error { "Properties: #{metadata.properties}" }
           end
 
-          logger.verbose("Creating queue: [queue]:#{denomalized_queue_name} [options]:#{options.queue}")
+          logger.verbose { "Creating queue: [queue]:#{denomalized_queue_name} [options]:#{options.queue}" }
 
           Smith.channel.queue(queue_name, options.queue) do |queue|
             @queue = queue
@@ -50,7 +50,7 @@ module Smith
         @message_counts[queue_name]
       end
 
-      def messages?(blk=nil, err=proc {logger.debug("No messages on #{@denomalized_queue_name}")})
+      def messages?(blk=nil, err=proc {logger.debug { "No messages on #{@denomalized_queue_name}" } })
         number_of_messages do |n|
           if n > 0
             if blk.respond_to? :call
@@ -64,7 +64,7 @@ module Smith
         end
       end
 
-      def consumers?(blk=nil, err=proc {logger.debug("Nothing listening on #{@denomalized_queue_name}")})
+      def consumers?(blk=nil, err=proc {logger.debug { "Nothing listening on #{@denomalized_queue_name}" } })
         number_of_consumers do |n|
           if n > 0
             if blk.respond_to? :call

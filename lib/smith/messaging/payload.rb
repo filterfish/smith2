@@ -13,10 +13,10 @@ module Smith
         else
           class_name = Extlib::Inflection.camelize(e)
           if ACL.constants.include?(class_name)
-            logger.error("Shouldn't get here.")
+            logger.error { "Shouldn't get here." }
           else
             require "#{e}.pb"
-            logger.debug("#{class_name} Loaded from #{e}.pb.rb")
+            logger.debug { "#{class_name} Loaded from #{e}.pb.rb" }
             ACL.const_get(class_name).tap do |clazz|
               @@pb_classes[e] = clazz
             end

@@ -32,7 +32,7 @@ module Smith
             # still listening. By cancel'ling the consumer it releases the queue and exchange.
             r.metadata.channel.consumers.each do |k,v|
               if k.start_with?(receiver.queue_name)
-                logger.verbose("Cancelling: #{k}")
+                logger.verbose { "Cancelling: #{k}" }
                 v.cancel
               end
             end
@@ -47,8 +47,8 @@ module Smith
       private
 
       def _publish(message, opts, &block)
-        logger.verbose("Publishing to: #{denomalized_queue_name}. [options]: #{opts}")
-        logger.verbose("Publishing to: #{denomalized_queue_name}. [message]: #{message}")
+        logger.verbose { "Publishing to: #{denomalized_queue_name}. [options]: #{opts}" }
+        logger.verbose { "Publishing to: #{denomalized_queue_name}. [message]: #{message}" }
         if message.initialized?
           increment_counter
           exchange.publish(message.encode, opts, &block)

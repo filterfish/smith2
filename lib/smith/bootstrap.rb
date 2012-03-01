@@ -25,17 +25,17 @@ module Smith
     end
 
     def signal_handlers
-      logger.debug("Installing default signal handlers")
+      logger.debug { "Installing default signal handlers" }
       %w{TERM INT QUIT}.each do |sig|
         @agent.install_signal_handler(sig) do |sig|
-          logger.error("Agent received: signal #{sig}: #{agent.name}")
+          logger.error { "Agent received: signal #{sig}: #{agent.name}" }
           terminate!
         end
       end
     end
 
     def load_agent
-      logger.debug("Loading #{@agent_name} from: #{@agent_filename.dirname}")
+      logger.debug { "Loading #{@agent_name} from: #{@agent_filename.dirname}" }
       add_agent_load_path
       load @agent_filename
       @agent = Kernel.const_get(@agent_name).new
@@ -52,15 +52,15 @@ module Smith
     # be running. So it must be restarted and then shutdown again
     # See the note at the in main.
     def terminate!(exception=nil)
-      logger.error(format_exception(exception)) if exception
-      logger.error("Terminating: #{@agent_name}.")
+      logger.error { format_exception(exception) } if exception
+      logger.error { "Terminating: #{@agent_name}." }
 
       if Smith.running?
         send_dead_message
         unlink_pid_file
         Smith.stop
       else
-        logger.debug("Reconnecting to AMQP Broker.")
+        logger.debug { "Reconnecting to AMQP Broker." }
         Smith.start do
           send_dead_message
           unlink_pid_file
@@ -83,7 +83,7 @@ module Smith
     end
 
     def send_dead_message
-      logger.debug("Sending dead message to agency: #{@agent_name}")
+      logger.debug { "Sending dead message to agency: #{@agent_name}" }
       Messaging::Sender.new('agent.lifecycle', :auto_delete => true, :durable => false).ready do |sender|
         sender.publish(ACL::Payload.new(:agent_lifecycle).content(:state => 'dead', :name => @agent_name))
       end
@@ -91,7 +91,7 @@ module Smith
 
     def unlink_pid_file
       if @pid && @pid.exist?
-        logger.debug("Cleaning up pid file: #{@pid.filename}")
+        logger.debug { "Cleaning up pid file: #{@pid.filename}" }
       end
     end
 
@@ -117,7 +117,7 @@ module Smith
       path = @agent_filename.dirname.dirname.join('lib')
       # The load path may be a pathname or a string. Change to strings.
       unless $:.detect { |p| p.to_s == path.to_s }
-        logger.debug("Adding #{path} to load path")
+        logger.debug { "Adding #{path} to load path" }
         $: << path
       end
     end

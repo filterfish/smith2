@@ -25,11 +25,11 @@ module Smith
     state_machine :initial => :null do
 
       before_transition do |transition|
-        logger.debug("Transition [#{name}]: :#{transition.from} -> :#{transition.to}")
+        logger.debug { "Transition [#{name}]: :#{transition.from} -> :#{transition.to}" }
       end
 
       after_failure do |transition|
-        logger.debug("Illegal state change [#{name}]: :#{transition.from} -> :#{transition.event}")
+        logger.debug { "Illegal state change [#{name}]: :#{transition.from} -> :#{transition.event}" }
       end
 
       event :instantiate do
@@ -131,7 +131,7 @@ module Smith
       Messaging::Sender.new(agent_process.control_queue_name, :durable => false, :auto_delete => true).ready do |sender|
         callback = proc {|sender| sender.publish(ACL::Payload.new(:agent_command).content(:command => 'stop')) }
         errback = proc do
-          logger.warn("Agent is not listening. Setting state to dead.")
+          logger.warn { "Agent is not listening. Setting state to dead." }
           agent_process.no_process_running
         end
 
@@ -144,14 +144,14 @@ module Smith
 
     def self.kill(agent_process)
       if agent_process.pid
-        logger.info("Sending kill signal: #{agent_process.name}(#{agent_process.pid})")
+        logger.info { "Sending kill signal: #{agent_process.name}(#{agent_process.pid})" }
         begin
           Process.kill('TERM', agent_process.pid.to_i)
         rescue
-          logger.error("Process does not exist. PID is stale: #{agent_process.pid}: #{agent_process.name}")
+          logger.error { "Process does not exist. PID is stale: #{agent_process.pid}: #{agent_process.name}" }
         end
       else
-        logger.error("Not sending kill signal, agent pid is not set: #{agent_process.name}")
+        logger.error { "Not sending kill signal, agent pid is not set: #{agent_process.name}" }
       end
     end
 
@@ -161,11 +161,11 @@ module Smith
     # quite worked out what I'm going to do with it so I'll leave it
     # as is
     def self.reap_agent(agent_process)
-      logger.info("Reaping agent: #{agent_process.name}")
+      logger.info { "Reaping agent: #{agent_process.name}" }
       if Pathname.new('/proc').join(agent_process.pid.to_s).exist?
-        logger.warn("Agent is still alive: #{agent_process.name}")
+        logger.warn { "Agent is still alive: #{agent_process.name}" }
       else
-        logger.warn("Agent is already dead: #{agent_process.name}")
+        logger.warn { "Agent is already dead: #{agent_process.name}" }
       end
     end
   end
