@@ -15,12 +15,12 @@ module Smith
     # Compile any protocol buffer files. This checks the timestamp
     # to see if the file needs compiling.
     def compile
-      logger.debug("Protocol buffer cache path: #{@cache_path}")
+      logger.debug { "Protocol buffer cache path: #{@cache_path}" }
       Smith.pb_path.each do |path|
         results = {}
         path_glob(path) do |p|
           if should_compile?(p)
-            logger.info("Compiling: #{p}")
+            logger.info { "Compiling: #{p}" }
             # TODO put some error handling here.
             Protobuf::Compiler.compile(p.basename, p.dirname, @cache_path)
           end
@@ -38,7 +38,7 @@ module Smith
     # but if it's not specified and a temporary directory was created then
     # the directory is removed as well.
     def clear_cache
-      logger.info("Clearing the Protocol Buffer cache: #{Smith.pb_cache_path}")
+      logger.info { "Clearing the Protocol Buffer cache: #{Smith.pb_cache_path}" }
 
       Pathname.glob(@cache_path.join("*")).each do |path|
         path.unlink

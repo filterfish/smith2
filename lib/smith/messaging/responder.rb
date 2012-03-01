@@ -6,7 +6,7 @@ module Smith
       include EventMachine::Deferrable
 
       def value(value=nil, &blk)
-        logger.verbose("Running responders: #{(value || blk).inspect}")
+        logger.verbose { "Running responders: #{(value || blk).inspect}" }
         value ||= ((blk) ? blk.call : nil)
         set_deferred_status(:succeeded, value)
       end

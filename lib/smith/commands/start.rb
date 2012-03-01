@@ -41,7 +41,7 @@ module Smith
                 nil
               else
                 "Unknown agent: #{agents[agent].name}".tap do |m|
-                  logger.error(m)
+                  logger.error { m }
                 end
               end
             end.compact.join("\n")

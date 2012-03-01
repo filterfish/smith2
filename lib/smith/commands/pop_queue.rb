@@ -18,7 +18,7 @@ module Smith
               finished = proc do |result|
                 responder.value do
                   if options[:remove]
-                    logger.debug("Removing #{result.size} message from #{result.first.queue_name}")
+                    logger.debug { "Removing #{result.size} message from #{result.first.queue_name}" }
                     result.inject([]) do |a,r|
                       a.tap do |acc|
                         r.ack

@@ -81,35 +81,35 @@ module Smith
         connection.on_connection do
           broker = connection.broker.properties
           endpoint = connection.broker_endpoint
-          logger.debug("Connected to: AMQP Broker: #{endpoint}, (#{broker['product']}/v#{broker['version']})") unless opts[:quiet]
+          logger.debug { "Connected to: AMQP Broker: #{endpoint}, (#{broker['product']}/v#{broker['version']})" } unless opts[:quiet]
         end
 
         connection.on_tcp_connection_loss do |connection, settings|
           EM.next_tick do
-            logger.error("TCP connection error. Attempting restart")
+            logger.error { "TCP connection error. Attempting restart" }
             connection.reconnect
           end
         end
 
         connection.after_recovery do
-          logger.info("Connection to AMQP server restored")
+          logger.info { "Connection to AMQP server restored" }
         end
 
         connection.on_error do |connection, reason|
           case reason.reply_code
           when 320
-            logger.warn("AMQP server shutdown. Waiting.")
+            logger.warn { "AMQP server shutdown. Waiting." }
           else
             if @handler
               @handler.call(connection, reason)
             else
-              logger.error("AMQP Server error: #{reason.reply_code}: #{reason.reply_text}")
+              logger.error { "AMQP Server error: #{reason.reply_code}: #{reason.reply_text}" }
             end
           end
         end
 
         # This will be the last thing run by the reactor.
-        shutdown_hook { logger.debug("Reactor Stopped") }
+        shutdown_hook { logger.debug { "Reactor Stopped" } }
 
         AMQP::Channel.new(connection) do |channel,ok|
           @channel = channel
@@ -120,8 +120,8 @@ module Smith
           # Log the error and stop the agency when there are channel errors.
           # TODO Add recovery instead of stopping the agency.
           channel.on_error do |ch,channel_close|
-            logger.fatal("Channel level exception: #{channel_close.reply_text}. Class id: #{channel_close.class_id}, Method id: #{channel_close.method_id}, Status code : #{channel_close.reply_code}")
-            logger.fatal("Agency is exiting")
+            logger.fatal { "Channel level exception: #{channel_close.reply_text}. Class id: #{channel_close.class_id}, Method id: #{channel_close.method_id}, Status code : #{channel_close.reply_code}" }
+            logger.fatal { "Agency is exiting" }
             Smith.stop(true)
           end
 
@@ -150,7 +150,7 @@ module Smith
           end
         end
       else
-        logger.fatal("Eventmachine is not running, exiting with prejudice")
+        logger.fatal { "Eventmachine is not running, exiting with prejudice" }
         exit!
       end
     end
@@ -161,11 +161,11 @@ module Smith
       # Only display the following settings.
       s = settings.select { |k,v| ([:user, :pass, :vhost, :host, :port, :ssl].include?(k)) }
 
-      logger.fatal("Cannot connect to the AMQP server.")
-      logger.fatal("Is the server running and are the connection details correct?")
-      logger.info("Details:")
+      logger.fatal { "Cannot connect to the AMQP server." }
+      logger.fatal { "Is the server running and are the connection details correct?" }
+      logger.info { "Details:" }
       s.each do |k,v|
-        logger.info(" Setting: %-7s%s" %  [k, v])
+        logger.info { " Setting: %-7s%s" %  [k, v] }
       end
       EM.stop
     end
@@ -174,10 +174,10 @@ module Smith
       # Only display the following settings.
       s = settings.select { |k,v| [:user, :pass, :vhost, :host].include?(k) }
 
-      logger.fatal("Authenticaton failure.")
-      logger.info("Details:")
+      logger.fatal { "Authenticaton failure." }
+      logger.info { "Details:" }
       s.each do |k,v|
-        logger.info(" Setting: %-7s%s" %  [k, v])
+        logger.info { " Setting: %-7s%s" %  [k, v] }
       end
       EM.stop
     end

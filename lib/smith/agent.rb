@@ -23,11 +23,11 @@ module Smith
       @start_time = Time.now
 
       on_started do
-        logger.info("#{name}:[#{pid}] started.")
+        logger.info { "#{name}:[#{pid}] started." }
       end
 
       on_stopped do
-        logger.info("#{name}:[#{pid}] stopped.")
+        logger.info { "#{name}:[#{pid}] stopped." }
       end
 
       EM.threadpool_size = 1
@@ -41,7 +41,7 @@ module Smith
     def run
       raise ArgumentError, "You need to call Agent.task(&block)" if @@task.nil?
 
-      logger.debug("Setting up default queue: #{default_queue_name}")
+      logger.debug { "Setting up default queue: #{default_queue_name}" }
 
       subscribe(default_queue_name, :auto_delete => false) do |r|
         @@task.call(r.payload)
@@ -59,7 +59,7 @@ module Smith
     def install_signal_handler(signal, position=:end, &blk)
       raise ArgumentError, "Unknown position: #{position}" if ![:beginning, :end].include?(position)
 
-      logger.debug("Installing signal handler for #{signal}")
+      logger.debug { "Installing signal handler for #{signal}" }
       @signal_handlers[signal].insert((position == :beginning) ? 0 : -1, blk)
       @signal_handlers.each do |sig, handlers|
         trap(sig, proc { |sig| run_signal_handlers(sig, handlers) })
@@ -108,14 +108,14 @@ module Smith
     protected
 
     def run_signal_handlers(sig, handlers)
-      logger.debug("Running signal handlers for agent: #{name}: #{sig}")
+      logger.debug { "Running signal handlers for agent: #{name}: #{sig}" }
       handlers.each { |handler| handler.call(sig) }
     end
 
     def setup_control_queue
-      logger.debug("Setting up control queue: #{control_queue_name}")
+      logger.debug { "Setting up control queue: #{control_queue_name}" }
       receiver(control_queue_name, :auto_delete => true, :durable => false) do |r|
-        logger.debug("Command received on agent control queue: #{r.payload.command} #{r.payload.options}")
+        logger.debug { "Command received on agent control queue: #{r.payload.command} #{r.payload.options}" }
 
         case r.payload.command
         when 'stop'
@@ -123,13 +123,13 @@ module Smith
         when 'log_level'
           begin
             level = r.payload.options.first
-            logger.info("Setting log level to #{level} for: #{name}")
+            logger.info { "Setting log level to #{level} for: #{name}" }
             log_level(level)
           rescue ArgumentError => e
-            logger.error("Incorrect log level: #{level}")
+            logger.error { "Incorrect log level: #{level}" }
           end
         else
-          logger.warn("Unknown command: #{level} -> #{level.inspect}")
+          logger.warn { "Unknown command: #{level} -> #{level.inspect}" }
         end
       end
     end
@@ -184,7 +184,7 @@ module Smith
           end
         end
       else
-        logger.info("Not initiating keep alive, agent is not being monitored: #{@name}")
+        logger.info { "Not initiating keep alive, agent is not being monitored: #{@name}" }
       end
     end
 

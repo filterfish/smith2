@@ -15,11 +15,11 @@ module Smith
               nil
             when 'agency'
               begin
-                logger.info("Setting agency log level to: #{options[:level]}")
+                logger.info { "Setting agency log level to: #{options[:level]}" }
                 log_level(options[:level])
                 nil
               rescue ArgumentError
-                logger.error("Incorrect log level: #{options[:level]}")
+                logger.error { "Incorrect log level: #{options[:level]}" }
                 nil
               end
             when nil

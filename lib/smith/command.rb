@@ -17,7 +17,7 @@ module Smith
     def self.run(command, args, vars)
       # Change _ to - underscores look so ugly as a command name.
       command.gsub!(/-/, '_')
-      logger.debug("Agency command: #{command}#{(args.empty?) ? '' : " #{args.join(', ')}"}.")
+      logger.debug { "Agency command: #{command}#{(args.empty?) ? '' : " #{args.join(', ')}"}." }
 
       load_command(command)
 
