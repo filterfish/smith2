@@ -17,7 +17,7 @@
   implement an autoload system. Look at shogun(?)
 
 * Think about whether to not send messages to agents if they aren't alive.
-  At the moment this is a little inconsistent: some command check to see it the
+  At the moment this is a little inconsistent: some commands check to see it the
   agent is alive and others check to see if there is anything listening on the
   queue.
 
@@ -25,7 +25,7 @@
   -e option to stop agency
 
 * Have a config item where I can put a list of agents that I can then start
-  (or stop or kill for that matter)all at the same time. For example the command
+  (or stop or kill for that matter) all at the same time. For example the command
   might be:
 
     smithctl group start <group name> smithctl group stop <group name>
@@ -190,13 +190,26 @@
     
   this is inconsistend.
 
-* Remove the commas in the agents command.
+* Remove the commas in the agents command. [done]
 
 * If nothing is listening on the reply queue to angency command then don't send
   the message back and delete the queue. I think this is going to be quite hard
   to do. I cound provide an option to Reply#reply but that smells.
 
 * Check all the commands for consistency.
+
+* Split the functionality of smithctl. At the moment this simply sends any
+  commands to the agency but some commands are better served by executing the
+  command directly. For example removing a queue. 
+
+  Removing a queue is quite problematic as I cannot get the queue attributes
+  from the broker (not via amqp anyway -- at least I cannot see a whay of doing
+  it) but I can declare the queue with the :passive option which will use any
+  existing queues but will cause a channel exception if the queue doesn't exist
+  which makes life really awkward for the agency. If I do this in smithctl then
+  a channel exception can be handled properly without impacting the agency.
+
+  So in short have local and remote commands!
 
 * Add next_ticks around things like requeue and general recovery.
 
