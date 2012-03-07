@@ -31,9 +31,15 @@ module Smith
       include ClassMethods
       extend ClassMethods
 
-      def initialize(encoder=:default)
-        @type = encoder
-        @clazz = encoder_class(encoder)
+      # content can be an existing ACL class.
+      def initialize(type=:default, opts={})
+        if opts[:from]
+          @type = opts[:from].class.to_s.split(/::/).last.snake_case
+          @encoder = opts[:from]
+        else
+          @type = type
+          @clazz = encoder_class(type)
+        end
       end
 
       def content(*content, &block)
