@@ -2,6 +2,12 @@
 module Smith
   module ACL
 
+    module ACLInstanceMethods
+      def inspect
+        "<#{self.class.to_s}> -> #{(self.respond_to?(:to_hash)) ? self.to_hash : self.to_s}"
+      end
+    end
+
     module ClassMethods
       def encoder_class(e)
         @@pb_classes ||= {:default => Default}
@@ -18,7 +24,8 @@ module Smith
             require "#{e}.pb"
             logger.debug { "#{class_name} Loaded from #{e}.pb.rb" }
             ACL.const_get(class_name).tap do |clazz|
-              @@pb_classes[e] = clazz
+              # Override the inspect method
+              @@pb_classes[e] = clazz.send(:include, ACLInstanceMethods)
             end
           end
         end
@@ -74,12 +81,13 @@ module Smith
 
       # Returns true if the payload has all its required fields set.
       def initialized?
+        raise RuntimeError, "You probably forgot to call #content or give the :from option when instantiating the object." if @encoder.nil?
         @encoder.initialized?
       end
 
       # Convert the payload to a pretty string.
       def to_s
-        "[#{type}] -> #{(@encoder.respond_to?(:to_hash)) ? @encoder.to_hash : @encoder.to_s}"
+        @encoder.inspect
       end
 
       # Decode the message using the specified decoder.

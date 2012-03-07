@@ -7,6 +7,9 @@ module Smith
     # assigned an empty Hash. method_missing is declared and will update
     # the hash.
     class Default
+
+      include ACLInstanceMethods
+
       def initialize(message={})
         @message = message
       end
@@ -25,12 +28,17 @@ module Smith
       end
 
       def to_s
-        @message.inspect
+        @message.to_s
       end
 
       def method_missing(method, args)
-        index = method.to_s.sub(/=$/, '').to_sym
-        @message[index] = args
+        match = /(.*?)=$/.match(method.to_s)
+        if match && match[1]
+          index = match[1].to_sym
+          @message[index] = args
+        else
+          raise NoMethodError, "undefined method `#{method}' for #{self}", caller
+        end
       end
     end
   end
