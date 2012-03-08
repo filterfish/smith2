@@ -9,7 +9,7 @@ module Smith
     end
 
     module ClassMethods
-      def encoder_class(e)
+      def content_class(e)
         @@pb_classes ||= {:default => Default}
 
         e = e.to_sym
@@ -42,57 +42,57 @@ module Smith
       def initialize(type=:default, opts={})
         if opts[:from]
           @type = opts[:from].class.to_s.split(/::/).last.snake_case
-          @encoder = opts[:from]
+          @content = opts[:from]
         else
           @type = type
-          @clazz = encoder_class(type)
+          @clazz = content_class(type)
         end
       end
 
+      # Add content to the content or get the content from a payload
       def content(*content, &block)
         if content.empty?
-          raise ArgumentError, "No block given" if block.nil?
-          @encoder = @clazz.new
-          block.call(@encoder)
+          if block.nil?
+            return @content
+          else
+            @content = @clazz.new
+            block.call(@content)
+          end
         else
-          @encoder = @clazz.new(content.first)
+          @content = @clazz.new(content.first)
         end
         self
       end
 
-      # The type of encoder.
+      # The type of content.
       def type
         @type.to_s
       end
 
-      def payload
-        @encoder
-      end
-
       # Returns a hash of the payload.
       def to_hash
-        @encoder.to_hash
+        @content.to_hash
       end
 
-      # Encode the message, returning the encoded data.
+      # Encode the content, returning the encoded data.
       def encode
-        @encoder.serialize_to_string
+        @content.serialize_to_string
       end
 
       # Returns true if the payload has all its required fields set.
       def initialized?
-        raise RuntimeError, "You probably forgot to call #content or give the :from option when instantiating the object." if @encoder.nil?
-        @encoder.initialized?
+        raise RuntimeError, "You probably forgot to call #content or give the :from option when instantiating the object." if @content.nil?
+        @content.initialized?
       end
 
       # Convert the payload to a pretty string.
       def to_s
-        @encoder.inspect
+        @content.inspect
       end
 
-      # Decode the message using the specified decoder.
+      # Decode the content using the specified decoder.
       def self.decode(payload, decoder=:default)
-        encoder_class(decoder).new.parse_from_string(payload)
+        content_class(decoder).new.parse_from_string(payload)
       end
     end
   end
