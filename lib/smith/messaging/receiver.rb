@@ -101,7 +101,8 @@ module Smith
           @time = Time.now
 
           @payload = ACL::Payload.decode(undecoded_payload, metadata.type)
-          logger.verbose { "Payload content: [queue]: #{denomalized_queue_name} [message]: #{pretty_print_payload(payload)}" }
+          logger.verbose { "Received content on: [queue]: #{denomalized_queue_name}." }
+          logger.verbose { "Payload content: [queue]: #{denomalized_queue_name}, [metadata type]: #{metadata.type}, [message]: #{payload.inspect}" }
         end
 
         # acknowledge the message.
@@ -187,12 +188,6 @@ module Smith
           headers.tap do |m|
             m['retry'] = (m['retry']) ? m['retry'] + 1 : 1
           end
-        end
-
-        # Pretty print the payload. This should go into the payload but for
-        # time being it's going here.
-        def pretty_print_payload(payload)
-          "[#{payload.class.to_s.split(/::/).last.snake_case}] -> #{(payload.respond_to?(:to_hash)) ? payload.to_hash : payload.to_s}"
         end
       end
     end

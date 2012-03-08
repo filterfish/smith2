@@ -39,7 +39,7 @@ module Smith
           end
 
           # DO NOT MOVE THIS OUTSIDE THE READY BLOCK: YOU WILL LOSE MESSAGES. The reason is
-          # that a message can be published and responded to before the receive queue is set up.
+          # that a message can be published and responded too before the receive queue is set up.
           _publish(message, options.publish(:reply_to => message_id, :message_id => message_id, :type => message.type))
         end
       end
@@ -47,8 +47,8 @@ module Smith
       private
 
       def _publish(message, opts, &block)
-        logger.verbose { "Publishing to: #{denomalized_queue_name}. [options]: #{opts}" }
-        logger.verbose { "Publishing to: #{denomalized_queue_name}. [message]: #{message}" }
+        logger.verbose { "Publishing to: [queue]: #{denomalized_queue_name}. [options]: #{opts}" }
+        logger.verbose { "Payload content: [queue]: #{denomalized_queue_name}, [metadata type]: #{message.type}, [message]: #{message.inspect}" }
         if message.initialized?
           increment_counter
           exchange.publish(message.encode, opts, &block)
