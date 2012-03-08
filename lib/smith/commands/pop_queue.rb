@@ -22,14 +22,14 @@ module Smith
                     result.inject([]) do |a,r|
                       a.tap do |acc|
                         r.ack
-                        acc << {r.metadata.delivery_tag => r.payload.to_s.strip} if options[:print]
+                        acc << {r.metadata.delivery_tag => r.payload}.inspect if options[:print]
                       end
                     end
                   else
                     result.inject([]) do |a,r|
                       a.tap do |acc|
                         r.reject(:requeue => true)
-                        acc << {r.metadata.delivery_tag => r.payload.to_s.strip} if options[:print]
+                        acc << {r.metadata.delivery_tag => r.payload}.inspect if options[:print]
                       end
                     end
                   end.join("\n")
