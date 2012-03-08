@@ -4,27 +4,15 @@ class TestAgent < Smith::Agent
   options :monitor => false
 
   def run
-    subscribe_and_reply('agent.test', :threads => true) do |metadata,payload,responder|
-      method(:search).call(metadata, payload, responder)
+    n = 0
+
+    receiver('agent.fast_test') do |r|
+      acl = Smith::ACL::Payload.new(:default)
+      sender('agent.barf') do |send_queue|
+        send_queue.publish_and_receive(acl.content("#{n +=1 } hey!")) do |r|
+          puts "echoing payload: #{r.payload}"
+        end
+      end
     end
-
-    subscribe('agent.fast_test', :threads => false) do |metadata,payload|
-      publish('agent.barf', Smith::ACL::Payload.new(:default).content("hey!"))
-    end
-
-    acknowledge_start
-    start_keep_alive
-    logger.info("Starting #{name}:[#{$$}]")
-  end
-
-  private
-
-  def search(metadata, payload, responder)
-    t1 = Time.now.to_f
-    puts "searching"
-    sleep(10)
-    t2 = Time.now.to_f
-    puts "finished searching"
-    responder.value("finished searching after #{t2 - t1}")
   end
 end
