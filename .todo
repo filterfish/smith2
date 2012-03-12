@@ -216,6 +216,10 @@
 * Put a lot more consideraton into recovery. Fox example the agency will die if
   there is a queue error.
 
+* Add a class to define the queue name and the type of message they can listen
+  on. This can be used to define the queues in a centralised place which should
+  avoid configuration errors.
+
                           ~~~~~~~~ BUGS  ~~~~~~~~
 
 * Add the internal (to smith) pb directory to the pb load path.
