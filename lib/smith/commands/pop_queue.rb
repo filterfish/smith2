@@ -1,4 +1,6 @@
 # -*- encoding: utf-8 -*-
+require 'yajl'
+
 module Smith
   module Commands
     class PopQueue < Command
@@ -22,14 +24,14 @@ module Smith
                     result.inject([]) do |a,r|
                       a.tap do |acc|
                         r.ack
-                        acc << {r.metadata.delivery_tag => r.payload}.inspect if options[:print]
+                        acc << print_message(r.payload)
                       end
                     end
                   else
                     result.inject([]) do |a,r|
                       a.tap do |acc|
                         r.reject(:requeue => true)
-                        acc << {r.metadata.delivery_tag => r.payload}.inspect if options[:print]
+                        acc << print_message(r.payload)
                       end
                     end
                   end.join("\n")
@@ -52,8 +54,21 @@ module Smith
         Trollop::Parser.new do
           banner  Command.banner('pop-queue')
           opt     :print,   "print the message", :short => :p
+          opt     :json ,   "return the JSON representation of the message", :short => :j
           opt     :remove,  "remove the message from the queue", :short => :r
           opt     :number,  "the number of messages to remove", :default =>1,  :short => :n
+        end
+      end
+
+      private
+
+      def print_message(message)
+        if options[:print]
+          if options[:json]
+            message.as_json
+          else
+            message.inspect
+          end
         end
       end
     end
