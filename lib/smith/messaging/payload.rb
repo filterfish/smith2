@@ -4,7 +4,11 @@ module Smith
 
     module ACLInstanceMethods
       def inspect
-        "<#{self.class.to_s}> -> #{(self.respond_to?(:to_hash)) ? self.to_hash : self.to_s}"
+        "<#{self.class.to_s}> -> #{self.to_hash}"
+      end
+
+      def as_json
+        Yajl.dump(self.to_hash)
       end
     end
 

@@ -8,8 +8,6 @@ module Smith
     # the hash.
     class Default
 
-      include ACLInstanceMethods
-
       def initialize(message={})
         @message = message
       end
@@ -29,6 +27,14 @@ module Smith
 
       def to_s
         @message.to_s
+      end
+
+      def inspect
+        "<#{self.class.to_s}> -> #{(self.respond_to?(:to_hash)) ? self.to_hash : self.to_s}"
+      end
+
+      def as_json
+        Yajl.dump(@message)
       end
 
       def method_missing(method, args)
