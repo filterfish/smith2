@@ -105,41 +105,6 @@ module Smith
           logger.verbose { "Payload content: [queue]: #{denomalized_queue_name}, [metadata type]: #{metadata.type}, [message]: #{payload.inspect}" }
         end
 
-        # acknowledge the message.
-        def ack(multiple=false)
-          @metadata.ack(multiple)
-        end
-
-        # reject the message. Optionally requeuing it.
-        def reject(opts={})
-          @metadata.reject(opts)
-        end
-
-        # Republish the message to the end of the same queue. This is useful
-        # for when the agent encounters an error and needs to requeue the message.
-        def requeue(delay, &block)
-          # Sort out the options.
-          opts = @receiver.send(:queue).opts.tap do |o|
-            o.delete(:queue)
-            o.delete(:exchange)
-
-            o[:headers] = increment_retry_count(metadata.headers)
-            o[:routing_key] = normalised_queue_name
-            o[:type] = metadata.type
-          end
-
-          logger.verbose { "Requeuing to: #{denomalized_queue_name}. [options]: #{opts}" }
-          logger.verbose { "Requeuing to: #{denomalized_queue_name}. [message]: #{ACL::Payload.decode(@undecoded_payload, metadata.type)}" }
-
-          EM.add_timer(delay) do
-            @receiver.send(:exchange).publish(@undecoded_payload, opts)
-          end
-        end
-
-        def requeue_count
-          metadata.headers['retry'] || 0
-        end
-
         # Reply to a message. If reply_to header is not set a error will be logged
         def reply(&block)
           responder = Responder.new
@@ -161,13 +126,57 @@ module Smith
           block.call(responder)
         end
 
-        # The payload type. This returns the protocol buffers class name as a string.
-        def payload_type
-          @metadata.type
+        # acknowledge the message.
+        def ack(multiple=false)
+          @metadata.ack(multiple)
+        end
+
+        # reject the message. Optionally requeuing it.
+        def reject(opts={})
+          @metadata.reject(opts)
         end
 
         def reply_to
           @metadata.reply_to
+        end
+
+        # Republish the message to the end of the same queue. This is useful
+        # for when the agent encounters an error and needs to requeue the message.
+        def requeue(delay, count, strategy, &block)
+          requeue_with_strategy(delay, count, strategy) do
+
+            # Sort out the options. Receiver#queue is private hence the send. I know, I know.
+            opts = @receiver.send(:queue).opts.tap do |o|
+              o.delete(:queue)
+              o.delete(:exchange)
+
+              o[:headers] = increment_requeue_count(metadata.headers)
+              o[:routing_key] = normalised_queue_name
+              o[:type] = metadata.type
+            end
+
+            logger.verbose { "Requeuing to: #{denomalized_queue_name}. [options]: #{opts}" }
+            logger.verbose { "Requeuing to: #{denomalized_queue_name}. [message]: #{ACL::Payload.decode(@undecoded_payload, metadata.type)}" }
+
+            @receiver.send(:exchange).publish(@undecoded_payload, opts)
+          end
+        end
+
+        def on_requeue_error(&block)
+          @on_requeue_error = block
+        end
+
+        def on_requeue(&block)
+          @on_requeue = block
+        end
+
+        def current_requeue_number
+          metadata.headers['requeue'] || 0
+        end
+
+        # The payload type. This returns the protocol buffers class name as a string.
+        def payload_type
+          @metadata.type
         end
 
         def queue_name
@@ -175,6 +184,35 @@ module Smith
         end
 
         private
+
+        def requeue_with_strategy(delay, count, strategy, &block)
+          if current_requeue_number < count
+            method = "#{strategy}_strategy".to_sym
+            if respond_to?(method, true)
+              cummulative_delay = send(method, delay)
+              @on_requeue.call(cummulative_delay, current_requeue_number + 1)
+              EM.add_timer(cummulative_delay) do
+                block.call(cummulative_delay, current_requeue_number + 1)
+              end
+            else
+              raise RuntimeError, "Unknown requeue strategy. #{method}"
+            end
+          else
+            @on_requeue_error.call(cummulative_delay, current_requeue_number)
+          end
+        end
+
+        def exponential_no_initial_delay_strategy(delay)
+          delay * (2 ** current_requeue_number - 1)
+        end
+
+        def exponential_strategy(delay)
+          delay * (2 ** current_requeue_number)
+        end
+
+        def linear_strategy(delay)
+          delay * (current_requeue_number + 1)
+        end
 
         def denomalized_queue_name
           @receiver.denomalized_queue_name
@@ -184,7 +222,7 @@ module Smith
           @receiver.queue_name
         end
 
-        def increment_retry_count(headers)
+        def increment_requeue_count(headers)
           headers.tap do |m|
             m['retry'] = (m['retry']) ? m['retry'] + 1 : 1
           end
