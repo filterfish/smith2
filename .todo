@@ -220,6 +220,16 @@
   on. This can be used to define the queues in a centralised place which should
   avoid configuration errors.
 
+* Separate out the Payload and ACL classes. Or at least check that they should
+  be separated out.
+
+  Have an ACL factory that returns decorated ACL objects and have the payload
+  use the factory.
+
+  If I set the content in the constructor is that good enough? How about
+  instantiating nested objects?
+
+
                           ~~~~~~~~ BUGS  ~~~~~~~~
 
 * Add the internal (to smith) pb directory to the pb load path.
