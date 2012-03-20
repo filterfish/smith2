@@ -18,11 +18,8 @@ module Smith
 
     def initialize(root)
 
-      @compiler = ProtocolBufferCompiler.new
-      @compiler.compile
-
-      # Set the load path for the protocol buffer files.
-      $: << Smith.pb_cache_path
+      Smith.compile_acls
+      Smith.load_acls
 
       @agency = Agency.new(:paths => Smith.agent_paths)
 

@@ -75,7 +75,7 @@ file = ARGV[1]
 data = (opts.json_given) ? opts[:json] : Pathname.new(file).read
 
 Smith.start(:quiet => true) do
-  $: << Smith.pb_cache_path
+  Smith.load_acls
 
   Smith::SmithCat.new(opts).cat(queue_name, data) do
     Smith.stop(true)
