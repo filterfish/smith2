@@ -14,6 +14,7 @@ require 'daemons/pidfile'
 
 require_relative 'smith/config'
 require_relative 'smith/logger'
+require_relative 'smith/protocol_buffer_compiler'
 
 module Smith
   include Logger
@@ -58,6 +59,21 @@ module Smith
           FileUtils.mkdir_p(cache_dir)
           cache_dir
         end
+      end
+    end
+
+    def compile_acls
+      @compiler = ProtocolBufferCompiler.new
+      @compiler.compile
+    end
+
+    # Load all acls. This fucking horrible but for the time
+    # being it's how it's going to be. This will really start
+    # to be a problem when there are a lot of acls.
+    def load_acls
+      pb_cache_path.each_child do |acl_file|
+        logger.verbose { "Loading acl file: #{acl_file}" }
+        require acl_file
       end
     end
 
