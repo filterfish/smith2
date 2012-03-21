@@ -229,6 +229,11 @@
   If I set the content in the constructor is that good enough? How about
   instantiating nested objects?
 
+* When an ACL is incomplete add code to check which field is missing. At the
+  moment an exception is being raised, the problem is that I've overloaded the
+  #inspect and it doesn't display what field is nil.
+
+* Add message versioning.
 
                           ~~~~~~~~ BUGS  ~~~~~~~~
 
