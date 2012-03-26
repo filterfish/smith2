@@ -3,7 +3,7 @@ require 'yajl'
 
 module Smith
   module Commands
-    class PopQueue < Command
+    class Pop < Command
       def execute
         case target.size
         when 0
