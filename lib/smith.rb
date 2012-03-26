@@ -81,6 +81,10 @@ module Smith
       EM.reactor_running?
     end
 
+    def on_error(&blk)
+      @on_error = blk
+    end
+
     def start(opts={}, &block)
       EM.epoll if EM.epoll?
       EM.kqueue if EM.kqueue?
@@ -133,12 +137,16 @@ module Smith
           # will get overwelmd and the whole thing will collapse in on itself.
           channel.prefetch(1)
 
-          # Log the error and stop the agency when there are channel errors.
-          # TODO Add recovery instead of stopping the agency.
-          channel.on_error do |ch,channel_close|
-            logger.fatal { "Channel level exception: #{channel_close.reply_text}. Class id: #{channel_close.class_id}, Method id: #{channel_close.method_id}, Status code : #{channel_close.reply_code}" }
-            logger.fatal { "Agency is exiting" }
-            Smith.stop(true)
+          if @on_error
+            channel.on_error(&@on_error)
+          else
+            # Log the error and stop the agency when there are channel errors.
+            # TODO Add recovery instead of stopping the agency.
+            channel.on_error do |ch,channel_close|
+              logger.fatal { "Channel level exception: #{channel_close.reply_text}. Class id: #{channel_close.class_id}, Method id: #{channel_close.method_id}, Status code : #{channel_close.reply_code}" }
+              logger.fatal { "Agency is exiting" }
+              Smith.stop(true)
+            end
           end
 
           # Set up auto-recovery. This will ensure that the AMQP gem reconnects each
@@ -216,8 +224,8 @@ require_relative 'smith/agent_monitoring'
 require_relative 'smith/command'
 require_relative 'smith/messaging/amqp_options'
 require_relative 'smith/messaging/queue_factory'
-require_relative 'smith/messaging/encoders/default'
 require_relative 'smith/messaging/payload'
+require_relative 'smith/messaging/encoders/default'
 require_relative 'smith/messaging/endpoint'
 require_relative 'smith/messaging/exceptions'
 require_relative 'smith/messaging/responder'
