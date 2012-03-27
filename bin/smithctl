@@ -15,16 +15,12 @@ module Smith
     end
 
     def send_command(command, args, &blk)
-      case command
-      when *smith_commands
-        smithctl_command(command, args, &blk)
-      else
-        agency_command(command, args, &blk)
+      begin
+        send("#{Command.command_type(command)}_command", command, args, &blk)
+      rescue Smith::Command::UnkownCommandError => e
+        puts e.message
+        Smith.stop(true)
       end
-    end
-
-    def smith_commands
-      ['cat', 'pop', 'rm', 'top']
     end
 
     private
@@ -94,10 +90,8 @@ Smith.load_acls
 
 control = Smith::SmithControl.new
 
-if control.smith_commands.include?(command)
-  Smith.on_error do
-    Smith.stop(true)
-  end
+Smith.on_error do
+  Smith.stop(true)
 end
 
 Smith.start(:quiet => true) do

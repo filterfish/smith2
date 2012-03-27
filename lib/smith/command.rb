@@ -16,7 +16,7 @@ module Smith
 
     def self.run(command, args, vars)
       # Change _ to - underscores look so ugly as a command name.
-      command.gsub!(/-/, '_')
+      command = command.gsub(/-/, '_')
       logger.debug { "Agency command: #{command}#{(args.empty?) ? '' : " #{args.join(', ')}"}." }
 
       load_command(command)
@@ -51,14 +51,57 @@ module Smith
 
     private
 
-    # Load the command from the lib/smith/commands directory.
+    # Determine whether the command is an agency or smithctl command and load
+    # accordingly.
     def self.load_command(cmd)
-      cmd_path = Smith.root_path.join('lib').join("smith").join('commands').join(cmd.to_s)
-      if cmd_path.sub_ext('.rb').exist?
-        require cmd_path
+      require command_path(cmd)
+    end
+
+    # Check to see if the command is an agency or smithctl command.
+    def self.agency?
+      Smith.constants.include?(:Agency)
+    end
+
+    # Return the full path of the ruby class.
+    def self.command_path(command)
+      send("#{command_type(command)}_path").join(command)
+    end
+
+    # What type of command is it?
+    def self.command_type(command)
+      case
+      when agency_command?(command)
+        :agency
+      when smithctl_command?(command)
+        :smithctl
       else
-        raise UnkownCommandError, "Command class does not exist: #{cmd}"
+        raise UnkownCommandError, "Unknown command: #{command}"
       end
+    end
+
+    # Is the command an agency command?
+    def self.agency_command?(cmd)
+     agency_path.join(cmd).sub_ext('.rb').exist?
+    end
+
+    # Is the command a smithctl command?
+    def self.smithctl_command?(cmd)
+      smithctl_path.join(cmd).sub_ext('.rb').exist?
+    end
+
+    # Return the agency command base path.
+    def self.agency_path
+      base_path.join('agency')
+    end
+
+    # Return the smithctl command base path.
+    def self.smithctl_path
+      base_path.join('smithctl')
+    end
+
+    # Return the command base path.
+    def self.base_path
+      @c64a6f4f ||= Smith.root_path.join('lib').join("smith").join('commands')
     end
 
     # Uses the options_parser method in the specific command class to procees
