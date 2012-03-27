@@ -25,7 +25,7 @@ module Smith
 
             Smith::Messaging::Sender.new(target.first, :auto_delete => options[:dynamic], :persistent => true, :nowait => false, :strict => true).ready do |sender|
 
-              work = proc do |n,iter| 
+              work = proc do |n,iter|
                 sender.publish(json_to_payload(data, options[:type])) do
                   iter.next
                 end
