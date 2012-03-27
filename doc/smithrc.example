@@ -1,0 +1,48 @@
+agent:
+  monitor    = true
+  singleton  = true
+  metadata   = ''
+
+# Options relating to agents only. Don't put agency stuff here.
+agency:
+  cache_path = "/var/cache/smith"
+  # If this is a relative path then it's relative to Smith.root_path
+  agent_path = '/home/you/dev/ruby/smith2/agents:/home/you/somewhere/else/agents'
+
+  # The path to the raw protoclo buffer files.
+  protocol_buffer_path = "/home/you/dev/ruby/smith2/acl:/home/you/somewhere/else/agents/lib/acl"
+
+# These directly translate to amqp options so
+# only put options that amqp understands.
+amqp:
+  # Don't change these options unless you *really* know what you are doing.
+  exchange:
+    durable     = true
+    auto_delete = false
+
+  # Don't change these options unless you *really* know what you are doing.
+  queue:
+    durable     = true
+    auto_delete = false
+
+  broker:
+    host        = 'localhost'
+    port        = 5672
+    user        = 'guest'
+    password    = 'guest'
+    vhost       = '/'
+
+# Only put options that eventmachine understands here.
+eventmachine:
+  file_descriptors = 1024
+
+logging:
+  trace = true
+  level = :debug
+  appender = 'Stdout'
+  # filename = '/var/tmp/smith.log'
+  default_pattern = '%d [%5p] %7l - %34c:%-3L - %m\\n'
+  default_date_pattern = '%Y/%m/%d %H:%M:%S.%N'
+
+smith:
+  namespace  = 'smith'
