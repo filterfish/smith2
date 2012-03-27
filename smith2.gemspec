@@ -24,7 +24,7 @@ spec = Gem::Specification.new do |s|
   s.add_dependency "trollop", ">= 1.16.2"
   s.add_dependency "yajl-ruby", ">= 1.1.0"
 
-  binaries = %w{agency smithctl smith-cat}
+  binaries = %w{agency smithctl}
   libraries = Dir.glob("lib/**/*")
 
   s.executables = binaries
