@@ -235,6 +235,9 @@
 
 * Add message versioning.
 
+* Add code to see if the reactor has started. If someone runs Smith.start it
+  appears to hang; at least put a warning.
+
                           ~~~~~~~~ BUGS  ~~~~~~~~
 
 * Add the internal (to smith) pb directory to the pb load path.
