@@ -139,6 +139,7 @@
   * specify the pid file.
   * specify the environment
   * specify a different config file.
+  * start the agency with a clean db
 
   In fact look at smith1 agency to see what options it had.
 
