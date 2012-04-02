@@ -246,6 +246,7 @@
 
 * Add version command to smith, obviously with support from the agency.
 
+* Add command to list what agents are in each group.
 
                           ~~~~~~~~ BUGS  ~~~~~~~~
 
