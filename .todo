@@ -243,6 +243,10 @@
 * Check to see if the acl directory actually exists.
 
 * change encoders to be acl.
+
+* Add version command to smith, obviously with support from the agency.
+
+
                           ~~~~~~~~ BUGS  ~~~~~~~~
 
 * Add the internal (to smith) pb directory to the pb load path.
