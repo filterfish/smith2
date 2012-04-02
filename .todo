@@ -244,7 +244,7 @@
 
 * change encoders to be acl.
 
-* Add version command to smith, obviously with support from the agency.
+* Add version command to smith, obviously with support from the agency. [done]
 
 * Add command to list what agents are in each group. Add a --groups option to
   the agents command 
