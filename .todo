@@ -249,6 +249,10 @@
 * Add command to list what agents are in each group. Add a --groups option to
   the agents command 
 
+* Add a headers hash to all messages so there are no
+  AMQP::IncompatibleOptionsError due to the queue being defined with or without
+  the headers hash.
+
                           ~~~~~~~~ BUGS  ~~~~~~~~
 
 * Add the internal (to smith) pb directory to the pb load path.
