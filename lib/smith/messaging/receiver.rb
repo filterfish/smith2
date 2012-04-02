@@ -224,7 +224,7 @@ module Smith
 
         def increment_requeue_count(headers)
           headers.tap do |m|
-            m['retry'] = (m['retry']) ? m['retry'] + 1 : 1
+            m['requeue'] = (m['requeue']) ? m['requeue'] + 1 : 1
           end
         end
       end
