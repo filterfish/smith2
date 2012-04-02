@@ -1,0 +1,4 @@
+package Smith.ACL;
+message AgentConfigRequest {
+  required string agent = 1;
+}
