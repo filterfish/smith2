@@ -59,7 +59,7 @@ module Smith
     def install_signal_handler(signal, position=:end, &blk)
       raise ArgumentError, "Unknown position: #{position}" if ![:beginning, :end].include?(position)
 
-      logger.debug { "Installing signal handler for #{signal}" }
+      logger.verbose { "Installing signal handler for #{signal}" }
       @signal_handlers[signal].insert((position == :beginning) ? 0 : -1, blk)
       @signal_handlers.each do |sig, handlers|
         trap(sig, proc { |sig| run_signal_handlers(sig, handlers) })
