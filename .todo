@@ -140,6 +140,7 @@
   * specify the environment
   * specify a different config file.
   * start the agency with a clean db
+  * dump a specific queues' acl.
 
   In fact look at smith1 agency to see what options it had.
 
