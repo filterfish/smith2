@@ -180,7 +180,7 @@ module Smith
         end
 
         def queue_name
-          normalised_queue_name
+          denomalized_queue_name
         end
 
         private
