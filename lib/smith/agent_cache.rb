@@ -4,9 +4,9 @@ module Smith
 
     attr_accessor :path
 
-    def initialize(opts={})
+    def initialize(opts = {})
       super()
-      @paths = opts[:paths]
+      @paths = opts[:paths] || []
 
       operator ->(agent_name, options={}) { AgentProcess.first(:name => agent_name) || AgentProcess.new(:name => agent_name, :path => agent_path(agent_name)) }
 
