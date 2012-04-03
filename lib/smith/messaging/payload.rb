@@ -14,12 +14,12 @@ module Smith
 
     module ClassMethods
       def content_class(e)
-        @@pb_classes ||= {:default => Default}
+        @@acl_classes ||= {:default => Default}
 
         e = e.to_sym
 
-        if @@pb_classes.include?(e)
-          @@pb_classes[e]
+        if @@acl_classes.include?(e)
+          @@acl_classes[e]
         else
           class_name = Extlib::Inflection.camelize(e)
           if ACL.constants.include?(class_name)
@@ -28,7 +28,7 @@ module Smith
             logger.debug { "#{class_name} Loaded from #{e}.pb.rb" }
             ACL.const_get(class_name).tap do |clazz|
               # Override the inspect method
-              @@pb_classes[e] = clazz.send(:include, ACLInstanceMethods)
+              @@acl_classes[e] = clazz.send(:include, ACLInstanceMethods)
             end
           end
         end

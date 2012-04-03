@@ -22,7 +22,8 @@ module Smith
     end._merge!(Optimism.require('/etc/smith/smithrc', "#{ENV['HOME']}/.smithrc"))
 
     # I'm sure there's a better way of doing this ...
-    @@config.agency['protocol_buffer_cache_path'] = "#{@@config.agency.cache_path.to_s}#{File::SEPARATOR}pb"
+    @@config.agency['acl_cache_path'] = Pathname.new(@@config.agency.cache_path).join('acl')
+    @@config.agency['acl_path'] = "#{Pathname.new(__FILE__).dirname.join('messaging').join('acl')}#{File::PATH_SEPARATOR}#{@@config.agency['acl_path']}"
 
     def self.get
       @@config

@@ -126,13 +126,13 @@ end
 
 path = ARGV[0]
 agent_name = ARGV[1]
-pb_path = ARGV[2]
 
 exit 1 if agent_name.nil? || path.nil?
 
 # Set the running instance name to the name of the agent.
 $0 = "#{agent_name}"
 
+# load the acls
 Smith.load_acls
 
 bootstrapper = Smith::AgentBootstrap.new(path, agent_name)

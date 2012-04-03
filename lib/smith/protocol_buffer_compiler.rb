@@ -9,14 +9,14 @@ module Smith
 
     def initialize(force=false)
       # TODO Add the force code.
-      @cache_path = Smith.pb_cache_path
+      @cache_path = Smith.acl_cache_path
     end
 
     # Compile any protocol buffer files. This checks the timestamp
     # to see if the file needs compiling.
     def compile
       logger.debug { "Protocol buffer cache path: #{@cache_path}" }
-      Smith.pb_path.each do |path|
+      Smith.acl_path.each do |path|
         results = {}
         path_glob(path) do |p|
           if should_compile?(p)
@@ -38,7 +38,7 @@ module Smith
     # but if it's not specified and a temporary directory was created then
     # the directory is removed as well.
     def clear_cache
-      logger.info { "Clearing the Protocol Buffer cache: #{Smith.pb_cache_path}" }
+      logger.info { "Clearing the Protocol Buffer cache: #{Smith.acl_cache_path}" }
 
       Pathname.glob(@cache_path.join("*")).each do |path|
         path.unlink
@@ -66,8 +66,8 @@ module Smith
     end
 
     def path_glob(path)
-      Pathname.glob("#{path.join("*.proto")}").map do |pb|
-        yield pb.realpath
+      Pathname.glob("#{path.join("*.proto")}").map do |acl|
+        yield acl.realpath
       end
     end
   end

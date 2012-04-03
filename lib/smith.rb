@@ -42,17 +42,17 @@ module Smith
       path_to_pathnames(config.agency.agent_path)
     end
 
-    def pb_path
-      path_to_pathnames(config.agency.protocol_buffer_path)
+    def acl_path
+      path_to_pathnames(config.agency.acl_path)
     end
 
     # Return the protocol cache path. If it's not specified in the config
     # generate a temporary path.
-    def pb_cache_path
-      @pb_cache_path ||= if Smith.config.agency._has_key?(:protocol_buffer_cache_path)
+    def acl_cache_path
+      @acl_cache_path ||= if Smith.config.agency._has_key?(:acl_cache_path)
         Pathname.new(Smith.config.agency.protocol_buffer_cache_path)
       else
-        cache_dir = Pathname.new(ENV['HOME']).join('.smith').join('pb')
+        cache_dir = Pathname.new(ENV['HOME']).join('.smith').join('acl')
         if cache_dir.exist?
           cache_dir
         else
@@ -71,7 +71,7 @@ module Smith
     # being it's how it's going to be. This will really start
     # to be a problem when there are a lot of acls.
     def load_acls
-      pb_cache_path.each_child do |acl_file|
+      acl_cache_path.each_child do |acl_file|
         logger.verbose { "Loading acl file: #{acl_file}" }
         require acl_file
       end
@@ -226,7 +226,6 @@ require_relative 'smith/command'
 require_relative 'smith/messaging/amqp_options'
 require_relative 'smith/messaging/queue_factory'
 require_relative 'smith/messaging/payload'
-require_relative 'smith/messaging/encoders/default'
 require_relative 'smith/messaging/endpoint'
 require_relative 'smith/messaging/exceptions'
 require_relative 'smith/messaging/responder'

@@ -10,7 +10,7 @@ agency:
   agent_path = '/home/you/dev/ruby/smith2/agents:/home/you/somewhere/else/agents'
 
   # The path to the raw protoclo buffer files.
-  protocol_buffer_path = "/home/you/dev/ruby/smith2/acl:/home/you/somewhere/else/agents/lib/acl"
+  acl_path = "/home/you/somewhere/else/agents/lib/acl"
 
 # These directly translate to amqp options so
 # only put options that amqp understands.
