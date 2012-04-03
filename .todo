@@ -253,6 +253,11 @@
   AMQP::IncompatibleOptionsError due to the queue being defined with or without
   the headers hash.
 
+* Add an option to pop that returns immediately. If I remove a lot of messages
+  from a queue smithctl will timeout due to the time taken to delete the
+  messages. Add an option that returns the number of messages to be removed
+  without waiting for the messages to be removed.
+
                           ~~~~~~~~ BUGS  ~~~~~~~~
 
 * Add the internal (to smith) pb directory to the pb load path.
