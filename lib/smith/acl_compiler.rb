@@ -3,7 +3,7 @@ require 'pp'
 require 'protobuf/compiler/compiler'
 
 module Smith
-  class ProtocolBufferCompiler
+  class ACLCompiler
 
     include Logger
 
@@ -33,7 +33,7 @@ module Smith
       @cache_path.to_s
     end
 
-    # Clears the Protocol Buffer cache. If protocol_buffer_cache_path si
+    # Clears the Protocol Buffer cache. If acl_cache_path is
     # specified in the config then the directory itself won't be removed
     # but if it's not specified and a temporary directory was created then
     # the directory is removed as well.
@@ -44,7 +44,7 @@ module Smith
         path.unlink
       end
 
-      unless Smith.config.agency._has_key?(:protocol_buffer_cache_path)
+      unless Smith.config.agency._has_key?(:acl_cache_path)
         @cache_path.rmdir
       end
     end

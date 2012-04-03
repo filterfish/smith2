@@ -14,7 +14,7 @@ require 'daemons/pidfile'
 
 require_relative 'smith/config'
 require_relative 'smith/logger'
-require_relative 'smith/protocol_buffer_compiler'
+require_relative 'smith/acl_compiler'
 
 module Smith
   include Logger
@@ -63,7 +63,7 @@ module Smith
     end
 
     def compile_acls
-      @compiler = ProtocolBufferCompiler.new
+      @compiler = ACLCompiler.new
       @compiler.compile
     end
 
