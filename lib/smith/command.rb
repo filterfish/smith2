@@ -9,14 +9,15 @@ module Smith
     include Logger
 
     # Load and run the command specified. This method takes:
-    # +target+ which is either a list of agents or the agency
+    # +command+ The command to run
+    # +args+ which is either a list of agents or the agency
     # +vars+ variables to be passed in to the command. This takes the
     # form of a hash and accessor methods are generated named after the
     # key of the hash.
 
     def self.run(command, args, vars)
       # Change _ to - underscores look so ugly as a command name.
-      command = command.gsub(/-/, '_')
+      command = command.to_s.gsub(/-/, '_')
       logger.debug { "Agency command: #{command}#{(args.empty?) ? '' : " #{args.join(', ')}"}." }
 
       load_command(command)

@@ -6,7 +6,7 @@ module Smith
 
       attr_accessor :queue_name
 
-      def initialize(options={})
+      def initialize(options = {})
         @options = options
         @options_map = {:strict => {:immediate => true, :mandatory => true}}
       end
@@ -46,7 +46,7 @@ module Smith
       end
 
       def merge(*hashes)
-        hashes.flatten.inject({}) do |acc,h|
+        hashes.flatten.inject({}) do |acc, h|
           acc.merge!(expand_options(h))
         end
       end
