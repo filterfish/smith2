@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 
 require 'spec_helper'
-
+require 'awesome_print'
 describe Smith::QueueFactory do
 
   context "basic operations" do
@@ -24,7 +24,9 @@ describe Smith::QueueFactory do
       factory.queues.size.should == 2
 
       factory.each_queue do |queue|
-        queue.should == factory.queues[queue.denomalized_queue_name]
+        queue_name = "sender:#{queue.denomalized_queue_name}"   if queue.instance_of? Smith::Messaging::Sender
+        queue_name = "receiver:#{queue.denomalized_queue_name}" if queue.instance_of? Smith::Messaging::Receiver
+        queue.should == factory.queues[queue_name]
       end
     end
 
