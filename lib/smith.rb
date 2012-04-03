@@ -50,7 +50,7 @@ module Smith
     # generate a temporary path.
     def acl_cache_path
       @acl_cache_path ||= if Smith.config.agency._has_key?(:acl_cache_path)
-        Pathname.new(Smith.config.agency.protocol_buffer_cache_path)
+        Pathname.new(Smith.config.agency.acl_cache_path)
       else
         cache_dir = Pathname.new(ENV['HOME']).join('.smith').join('acl')
         if cache_dir.exist?
@@ -226,6 +226,7 @@ require_relative 'smith/command'
 require_relative 'smith/messaging/amqp_options'
 require_relative 'smith/messaging/queue_factory'
 require_relative 'smith/messaging/payload'
+require_relative 'smith/messaging/acl/default'
 require_relative 'smith/messaging/endpoint'
 require_relative 'smith/messaging/exceptions'
 require_relative 'smith/messaging/responder'
