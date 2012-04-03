@@ -127,12 +127,12 @@ module Smith
         end
 
         # acknowledge the message.
-        def ack(multiple=false)
+        def ack(multiple = false)
           @metadata.ack(multiple)
         end
 
         # reject the message. Optionally requeuing it.
-        def reject(opts={})
+        def reject(opts = {})
           @metadata.reject(opts)
         end
 
