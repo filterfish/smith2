@@ -46,7 +46,7 @@ module Smith
       path_to_pathnames(config.agency.acl_path)
     end
 
-    # Return the protocol cache path. If it's not specified in the config
+    # Return the acl cache path. If it's not specified in the config
     # generate a temporary path.
     def acl_cache_path
       @acl_cache_path ||= if Smith.config.agency._has_key?(:acl_cache_path)
