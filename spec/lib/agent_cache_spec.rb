@@ -14,7 +14,8 @@ describe Smith::AgentCache do
   end
 
   it 'should create a new AgentProcess' do
-    agent_process = @cache.entry('new_agent').name.should == 'new_agent'
+    agent_name = @cache.entry('new_agent').name
+    agent_name.should == 'new_agent'
   end
 
   it 'should return agents given a particular state' do
