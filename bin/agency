@@ -8,7 +8,7 @@ root_path = Pathname.new(__FILE__).dirname.join('..').expand_path
 $:.unshift(root_path.join('lib'))
 
 require 'smith'
-require 'smith/protocol_buffer_compiler'
+require 'smith/acl_compiler'
 require 'smith/application/agency'
 
 module Smith
