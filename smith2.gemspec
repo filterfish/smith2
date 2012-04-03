@@ -24,10 +24,16 @@ spec = Gem::Specification.new do |s|
   s.add_dependency "trollop", ">= 1.16.2"
   s.add_dependency "yajl-ruby", ">= 1.1.0"
 
+  s.add_development_dependency 'guard',       '>= 0.3'
+  s.add_development_dependency 'rspec',       '>= 2.9.0'
+  s.add_development_dependency 'guard-rspec', '>= 0.7.0'
+  
   binaries = %w{agency smithctl}
   libraries = Dir.glob("lib/**/*")
 
   s.executables = binaries
 
   s.files = binaries.map { |b| "bin/#{b}" } + libraries
+  s.test_files    = `git ls-files -- {spec,features}/*`.split("\n")
+  
 end
