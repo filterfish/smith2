@@ -27,6 +27,7 @@ spec = Gem::Specification.new do |s|
   s.add_development_dependency 'guard',       '>= 0.3'
   s.add_development_dependency 'rspec',       '>= 2.9.0'
   s.add_development_dependency 'guard-rspec', '>= 0.7.0'
+  s.add_development_dependency 'awesome_print'
   
   binaries = %w{agency smithctl}
   libraries = Dir.glob("lib/**/*")
