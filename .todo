@@ -258,9 +258,16 @@
   messages. Add an option that returns the number of messages to be removed
   without waiting for the messages to be removed.
 
+* Add default on_requeue proc. Check to see if it makes sense to do so or throw
+  and exception if it doesn't.
+
                           ~~~~~~~~ BUGS  ~~~~~~~~
 
 * Add the internal (to smith) pb directory to the pb load path.
+
+* Smith::ACL::Payload.new(<payload tyep>, :from => payload) doesn't work for
+  :default messages.
+
 
 * Fix bug where I get an exception if the pb class has already been loaded:
 
