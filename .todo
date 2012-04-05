@@ -261,6 +261,12 @@
 * Add default on_requeue proc. Check to see if it makes sense to do so or throw
   and exception if it doesn't.
 
+* Add a message TTL so that messages will get timed out after a period of time.
+  This might be particularly useful for smithctl.
+
+* Create a mixin that can be included in the agent to allow a key-value store.
+  This would be useful for storing transient data that needs to be persisted.
+
                           ~~~~~~~~ BUGS  ~~~~~~~~
 
 * Add the internal (to smith) pb directory to the pb load path.
