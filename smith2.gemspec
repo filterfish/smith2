@@ -10,7 +10,7 @@ spec = Gem::Specification.new do |s|
   s.rubyforge_project = "nowarning"
 
   s.authors = ["Richard Heycock"]
-  s.add_dependency "amqp", "0.9.0"
+  s.add_dependency "amqp", ">= 0.9.5.pre"
   s.add_dependency "dm-core", "1.0.1"
   s.add_dependency "dm-observer", "1.0.1"
   s.add_dependency "dm-yaml-adapter", "1.0.1"
