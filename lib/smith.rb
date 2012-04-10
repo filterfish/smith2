@@ -50,7 +50,7 @@ module Smith
     # generate a temporary path.
     def acl_cache_path
       @acl_cache_path ||= if Smith.config.agency._has_key?(:acl_cache_path)
-        Pathname.new(Smith.config.agency.acl_cache_path)
+        Pathname.new(Smith.config.agency.acl_cache_path).tap { |path| check_path(path) }
       else
         cache_dir = Pathname.new(ENV['HOME']).join('.smith').join('acl')
         if cache_dir.exist?
@@ -210,8 +210,12 @@ module Smith
       path ||= []
       path.split(':').map do |path|
         p = Pathname.new(path)
-        (p.absolute?) ? p : root_path.join(p)
+        ((p.absolute?) ? p : root_path.join(p)).tap { |path| check_path(path) }
       end
+    end
+
+    def check_path(path)
+      logger.error("Path does not exist: #{path}") unless path.exist?
     end
   end
 end
