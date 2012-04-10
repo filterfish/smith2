@@ -267,9 +267,21 @@
 * Create a mixin that can be included in the agent to allow a key-value store.
   This would be useful for storing transient data that needs to be persisted.
 
+* Check for the existance of the various paths in the config and log a message
+  if it doesn't exist.
+
+* Payload should be able to be instantiated from an undecoded message.
+
+* Add better error reporting. When someone sets the message content that isn't a
+  payload object and exception should be raised.
+
+* If the list command is passed an agent just give details about that agent -
+  maybe get rid of the stats command.
+
+
                           ~~~~~~~~ BUGS  ~~~~~~~~
 
-* Add the internal (to smith) pb directory to the pb load path.
+* Add the internal (to smith) pb directory to the pb load path. [done]
 
 * Smith::ACL::Payload.new(<payload tyep>, :from => payload) doesn't work for
   :default messages.
