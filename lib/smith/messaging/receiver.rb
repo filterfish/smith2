@@ -47,10 +47,8 @@ module Smith
       def pop(&block)
         opts = options.pop
         @queue.pop(opts) do |metadata, payload|
-          if payload
-            thread(Reply.new(self, metadata, payload)) do |reply|
-              block.call(reply)
-            end
+          thread(Reply.new(self, metadata, (payload.nil?) ? nil : payload)) do |reply|
+            block.call(reply)
           end
         end
       end
@@ -100,9 +98,15 @@ module Smith
           @metadata = metadata
           @time = Time.now
 
-          @payload = ACL::Payload.decode(undecoded_payload, metadata.type)
-          logger.verbose { "Received content on: [queue]: #{denomalized_queue_name}." }
-          logger.verbose { "Payload content: [queue]: #{denomalized_queue_name}, [metadata type]: #{metadata.type}, [message]: #{payload.inspect}" }
+          if undecoded_payload
+            @payload = ACL::Payload.decode(undecoded_payload, metadata.type)
+            logger.verbose { "Received content on: [queue]: #{denomalized_queue_name}." }
+            logger.verbose { "Payload content: [queue]: #{denomalized_queue_name}, [metadata type]: #{metadata.type}, [message]: #{payload.inspect}" }
+          else
+            logger.verbose { "Received nil content on: [queue]: #{denomalized_queue_name}." }
+            @payload = nil
+            @nil_message = true
+          end
         end
 
         # Reply to a message. If reply_to header is not set a error will be logged
@@ -128,12 +132,12 @@ module Smith
 
         # acknowledge the message.
         def ack(multiple=false)
-          @metadata.ack(multiple)
+          @metadata.ack(multiple) unless @nil_message
         end
 
         # reject the message. Optionally requeuing it.
         def reject(opts={})
-          @metadata.reject(opts)
+          @metadata.reject(opts) unless @nil_message
         end
 
         def reply_to
