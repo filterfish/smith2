@@ -1,5 +1,5 @@
 spec = Gem::Specification.new do |s|
-  s.name = 'smith2'
+  s.name = 'smith'
   s.version = File.read('./VERSION')
   s.date = '2012-02-22'
   s.summary = 'Multi-agent framework'
