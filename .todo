@@ -55,7 +55,7 @@
 * Name reply queues based on the agent name. This would only work with the
   default queue.
 
-* Delete queue should be part of smithctl.
+* Delete queue should be part of smithctl. [done]
 
 * smithctl message should have some sort of printf formatting string
   that can be used to construct the protocol buffer message.
@@ -74,10 +74,10 @@
   For example if an agent is in the starting state for longer than a minutes or
   so
 
-* Be able to change log level for individual loggers (ie per class). [done]
+* Be able to change log level for individual loggers (ie per class).
 
 * Add to_s to the Encoders, so when I call inspect on the message it
-  gives a proper representation.
+  gives a proper represntation. [done - could maybe be improved though]
 
 * Setup a dead letter queue in case of error. Have a look at the dead letter
   stuff in rabbitmq.
@@ -101,7 +101,7 @@
   thinking about the above make sure you check whether that method fits.
 
 * Think about how to make ./bin/send a general tool. Maybe write some rake
-  tasks.
+  tasks. [done - send no longer exists but it's now in smithctl * more general]
 
 * Make an equivalent of ripl-rails: ripl-smith
 
@@ -120,7 +120,8 @@
 
 * Message headers:
   * sent time,
-  * message checksum.
+  * message checksum - not sure if this is required
+  * TTL - this can be used to get rid of stray messages.
 
 * Add the message_id to all log messages.
 
@@ -134,7 +135,7 @@
   is noisy.
 
 * Add command line options to the agency:
-  * dump the config.
+  * dump the config -- this should be in smithctl
   * daemonise the agency (and create the pid file.)
   * specify the pid file.
   * specify the environment
@@ -153,7 +154,9 @@
 
     Smith.set_acl_path
 
-  oar maybe add it to the Smith run, Smith is useless without it.
+  or maybe add it to the Smith run, Smith is usless without it.
+  [done in the sense that I've added load_acls method but not included it in
+  Smith.start]
 
 * Have a pb cache reload mechanism at the moment you need to restart the agency.
 
@@ -161,7 +164,7 @@
   structuring the message handlers.
 
 * Add support for connecting to rabbitmq using ssl with certificates, see
-    http://hg.rabbitmq.com/rabbitmq-auth-mechanism-ssl/file/default/README
+  http://hg.rabbitmq.com/rabbitmq-auth-mechanism-ssl/file/default/README
 
 * Fix incorrect message handling (if an acl gets sent to an agent that can't
   handle it). At the moment it doesn't catch the exception and the agent dies. It
@@ -169,9 +172,9 @@
   message has to be manually removed from the queue.
 
   It's actually a bit tricky to know what to do here: should I assume the agent
-  is correct and that the message is in error in which as the message should be
-  sent to the dead letter queue; or should I assume the message is correct and
-  the agent has a bug in which case the current behaviour is correct.
+  is correct and that the message is in error in which case the message should
+  be sent to the dead letter queue; or should I assume the message is correct
+  and the agent has a bug in which case the current behaviour is correct.
 
 * Add warning that if there is an error of type:
 
@@ -202,7 +205,7 @@
 
 * Split the functionality of smithctl. At the moment this simply sends any
   commands to the agency but some commands are better served by executing the
-  command directly. For example removing a queue. 
+  command directly. For example removing a queue.
 
   Removing a queue is quite problematic as I cannot get the queue attributes
   from the broker (not via amqp anyway -- at least I cannot see a way of doing
@@ -212,6 +215,8 @@
   a channel exception can be handled properly without impacting the agency.
 
   So in short have local and remote commands!
+
+  [done]
 
 * Add next_ticks around things like requeue and general recovery.
 
@@ -240,9 +245,10 @@
 * Add code to see if the reactor has started. If someone runs Smith.start it
   appears to hang; at least put a warning.
 
-* Check to see if the acl directory actually exists.
+* Check to see if the acl directory actually exists. This logs a message it
+  isn't. Is that good enough.
 
-* change encoders to be acl.
+* change encoders to be acl. [done]
 
 * Add version command to smith, obviously with support from the agency. [done]
 
@@ -277,6 +283,19 @@
 
 * If the list command is passed an agent just give details about that agent -
   maybe get rid of the stats command.
+
+* Have a list acl command. [done]
+
+* Add a stopping? method to the Smith class. Agents can then check this & do the
+  right thing when shutting down.
+
+* Add a command called commands.
+
+* Add a command that says if the agency is alive: ping?
+
+* Add check for ACLs of the same name.
+
+* Fix banner helps. See commands/acl. [done]
 
 
                           ~~~~~~~~ BUGS  ~~~~~~~~
