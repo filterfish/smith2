@@ -283,6 +283,8 @@
 * Add a stopping? method to the Smith class. Agents can then check this & do the
   right thing when shutting down.
 
+* Add a command called commands.
+
                           ~~~~~~~~ BUGS  ~~~~~~~~
 
 * Add the internal (to smith) pb directory to the pb load path. [done]
