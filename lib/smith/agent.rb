@@ -36,7 +36,7 @@ module Smith
       start_keep_alive
     end
 
-    # Overide this method to implement your own agent. You can use task but this may
+    # Override this method to implement your own agent. You can use task but this may
     # go away in the future. This method must not block.
     def run
       raise ArgumentError, "You need to call Agent.task(&block)" if @@task.nil?
@@ -143,17 +143,17 @@ module Smith
             payload = ACL::Payload.new(:agent_stats).content do |p|
               p.agent_name = self.name
               p.pid = self.pid
-              p.rss = (File.read("/proc/#{pid}/statm").split[1].to_i * 4) / 1024 # This assums the page size is 4K & is MB
+              p.rss = (File.read("/proc/#{pid}/statm").split[1].to_i * 4) / 1024 # This assumes the page size is 4K & is MB
               p.up_time = (Time.now - @start_time).to_i
               factory.each_queue do |q|
-                p.queues << ACL::AgentStats::QueueStats.new(:name => q.denomalized_queue_name, :type => q.class.to_s, :length => q.counter)
+                p.queues << ACL::AgentStats::QueueStats.new(:name => q.denormalized_queue_name, :type => q.class.to_s, :length => q.counter)
               end
             end
 
             stats_queue.publish(payload)
           end
 
-          # The errback argument is set to nil so as to suppres the default message.
+          # The errback argument is set to nil so as to suppress the default message.
           stats_queue.consumers?(callback, nil)
         end
       end

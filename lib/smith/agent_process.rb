@@ -115,9 +115,9 @@ module Smith
         STDIN.reopen("/dev/null")
         STDERR.reopen(STDOUT)
 
-        bootstraper = File.expand_path(File.join(File.dirname(__FILE__), 'bootstrap.rb'))
+        bootstrapper = File.expand_path(File.join(File.dirname(__FILE__), 'bootstrap.rb'))
 
-        exec('ruby', bootstraper, agent_process.path, agent_process.name, Smith.acl_cache_path.to_s)
+        exec('ruby', bootstrapper, agent_process.path, agent_process.name, Smith.acl_cache_path.to_s)
       end
 
       # We don't want any zombies.
