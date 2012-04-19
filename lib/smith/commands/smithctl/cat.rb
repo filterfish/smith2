@@ -60,7 +60,7 @@ module Smith
 
       def json_to_payload(data, type)
         Smith::ACL::Payload.new(type.to_sym).content do |m|
-          MultiJson.decode(data, :symbolize_keys => true).each do |k,v|
+          MultiJson.load(data, :symbolize_keys => true).each do |k,v|
             m.send("#{k}=".to_sym, v)
           end
         end
