@@ -2,7 +2,7 @@
 module Smith
   module ACL
 
-    # Default message. This takes any objuct that can be marshalled. If
+    # Default message. This takes any object that can be marshalled. If
     # no content is passed in on the constructor then an the message is
     # assigned an empty Hash. method_missing is declared and will update
     # the hash.
