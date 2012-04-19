@@ -22,7 +22,7 @@ module Smith
                     agent_process.no_process_running
                   end
                 else
-                  logger.warn { "Discarding keep_alives with timestamp before agent started: #{Time.at(agent_process.started_at)} > #{Time.at(agent_process.last_keep_alive)}" }
+                  logger.warn { "Discarding keepalives with timestamp before agent started: #{Time.at(agent_process.started_at)} > #{Time.at(agent_process.last_keep_alive)}" }
                 end
               end
             when 'starting'
@@ -32,7 +32,7 @@ module Smith
               else
                 logger.debug { "no keep alive from #{agent_process.name}" }
               end
-            when 'stoping'
+            when 'stopping'
               logger.info { "Agent is shutting down: #{agent_process.name}" }
             when 'dead'
               logger.info { "Restarting dead agent: #{agent_process.name}" }

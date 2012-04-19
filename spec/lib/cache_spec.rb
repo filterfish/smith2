@@ -15,10 +15,10 @@ describe Smith::Cache do
       cache.entry(:new_agent).should == 'new_agent'
     end
 
-    it 'should check for the existance of an entry without changing the cache' do
+    it 'should check for the existence of an entry without changing the cache' do
       cache.entry(:new_agent).should == 'new_agent'
       cache.exist?(:new_agent).should == true
-      cache.exist?(:non_existant_agent).should == false
+      cache.exist?(:non_existent_agent).should == false
       cache.size.should == 1
     end
 

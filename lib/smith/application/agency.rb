@@ -23,7 +23,7 @@ module Smith
 
             begin
               Command.run(r.payload.command, r.payload.args, :agency => self,  :agents => @agent_processes, :responder => responder)
-            rescue Command::UnkownCommandError => e
+            rescue Command::UnknownCommandError => e
               responder.value("Unknown command: #{r.payload.command}")
             end
           end
@@ -40,7 +40,7 @@ module Smith
           when 'acknowledge_stop'
             acknowledge_stop(r.payload)
           else
-            logger.warn { "Unkown command received on agent.lifecycle queue: #{r.payload.state}" }
+            logger.warn { "Unknown command received on agent.lifecycle queue: #{r.payload.state}" }
           end
         end
       end
