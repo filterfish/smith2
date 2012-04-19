@@ -17,13 +17,14 @@ module Smith
     module Methods
       protected
 
+      @@__name = 'smith'
       @@__pattern = Smith::Config.get.logging.default_pattern
       @@__date_pattern = Smith::Config.get.logging.default_date_pattern
       @@__level = Smith::Config.get.logging.level
       @@__trace = Smith::Config.get.logging.trace
-      @@__appender_type = Logging::Appenders.const_get(Smith::Config.get.logging.appender.to_s.to_sym)
-      @@__appender_filename = Smith::Config.get.logging.filename
-      @@__name = 'smith'
+      @@__appender = Smith::Config.get.logging.appender._data.tap do |appender|
+        appender[:type] = Logging::Appenders.const_get(appender.delete(:type))
+      end
 
       def log_level(level=nil)
         if level
@@ -40,8 +41,7 @@ module Smith
       def log_appender(opts={})
         if @appender.nil? || !opts.empty?
           @@__name = opts[:name] if opts[:name]
-          @@__appender_type = opts[:class] if opts[:class]
-          @appender = @@__appender_type.send(:new, @@__name, :filename => @@__appender_filename, :layout => log_pattern)
+          @appender = @@__appender[:type].send(:new, @@__name, @@__appender.merge(:layout => log_pattern))
           @reload = true
         end
         Logging.logger.root.appenders = @appender
