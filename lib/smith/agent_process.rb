@@ -99,7 +99,7 @@ module Smith
       agent_process.pid = fork do
 
         # Detach from the controlling terminal
-        unless sess_id = Process.setsid
+        unless Process.setsid
           raise 'Cannot detach from controlling terminal'
         end
 
