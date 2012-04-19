@@ -276,7 +276,7 @@
   payload object and exception should be raised.
 
 * If the list command is passed an agent just give details about that agent -
-  maybe get rid of the stats command.
+  maybe get rid of the state command.
 
 * Have a list acl command.
 
