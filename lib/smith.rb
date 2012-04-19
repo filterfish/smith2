@@ -134,7 +134,7 @@ module Smith
         AMQP::Channel.new(connection) do |channel,ok|
           @channel = channel
           # Set up QOS. If you do not do this then the subscribe in receive_message
-          # will get overwelmd and the whole thing will collapse in on itself.
+          # will get overwhelmed and the whole thing will collapse in on itself.
           channel.prefetch(1)
 
           if @on_error
@@ -198,7 +198,7 @@ module Smith
       # Only display the following settings.
       s = settings.select { |k,v| [:user, :pass, :vhost, :host].include?(k) }
 
-      logger.fatal { "Authenticaton failure." }
+      logger.fatal { "Authentication failure." }
       logger.info { "Details:" }
       s.each do |k,v|
         logger.info { " Setting: %-7s%s" %  [k, v] }

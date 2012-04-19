@@ -107,7 +107,7 @@ describe Smith::Logger do
       log_output.should == "  FATAL - Smith::ClassUnderTest: - instance log message\n"
     end
 
-    it 'should throw an error if an inccorect level is set' do
+    it 'should throw an error if an incorrect level is set' do
       expect {
           cut.send(:log_level, :nonsense)
       }.to raise_error(ArgumentError, /Unknown level: nonsense/)
