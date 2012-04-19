@@ -285,6 +285,8 @@
 
 * Add a command called commands.
 
+* Add a command that says if the agency is alive: ping?
+
                           ~~~~~~~~ BUGS  ~~~~~~~~
 
 * Add the internal (to smith) pb directory to the pb load path. [done]
