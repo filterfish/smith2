@@ -4,7 +4,7 @@ require 'trollop'
 
 module Smith
   class Command
-    class UnkownCommandError < RuntimeError; end
+    class UnknownCommandError < RuntimeError; end
 
     include Logger
 
@@ -75,7 +75,7 @@ module Smith
       when smithctl_command?(command)
         :smithctl
       else
-        raise UnkownCommandError, "Unknown command: #{command}"
+        raise UnknownCommandError, "Unknown command: #{command}"
       end
     end
 
@@ -104,7 +104,7 @@ module Smith
       @c64a6f4f ||= Smith.root_path.join('lib').join("smith").join('commands')
     end
 
-    # Uses the options_parser method in the specific command class to procees
+    # Uses the options_parser method in the specific command class to process
     # any options associated with that command. If no options_parser method
     # exits then an empty Array is returned. Any members of the args array
     # that are not parsed by the options parser are return as the target, i.e.

@@ -46,7 +46,7 @@ module Smith
             receiver.messages?(callback, errback)
           end
         else
-          responder.value("You can only specifiy one queue at a time")
+          responder.value("You can only specify one queue at a time")
         end
       end
 
