@@ -2,6 +2,13 @@
 require 'pp'
 require 'protobuf/compiler/compiler'
 
+# There doesn't seem to be a way to turn of printing. The code is generally run
+# like this: log_writing unless silent but there is no way of setting silent!
+# So monkey patch it.
+class Protobuf::Visitor::Base
+  def log_writing(filename, message="writing..."); end
+end
+
 module Smith
   class ACLCompiler
 
@@ -15,14 +22,16 @@ module Smith
     # Compile any protocol buffer files. This checks the timestamp
     # to see if the file needs compiling.
     def compile
-      logger.debug { "Protocol buffer cache path: #{@cache_path}" }
-      Smith.acl_path.each do |path|
-        results = {}
-        path_glob(path) do |p|
-          if should_compile?(p)
-            logger.info { "Compiling: #{p}" }
-            # TODO put some error handling here.
-            Protobuf::Compiler.compile(p.basename, p.dirname, @cache_path)
+      fork do
+        logger.debug { "Protocol buffer cache path: #{@cache_path}" }
+        Smith.acl_path.each do |path|
+          results = {}
+          path_glob(path) do |p|
+            if should_compile?(p)
+              logger.info { "Compiling: #{p}" }
+              # TODO put some error handling here.
+              Protobuf::Compiler.compile(p.basename, p.dirname, @cache_path)
+            end
           end
         end
       end
