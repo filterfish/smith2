@@ -1,6 +1,6 @@
                           ~~~~~~~~ TODO  ~~~~~~~~
 
-* If an agent hasn't started after 20 seconds (ie there are no keep alives)
+* If an agent hasn't started after 20 seconds (ie there are no keepalives)
   set the state to dead.
 
 * Have an top like tool. Send the agent state to a queue so that anything
@@ -40,7 +40,7 @@
 * Don't send messages to queues that don't exist [send, smithctl messages,
   pop-queue.
 
-* list commnd should display the state of the agent. [partially done]
+* list command should display the state of the agent. [partially done]
 
 * Think about the idea of a run list. Or is this already implemented in
   the state machine.
@@ -57,7 +57,7 @@
 
 * Delete queue should be part of smithctl.
 
-* smithctl message should have some sort of printf formating string
+* smithctl message should have some sort of printf formatting string
   that can be used to construct the protocol buffer message.
 
 * Change all log messages to use the block form instead of the argument passing.
@@ -77,25 +77,25 @@
 * Be able to change log level for individual loggers (ie per class). [done]
 
 * Add to_s to the Encoders, so when I call inspect on the message it
-  gives a proper represntation.
+  gives a proper representation.
 
 * Setup a dead letter queue in case of error. Have a look at the dead letter
   stuff in rabbitmq.
 
-* The number of threads should be configurable programmatically
+* The number of threads should be configurable programatically
   queues per process.
 
-* Have message oounters for every agent. [partially done]
+* Have message counters for every agent. [partially done]
 
-* Set default config for all options that make sense (which is most of tthem).
+* Set default config for all options that make sense (which is most of them).
 
 * Add checking to the config. For example the logging class can only accept File
   or Stdout appenders but this is not checked for.
 
 * Think about a generator to write the directory structure and what that
-  directory structer might look like. Change Smith.root to the root of directory
+  directory structure might look like. Change Smith.root to the root of directory
   structure. You will need to think about what to do with the agent_path (ie the
-  fact that multiple paths are alllowed).
+  fact that multiple paths are allowed).
 
 * I've added a method called add_agent_load_path to the bootstrapper. When
   thinking about the above make sure you check whether that method fits.
@@ -115,7 +115,7 @@
   or maybe both but just using name I can't have more than one agent which
   stops things like cloning.
 
-* Add code to verify the protocl buffer payload type. It should go in
+* Add code to verify the protocol buffer payload type. It should go in
   Sender#_publish. [done - needs checking]
 
 * Message headers:
@@ -146,14 +146,14 @@
 
 * Write a startup script.
 
-* Have an option to freeze an agent. Not sure of a use caes but it could be
+* Have an option to freeze an agent. Not sure of a use case but it could be
   quite useful. It might be quite complicated to implement though.
 
 * Clean up the pb cache handling. Have something like:
 
     Smith.set_acl_path
 
-  oar maybe add it to the Smith run, Smith is usless without it.
+  oar maybe add it to the Smith run, Smith is useless without it.
 
 * Have a pb cache reload mechanism at the moment you need to restart the agency.
 
@@ -164,7 +164,7 @@
     http://hg.rabbitmq.com/rabbitmq-auth-mechanism-ssl/file/default/README
 
 * Fix incorrect message handling (if an acl gets sent to an agent that can't
-  hadle it). At the moment it doesn't catch the exception and the agent dies. It
+  handle it). At the moment it doesn't catch the exception and the agent dies. It
   should probably send it a dead letter queue. Either way at the moment the
   message has to be manually removed from the queue.
 
@@ -178,9 +178,9 @@
     Channel level exception: PRECONDITION_FAILED - unknown delivery tag 2. Class
     id: 60, Method id: 80, Status code : 406
 
-  it probably means that you've already ack'ed the message.
+  it probably means that you've already acked the message.
 
-* Sort the output of the agents commnd into alphabetical order. [done]
+* Sort the output of the agents command into alphabetical order. [done]
 
 * Clean up some of the logging messages, for example:
 
@@ -190,13 +190,13 @@
   where Receiver::Reply prints:
     Payload content: [queue]: a1bf3328e2f3db87 [message]: [string] -> No agents running
     
-  this is inconsistend.
+  this is inconsistent.
 
 * Remove the commas in the agents command. [done]
 
-* If nothing is listening on the reply queue to angency command then don't send
+* If nothing is listening on the reply queue to agency command then don't send
   the message back and delete the queue. I think this is going to be quite hard
-  to do. I cound provide an option to Reply#reply but that smells.
+  to do. I could provide an option to Reply#reply but that smells.
 
 * Check all the commands for consistency.
 
@@ -205,7 +205,7 @@
   command directly. For example removing a queue. 
 
   Removing a queue is quite problematic as I cannot get the queue attributes
-  from the broker (not via amqp anyway -- at least I cannot see a whay of doing
+  from the broker (not via amqp anyway -- at least I cannot see a way of doing
   it) but I can declare the queue with the :passive option which will use any
   existing queues but will cause a channel exception if the queue doesn't exist
   which makes life really awkward for the agency. If I do this in smithctl then
@@ -215,7 +215,7 @@
 
 * Add next_ticks around things like requeue and general recovery.
 
-* Put a lot more consideraton into recovery. Fox example the agency will die if
+* Put a lot more consideration into recovery. Fox example the agency will die if
   there is a queue error.
 
 * Add a class to define the queue name and the type of message they can listen
@@ -267,7 +267,7 @@
 * Create a mixin that can be included in the agent to allow a key-value store.
   This would be useful for storing transient data that needs to be persisted.
 
-* Check for the existance of the various paths in the config and log a message
+* Check for the existence of the various paths in the config and log a message
   if it doesn't exist.
 
 * Payload should be able to be instantiated from an undecoded message.
@@ -291,7 +291,7 @@
 
 * Add the internal (to smith) pb directory to the pb load path. [done]
 
-* Smith::ACL::Payload.new(<payload tyep>, :from => payload) doesn't work for
+* Smith::ACL::Payload.new(<payload type>, :from => payload) doesn't work for
   :default messages.
 
 * Have a callback per message type. In effect implement pattern matching instead
@@ -311,7 +311,7 @@
 * Fix force in protocol_buffer_compiler. There's no way to currently force the
   recompilation the pb files.
 
-* Fix the incredably slow Payload creation time. It's about 500 times slower
+* Fix the incredibly slow Payload creation time. It's about 500 times slower
   than instantiating the protocol buffer itself.
 
 * Make sure all time fields in pb files are integers.

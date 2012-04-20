@@ -137,10 +137,10 @@ Smith.load_acls
 
 bootstrapper = Smith::AgentBootstrap.new(path, agent_name)
 
-# I've tried putting the exception handling in the main reactor loog
-# but it doesn't do anything. I know theres a resaon for this but I
+# I've tried putting the exception handling in the main reactor log
+# but it doesn't do anything. I know there's a reason for this but I
 # don't what it is at the moment. Just beware that whenever there
-# is an exception the recator is not going going to be running.
+# is an exception the reactor is not going going to be running.
 begin
   Smith.start do
     bootstrapper.load_agent

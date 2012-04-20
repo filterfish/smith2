@@ -4,10 +4,10 @@ module Smith
     class Endpoint
       include Logger
 
-      attr_accessor :denomalized_queue_name, :queue_name
+      attr_accessor :denormalized_queue_name, :queue_name
 
       def initialize(queue_name, options)
-        @denomalized_queue_name = queue_name
+        @denormalized_queue_name = queue_name
         @queue_name = normalise(queue_name)
         @message_counts = Hash.new(0)
         @options = options
@@ -22,7 +22,7 @@ module Smith
             logger.error { "Properties: #{metadata.properties}" }
           end
 
-          logger.verbose { "Creating queue: [queue]:#{denomalized_queue_name} [options]:#{options.queue}" }
+          logger.verbose { "Creating queue: [queue]:#{denormalized_queue_name} [options]:#{options.queue}" }
 
           Smith.channel.queue(queue_name, options.queue) do |queue|
             @queue = queue
@@ -50,7 +50,7 @@ module Smith
         @message_counts[queue_name]
       end
 
-      def messages?(blk=nil, err=proc {logger.debug { "No messages on #{@denomalized_queue_name}" } })
+      def messages?(blk=nil, err=proc {logger.debug { "No messages on #{@denormalized_queue_name}" } })
         number_of_messages do |n|
           if n > 0
             if blk.respond_to? :call
@@ -64,7 +64,7 @@ module Smith
         end
       end
 
-      def consumers?(blk=nil, err=proc {logger.debug { "Nothing listening on #{@denomalized_queue_name}" } })
+      def consumers?(blk=nil, err=proc {logger.debug { "Nothing listening on #{@denormalized_queue_name}" } })
         number_of_consumers do |n|
           if n > 0
             if blk.respond_to? :call

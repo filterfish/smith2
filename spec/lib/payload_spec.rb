@@ -54,13 +54,13 @@ describe Smith::ACL::Payload do
   #     Smith::ACL::Payload.decode(Smith::ACL::Payload.new(Encoder::AgencyCommand).content(message2).encode, Encoder::AgencyCommand).should == message2
   #   end
 
-  #   it "should access the decoded message fields using accessor mesthods." do
+  #   it "should access the decoded message fields using accessor methods." do
   #     decoded_message = Smith::ACL::Payload.decode(Smith::ACL::Payload.new(:agency_command).content(message2).encode, :agency_command)
   #     decoded_message.command.should == 'list'
   #     decoded_message.args.should == ["--all", "--l"]
   #   end
 
-  #   it "should throw an TypeException when an message of incorect type is used" do
+  #   it "should throw an TypeException when an message of incorrect type is used" do
   #     expect { Smith::ACL::Payload.decode(Smith::ACL::Payload.new(:agency_command).content(message3).encode, :agency_command) }.to raise_error(TypeError)
   #   end
 

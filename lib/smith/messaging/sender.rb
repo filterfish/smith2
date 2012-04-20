@@ -29,7 +29,7 @@ module Smith
             block.call(r)
 
             # Cancel the receive queue. Queues get left behind because the reply queue is
-            # still listening. By cancel'ling the consumer it releases the queue and exchange.
+            # still listening. By cancelling the consumer it releases the queue and exchange.
             r.metadata.channel.consumers.each do |k,v|
               if k.start_with?(receiver.queue_name)
                 logger.verbose { "Cancelling: #{k}" }
@@ -47,8 +47,8 @@ module Smith
       private
 
       def _publish(message, opts, &block)
-        logger.verbose { "Publishing to: [queue]: #{denomalized_queue_name}. [options]: #{opts}" }
-        logger.verbose { "Payload content: [queue]: #{denomalized_queue_name}, [metadata type]: #{message.type}, [message]: #{message.inspect}" }
+        logger.verbose { "Publishing to: [queue]: #{denormalized_queue_name}. [options]: #{opts}" }
+        logger.verbose { "Payload content: [queue]: #{denormalized_queue_name}, [metadata type]: #{message.type}, [message]: #{message.inspect}" }
         if message.initialized?
           increment_counter
           exchange.publish(message.encode, opts, &block)
