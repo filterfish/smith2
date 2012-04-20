@@ -10,6 +10,8 @@ module Smith
 
     include Logger
 
+    AGENCY_TIMEOUT = 60
+
     def initialize
       log_level(:info)
     end
@@ -59,7 +61,7 @@ module Smith
     def agency_command(command, args, &blk)
       Messaging::Sender.new('agency.control', :auto_delete => true, :durable => false, :persistent => true,  :strict => true).ready do |sender|
 
-        sender.timeout(8) { puts "Timeout. Is the agency still running"; Smith.stop(true) }
+        sender.timeout(AGENCY_TIMEOUT) { puts "Timeout. Is the agency still running"; Smith.stop(true) }
 
         payload = ACL::Payload.new(:agency_command).content(:command => command, :args => args)
 
