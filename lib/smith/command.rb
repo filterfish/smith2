@@ -49,6 +49,18 @@ module Smith
       "smithctl #{command} OPTIONS [Agents]"
     end
 
+    def self.banner_template(clazz)
+      return <<EOS
+
+  %s
+
+  Usage:
+    smithctl #{clazz.class.to_s.split('::').last.downcase} Options
+
+Options are:
+EOS
+    end
+
     private
 
     # Determine whether the command is an agency or smithctl command and load
