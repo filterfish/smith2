@@ -4,7 +4,7 @@ require 'multi_json'
 
 module Smith
   module Commands
-    class Cat < Command
+    class Cat < CommandBase
       def execute
         if target.size == 0
           responder.value("No queue specified. Please specify a queue.")
@@ -45,17 +45,6 @@ module Smith
         end
       end
 
-      def options_parser
-        Trollop::Parser.new do
-          banner  Command.banner('cat')
-          opt :type,     "message type", :type => :string, :default => 'default', :short => :t
-          opt :json,     "supply the json representation with this flag", :type => :string, :conflicts => :file, :short => :j
-          opt :file,     "read the data from the named file", :type => :string, :conflicts => :json, :short => :f
-          opt :number,   "the number of times to send the message", :type => :integer, :default => 1, :short => :n
-          opt :dynamic,  "send message to a dynamic queue", :type => :boolean, :default => false, :short => :d
-        end
-      end
-
       private
 
       def json_to_payload(data, type)
@@ -64,6 +53,16 @@ module Smith
             m.send("#{k}=".to_sym, v)
           end
         end
+      end
+
+      def options_spec
+        banner "Send a message to a queue. The ACL can also be specified."
+
+        opt :type,    "message type", :type => :string, :default => 'default', :short => :t
+        opt :json,    "supply the json representation with this flag", :type => :string, :conflicts => :file, :short => :j
+        opt :file,    "read the data from the named file", :type => :string, :conflicts => :json, :short => :f
+        opt :number,  "the number of times to send the message", :type => :integer, :default => 1, :short => :n
+        opt :dynamic, "send message to a dynamic queue", :type => :boolean, :default => false, :short => :d
       end
     end
   end

@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 module Smith
   module Commands
-    class List < Command
+    class List < CommandBase
       def execute
         responder.value do
           if options[:all]
@@ -29,14 +29,6 @@ module Smith
         end
       end
 
-      def options_parser
-        Trollop::Parser.new do
-          banner  Command.banner('list')
-          opt     :long,                "the number of times to send the message", :short => :l
-          opt     :all,                 "show all agents in all states", :short => :a
-        end
-      end
-
       private
 
       def long_format(agents)
@@ -59,6 +51,13 @@ module Smith
         a.inject(header) do |acc,e|
           acc << sprintf("#{col_widths.inject("") { |spec,w| spec << "%-#{w + 2}s"}}\n", *e)
         end
+      end
+
+      def options_spec
+        banner "List the running agents."
+
+        opt    :long, "the number of times to send the message", :short => :l
+        opt    :all,  "show all agents in all states", :short => :a
       end
     end
   end

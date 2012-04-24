@@ -3,7 +3,7 @@ require 'yajl'
 
 module Smith
   module Commands
-    class Pop < Command
+    class Pop < CommandBase
       def execute
         case target.size
         when 0
@@ -50,16 +50,6 @@ module Smith
         end
       end
 
-      def options_parser
-        Trollop::Parser.new do
-          banner  Command.banner('pop-queue')
-          opt     :print,   "print the message", :short => :p
-          opt     :json ,   "return the JSON representation of the message", :short => :j
-          opt     :remove,  "remove the message from the queue", :short => :r
-          opt     :number,  "the number of messages to remove", :default =>1,  :short => :n
-        end
-      end
-
       private
 
       def print_message(message)
@@ -70,6 +60,15 @@ module Smith
             message.inspect
           end
         end
+      end
+
+      def options_spec
+        banner "Pop messages off the named queue."
+
+        opt    :print,  "print the message", :short => :p
+        opt    :json ,  "return the JSON representation of the message", :short => :j
+        opt    :remove, "remove the message from the queue", :short => :r
+        opt    :number, "the number of messages to remove", :default =>1,  :short => :n
       end
     end
   end

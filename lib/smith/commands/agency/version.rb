@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 module Smith
   module Commands
-    class Version < Command
+    class Version < CommandBase
       def execute
         version_file = Smith.root_path.join('VERSION')
 
@@ -12,11 +12,12 @@ module Smith
         end
       end
 
-      def options_parser
-        Trollop::Parser.new do
-          banner  Command.banner('version')
-          opt     :git, "run git describe, assuming git is installed", :short => :g
-        end
+      private
+
+      def options_spec
+        banner "Display the agency version."
+
+        opt    :git, "run git describe, assuming git is installed", :short => :g
       end
     end
   end
