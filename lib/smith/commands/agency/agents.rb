@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 module Smith
   module Commands
-    class Agents < Command
+    class Agents < CommandBase
       def execute
         responder.value do
           # FIXME make sure that if the path doesn't exist don't blow up.
@@ -22,6 +22,12 @@ module Smith
           end.flatten
           (agent_paths.empty?) ? "" : agent_paths.sort.join(" ")
         end
+      end
+
+      private
+
+      def options_spec
+        banner "List all available agents."
       end
     end
   end

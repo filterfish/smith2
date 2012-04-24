@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 module Smith
   module Commands
-    class Logger < Command
+    class Logger < CommandBase
       def execute
         responder.value do
           if options[:level].nil?
@@ -36,20 +36,19 @@ module Smith
         end
       end
 
-      def options_parser
-        Trollop::Parser.new do
-          banner  Command.banner('logger')
-          opt     :level,               "the log level you want to set", :type => :string, :short => :l
-          opt     :trace,               "turn trace on or off", :type => :boolean, :short => :t
-        end
-      end
-
       private
 
       def send_agent_control_message(agent, message)
         Messaging::Sender.new(agent.control_queue_name, :durable => false, :auto_delete => true).ready do |sender|
           sender.publish(ACL::Payload.new(:agent_command).content(message))
         end
+      end
+
+      def options_spec
+        banner "Change the log and trace level of the agents or the agency."
+
+        opt    :level, "the log level you want to set", :type => :string, :short => :l
+        opt    :trace, "turn trace on or off", :type => :boolean, :short => :t
       end
     end
   end

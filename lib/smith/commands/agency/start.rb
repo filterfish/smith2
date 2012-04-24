@@ -4,7 +4,7 @@ require_relative 'common'
 
 module Smith
   module Commands
-    class Start < Command
+    class Start < CommandBase
 
       include Common
 
@@ -49,13 +49,13 @@ module Smith
         end
       end
 
-      def options_parser
-        command = self.class.to_s.split(/::/).last.downcase
-        Trollop::Parser.new do
-          banner  Command.banner(command)
-          opt     :kill,     "Reset the state of the agent before starting", :short => :k
-          opt     :group,     "Start everything in the specified group", :type => :string, :short => :g
-        end
+      private
+
+      def options_spec
+        banner "Start an agent/agents or group of agents."
+
+        opt    :kill,  "Reset the state of the agent before starting", :short => :k
+        opt    :group, "Start everything in the specified group", :type => :string, :short => :g
       end
     end
   end

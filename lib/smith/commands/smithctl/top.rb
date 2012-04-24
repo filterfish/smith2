@@ -4,7 +4,7 @@ require 'curses'
 
 module Smith
   module Commands
-    class Top < Command
+    class Top < CommandBase
       def execute
         Curses.init_screen()
         win = Curses::Window.new(Curses.lines, Curses.cols, 0, 0)
@@ -30,12 +30,17 @@ module Smith
       end
 
       private
+
       def format_queues(queue_stats)
         queue_stats.inject([]) do |a,queue_stat|
           a.tap do |acc|
             acc << "#{queue_stat.name}:[#{queue_stat.length}]"
           end
         end.join(";")
+      end
+
+      def options_spec
+        banner "Show information about running agents."
       end
     end
   end

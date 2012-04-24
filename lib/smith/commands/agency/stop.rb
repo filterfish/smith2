@@ -4,7 +4,7 @@ require_relative 'common'
 
 module Smith
   module Commands
-    class Stop < Command
+    class Stop < CommandBase
 
       include Common
 
@@ -58,12 +58,12 @@ module Smith
         end
       end
 
-      def options_parser
-        command = self.class.to_s.split(/::/).last.downcase
-        Trollop::Parser.new do
-          banner  Command.banner(command)
-          opt     :group,     "Stop everything in the specified group", :type => :string, :short => :g
-        end
+      private
+
+      def options_spec
+        banner "Stop an agent/agents."
+
+        opt    :group, "Stop everything in the specified group", :type => :string, :short => :g
       end
     end
   end

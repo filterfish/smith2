@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 module Smith
   module Commands
-    class Rm < Command
+    class Rm < CommandBase
       def execute
         case target.size
         when 0
@@ -18,18 +18,13 @@ module Smith
         end
       end
 
-      def options_parser
-        Trollop::Parser.new do
-          banner  Command.banner('remove-queue')
-          opt     :force,   "force the removal even if there are messages on the queue", :short => :f
-          opt     :verbose, "print the number of messages deleted", :short => :v
-        end
-      end
+      private
 
-      def format_output(message_count)
-        if options[:verbose]
-          responder.value("Queue deleted. #{message_count}s messages deleted.")
-        end
+      def options_spec
+        banner "Display or remove a message from the named queue."
+
+        opt    :force,   "force the removal even if there are messages on the queue", :short => :f
+        opt    :verbose, "print the number of messages deleted", :short => :v
       end
     end
   end

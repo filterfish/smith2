@@ -7,7 +7,7 @@ require_relative 'common'
 
 module Smith
   module Commands
-    class Restart < Command
+    class Restart < CommandBase
 
       include Common
 
@@ -26,13 +26,12 @@ module Smith
         end
       end
 
+      private
 
-      def options_parser
-        command = self.class.to_s.split(/::/).last.downcase
-        Trollop::Parser.new do
-          banner  Command.banner(command)
-          opt     :group,     "Start everything in the specified group", :type => :string, :short => :g
-        end
+      def options_spec
+        banner "Restart an agent/agents."
+
+        opt    :group,     "Start everything in the specified group", :type => :string, :short => :g
       end
     end
   end

@@ -4,7 +4,7 @@ require 'extlib/string'
 
 module Smith
   module Commands
-    class Acls < Command
+    class Acls < CommandBase
       def execute
         responder.value do
           if options[:show]
@@ -44,17 +44,17 @@ module Smith
         end
       end
 
-      def options_parser
-        clazz = self
-        Trollop::Parser.new do
-          banner  Command.banner_template(clazz) % "List and display acl files."
-          opt     :long,  "format the listing", :short => :l
-          opt     :show,  "show the contents of the acl file", :short => :s
-        end
-      end
+      private
 
       def indent_acl(acl)
         acl.split("\n").map { |l| l.sub(/^/, "  ") }.join("\n")
+      end
+
+      def options_spec
+        banner "List and display acl files."
+
+        opt    :long, "format the listing", :short => :l
+        opt    :show, "show the contents of the acl file", :short => :s
       end
     end
   end
