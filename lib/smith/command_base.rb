@@ -12,11 +12,7 @@ module Smith
 
     def initialize
       @parser = Trollop::Parser.new
-      if self.respond_to?(:options_spec)
-        options_spec
-      else
-        raise RuntimeError, "You should really add an options_spec method with at least a banner method call."
-      end
+      options_spec
     end
 
     def parse_options(args)
@@ -32,18 +28,23 @@ module Smith
       end.read
     end
 
+    def banner(banner=nil, opts={})
+      if banner.nil?
+        @banner
+      else
+        @banner = banner
+        @parser.banner((opts[:no_template]) ? banner : banner_template(banner))
+      end
+    end
+
     protected
 
     def opt(*opt_spec)
       @parser.opt(*opt_spec)
     end
 
-    def banner(banner, opts={})
-      if opts[:no_template]
-        @parser.banner(banner)
-      else
-        @parser.banner(banner_template(banner))
-      end
+    def options_spec
+      banner "You should really set a proper banner notice for this command."
     end
 
     private
