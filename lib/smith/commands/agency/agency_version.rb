@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 module Smith
   module Commands
-    class Version < CommandBase
+    class AgencyVersion < CommandBase
       def execute
         version_file = Smith.root_path.join('VERSION')
 
