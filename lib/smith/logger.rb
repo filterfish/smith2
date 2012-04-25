@@ -23,7 +23,7 @@ module Smith
       @@__level = Smith::Config.get.logging.level
       @@__trace = Smith::Config.get.logging.trace
       @@__appender = Smith::Config.get.logging.appender._data.tap do |appender|
-        appender[:type] = Logging::Appenders.const_get(appender.delete(:type))
+        appender[:type] = Logging::Appenders.const_get(Extlib::Inflection.camelize(appender.delete(:type)))
       end
 
       def log_level(level=nil)
