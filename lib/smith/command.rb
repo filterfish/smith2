@@ -44,22 +44,14 @@ module Smith
       end
     end
 
-    private
-
     # Determine whether the command is an agency or smithctl command and load
     # accordingly.
-    def self.load_command(cmd)
-      require command_path(cmd)
+    def self.load_command(command)
+      require command_path(command)
     end
 
-    # Check to see if the command is an agency or smithctl command.
-    def self.agency?
-      Smith.constants.include?(:Agency)
-    end
-
-    # Return the full path of the ruby class.
-    def self.command_path(command)
-      send("#{command_type(command)}_path").join(command)
+    def self.instantiate(command)
+      Commands.const_get(Extlib::Inflection.camelize(command)).new
     end
 
     # What type of command is it?
@@ -72,6 +64,18 @@ module Smith
       else
         raise UnknownCommandError, "Unknown command: #{command}"
       end
+    end
+
+    private
+
+    # Check to see if the command is an agency or smithctl command.
+    def self.agency?
+      Smith.constants.include?(:Agency)
+    end
+
+    # Return the full path of the ruby class.
+    def self.command_path(command)
+      send("#{command_type(command)}_path").join(command)
     end
 
     # Is the command an agency command?
