@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 
-require_relative 'common'
+require_relative '../common'
 
 module Smith
   module Commands
