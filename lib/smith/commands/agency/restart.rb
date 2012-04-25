@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 
-require_relative 'common'
+require_relative '../common'
 
 # This is a meta-command. It doesn't implement anything it simply sends
 # messages to one or many existing commands to do the work.
