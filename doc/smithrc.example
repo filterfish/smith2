@@ -37,12 +37,14 @@ eventmachine:
   file_descriptors = 1024
 
 logging:
-  trace = true
-  level = :debug
-  appender = 'Stdout'
-  # filename = '/var/tmp/smith.log'
-  default_pattern = '%d [%5p] %7l - %34c:%-3L - %m\\n'
-  default_date_pattern = '%Y/%m/%d %H:%M:%S.%N'
+  trace                 = true
+  level                 = :debug
+  default_pattern       = '%d [%5p] %7l - %34c:%-3L - %m\\n'
+  default_date_pattern  = '%Y/%m/%d %H:%M:%S.%N'
+
+  appender:
+    type     = 'File'
+    filename = '/var/log/smith.log'
 
 smith:
   namespace  = 'smith'
