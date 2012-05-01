@@ -3,12 +3,8 @@ module Smith
   module Commands
     class Commands < CommandBase
       def execute
-        commands = (target.empty?) ? list_commands('agency') + list_commands('smithctl') : target
+        commands = (target.empty?) ? Command.commands : target
         responder.value(format(commands))
-      end
-
-      def list_commands(type)
-        list_command_files(type).map {|command| to_command_name(command) }
       end
 
       def format(commands)
@@ -29,14 +25,6 @@ module Smith
       end
 
       private
-
-      def list_command_files(type)
-        Pathname.glob(Command.base_path.join(type).join("**/*.rb"))
-      end
-
-      def to_command_name(path)
-        path.basename(".rb").to_s
-      end
 
       def instantiate_commands(commands)
         commands.sort.inject({}) do |a, command|

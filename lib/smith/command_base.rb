@@ -55,9 +55,9 @@ module Smith
   #{text}
 
   Usage:
-    smithctl #{self.class.to_s.split('::').last.downcase} OPTIONS
+    smithctl #{self.class.to_s.split('::').last.downcase} [Options]
 
-OPTIONS are:
+[Options] are:
       EOS
     end
   end

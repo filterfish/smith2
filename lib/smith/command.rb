@@ -66,6 +66,23 @@ module Smith
       end
     end
 
+    def self.commands(type=:all)
+      types = case type
+      when :all
+        ['agency', 'smithctl']
+      when :agency
+        types = ['agency']
+      when :smithctl
+        types = ['smithctl']
+      else
+        raise ArgumentError, "Unknown command type"
+      end
+
+      types.map do |type|
+        Pathname.glob(base_path.join(type).join("**/*.rb"))
+      end.flatten.map {|p| to_command_name(p) }
+    end
+
     private
 
     # Check to see if the command is an agency or smithctl command.
@@ -96,6 +113,10 @@ module Smith
     # Return the smithctl command base path.
     def self.smithctl_path
       base_path.join('smithctl')
+    end
+
+    def self.to_command_name(path)
+      path.basename(".rb").to_s
     end
 
     # Return the command base path.
