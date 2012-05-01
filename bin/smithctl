@@ -13,10 +13,8 @@ module Smith
     DEFAULT_AGENCY_TIMEOUT = 60
 
     def initialize(options={})
-      @log_level = (options[:log_level_given]) ? options[:log_level].to_sym : :info
+      log_level((options[:log_level_given]) ? options[:log_level].to_sym : :info)
       @timeout = (options[:timeout_given]) ? options[:timeout] : DEFAULT_AGENCY_TIMEOUT
-
-      log_level @log_level
     end
 
     def send_command(command, args, &blk)
@@ -102,7 +100,12 @@ Usage:
 
   opts = Trollop::with_standard_exception_handling parser do
     raise Trollop::HelpNeeded if ARGV.size < 1
-    parser.parse ARGV
+    parser.parse(ARGV).tap do
+      unless Command.commands.include?(ARGV.first)
+        puts "Unknown command: #{ARGV.first}"
+        exit 1
+      end
+    end
   end
 
   command = ARGV.shift
