@@ -101,11 +101,12 @@
   thinking about the above make sure you check whether that method fits.
 
 * Think about how to make ./bin/send a general tool. Maybe write some rake
-  tasks. [done - send no longer exists but it's now in smithctl * more general]
+  tasks. [done - send no longer exists but it's now in smithctl & more general]
 
 * Make an equivalent of ripl-rails: ripl-smith
 
-* Add command to smithctl to return the queue names an agent is using.
+* Add command to smithctl to return the queue names an agent is using. This
+  could be done by interrogating the channel.
 
 * Add the ability to clone an agent. See next point (It looks as if the agent
   lifecycles ...).
@@ -136,12 +137,14 @@
 
 * Add command line options to the agency:
   * dump the config -- this should be in smithctl
-  * daemonise the agency (and create the pid file.)
-  * specify the pid file.
+  * daemonise the agency (and create the pid file.) [done]
+  * specify the pid file. [done]
   * specify the environment
   * specify a different config file.
   * start the agency with a clean db
   * dump a specific queues' acl.
+  * add a --kill option to the agency. This is addition to the stop agency
+    command
 
   In fact look at smith1 agency to see what options it had.
 
@@ -201,7 +204,7 @@
   the message back and delete the queue. I think this is going to be quite hard
   to do. I could provide an option to Reply#reply but that smells.
 
-* Check all the commands for consistency.
+* Check all the commands for consistency. [mostly done]
 
 * Split the functionality of smithctl. At the moment this simply sends any
   commands to the agency but some commands are better served by executing the
@@ -289,7 +292,7 @@
 * Add a stopping? method to the Smith class. Agents can then check this & do the
   right thing when shutting down.
 
-* Add a command called commands.
+* Add a command called commands. [done]
 
 * Add a command that says if the agency is alive: ping?
 
@@ -297,7 +300,17 @@
 
 * Fix banner helps. See commands/acl. [done]
 
-* Add smithctl options to ~/.smithrc. Add timeout and log_level.
+* Add smithctl options to ~/.smithrc. Add timeout and log_level. [done]
+
+* Use PidFile.find_files to determine if and agent is alive or dead irrespective
+  of the current state.
+
+* Add column(1) like formatting to the output of smithctl.
+
+* Add support for flapping in the agent monitor. At the very least allow the
+  agent stop message to be queued (this might be fraught however).
+
+
 
                           ~~~~~~~~ BUGS  ~~~~~~~~
 
@@ -318,13 +331,14 @@
           from /var/cache/smith/pb/agency_command.pb.rb:15:in `<module:Smith>'
           from /var/cache/smith/pb/agency_command.pb.rb:14:in `<top (required)>'
 
-  In practice this only happens when a pb is compiled.
+  In practice this only happens when a pb is compiled. [done]
 
 * Fix force in protocol_buffer_compiler. There's no way to currently force the
   recompilation the pb files.
 
 * Fix the incredibly slow Payload creation time. It's about 500 times slower
-  than instantiating the protocol buffer itself.
+  than instantiating the protocol buffer itself. [ I think this is fixed -- it
+  fas due to not using lazy log messages. Needs cheeking.]
 
 * Make sure all time fields in pb files are integers.
 
@@ -333,4 +347,5 @@
     then there is a exchange/queue leak.
   * I think there is another case but I cannot think of it.
 
-* Start should check to see if the agent exists before starting it.
+* Start should check to see if the agent exists before starting it. See Use
+  PidFile.find_files to determine ... This would fix the problem.
