@@ -4,7 +4,7 @@ require 'multi_json'
 
 module Smith
   module Commands
-    class Cat < CommandBase
+    class Push < CommandBase
       def execute
         if target.size == 0
           responder.value("No queue specified. Please specify a queue.")
