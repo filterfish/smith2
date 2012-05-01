@@ -297,6 +297,7 @@
 
 * Fix banner helps. See commands/acl. [done]
 
+* Add smithctl options to ~/.smithrc. Add timeout and log_level.
 
                           ~~~~~~~~ BUGS  ~~~~~~~~
 
