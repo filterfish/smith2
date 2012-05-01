@@ -1,11 +1,11 @@
 #!/usr/bin/env ruby
 # -*- encoding: utf-8 -*-
 
-require 'pp'
-require 'pathname'
+$:.unshift(File.dirname(__FILE__) + '/../lib')
 
-root_path = Pathname.new(__FILE__).dirname.join('..').expand_path
-$:.unshift(root_path.join('lib'))
+require 'pp'
+require 'daemons/daemonize'
+require 'daemons/pidfile'
 
 require 'smith'
 require 'smith/acl_compiler'
@@ -16,11 +16,11 @@ module Smith
 
     include Logger
 
-    def initialize(root)
+    AGENCY_NAME = 'agency'
 
-      Smith.compile_acls
-      Smith.load_acls
+    def initialize(opts={})
 
+      @options = opts
       @agency = Agency.new(:paths => Smith.agent_paths)
 
       # Setup signal handlers to clean up.
@@ -30,26 +30,70 @@ module Smith
     end
 
     def run
-      Smith.start do
-
-        # This block is here so the that the shutdown hook added in
-        # Smith.start runs last. Yes I know this is leaky but that's how
-        # it is at the moment.
-
-        Smith.shutdown_hook do
-          # TODO put this as a command line option
-          if false
-            @compiler.clear_cache
-          end
+      if Daemons::PidFile.find_files(*split_pid_path(pid_path), true).empty?
+        if @options[:daemon]
+          Daemonize::daemonize('/dev/null', AGENCY_NAME)
+        else
+          $0 = AGENCY_NAME
         end
 
-        logger.info { "Starting #{File.basename($0)}" }
-        @agency.setup_queues
-        @agency.start_monitoring
+        Daemons::PidFile.new(*split_pid_path(pid_path)).pid = Process.pid
+
+        Smith.compile_acls
+        Smith.load_acls
+
+        Smith.start do
+          # This block is here so the that the shutdown hook added in
+          # Smith.start runs last. Yes I know this is leaky but that's how
+          # it is at the moment.
+
+          Smith.shutdown_hook do
+            # TODO put this as a command line option
+            if false
+              @compiler.clear_cache
+            end
+          end
+
+          logger.info { "Starting #{File.basename($0)}" }
+          @agency.setup_queues
+          @agency.start_monitoring
+        end
+      else
+        logger.fatal { "The agency is alredy running" }
       end
+    end
+
+    def pid_path
+      if @options[:pid_given]
+        @options[:pid]
+      else
+        if Smith.config.agency._has_key?(:pid)
+          Smith.config.agency.pid
+        else
+          Pathname.new(Dir.tmpdir).join("#{AGENCY_NAME}.pid")
+        end
+      end
+    end
+
+    def split_pid_path(path)
+      Pathname.new(path).split
     end
   end
 end
 
-agency_runner = Smith::AgencyRunner.new(root_path)
+parser = Trollop::Parser.new do
+  opt :daemon,      "daemonise", :default => false, :short => :d
+  opt :pid,         "pid file", :type => :string, :short => :p
+end
+
+opts = Trollop::with_standard_exception_handling parser do
+  #raise Trollop::HelpNeeded if ARGV.size < 2
+  parser.parse ARGV
+end
+
+pp opts
+
+# TODO put usage message if pid is given without :daemon.
+
+agency_runner = Smith::AgencyRunner.new(opts)
 agency_runner.run
