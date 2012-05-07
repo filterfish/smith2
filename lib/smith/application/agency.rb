@@ -59,8 +59,12 @@ module Smith
 
     # Stop the agency. This will wait for one second to ensure
     # that any messages are flushed.
-    def stop
-      Smith.stop(true)
+    def stop(&blk)
+      if blk
+        Smith.stop(true, &blk)
+      else
+        Smith.stop(true)
+      end
     end
 
     private
