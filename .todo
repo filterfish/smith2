@@ -303,7 +303,7 @@
 * Add smithctl options to ~/.smithrc. Add timeout and log_level. [done]
 
 * Use PidFile.find_files to determine if and agent is alive or dead irrespective
-  of the current state.
+  of the current state. [done]
 
 * Add column(1) like formatting to the output of smithctl.
 
