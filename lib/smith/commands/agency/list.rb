@@ -6,7 +6,7 @@ module Smith
         responder.value do
           if options[:all]
             if agents.empty?
-              "No agents running."
+              nil
             else
               if options[:long]
                 tabulate(long_format(agents), :header => "total #{agents.count}")
@@ -17,7 +17,7 @@ module Smith
           else
             running_agents = agents.state(:running)
             if running_agents.empty?
-              "No agents running."
+              nil
             else
               if options[:long]
                 tabulate(long_format(running_agents), :header => "total #{running_agents.count}")
