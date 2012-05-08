@@ -43,7 +43,7 @@ module Smith
 
       responder = Messaging::Responder.new
       responder.callback do |v|
-        puts v if v
+        puts v if v && !v.empty?
         Smith.stop(true)
       end
 

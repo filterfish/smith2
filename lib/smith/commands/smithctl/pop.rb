@@ -24,14 +24,18 @@ module Smith
                     result.inject([]) do |a,r|
                       a.tap do |acc|
                         r.ack
-                        acc << print_message(r.payload)
+                        if options[:print]
+                          acc << print_message(r.payload)
+                        end
                       end
                     end
                   else
                     result.inject([]) do |a,r|
                       a.tap do |acc|
                         r.reject(:requeue => true)
-                        acc << print_message(r.payload)
+                        if options[:print]
+                          acc << print_message(r.payload)
+                        end
                       end
                     end
                   end.join("\n")
@@ -53,12 +57,10 @@ module Smith
       private
 
       def print_message(message)
-        if options[:print]
-          if options[:json]
-            message.as_json
-          else
-            message.inspect
-          end
+        if options[:json]
+          message.as_json
+        else
+          message.inspect
         end
       end
 
