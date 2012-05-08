@@ -31,10 +31,7 @@ module Smith
           # any other specified agents.
           if options[:group]
             begin
-              # I don't understand why I need to put self here. target= is a method
-              # on Command so I would have thought that would be used but a local
-              # variable is used instead of the method. TODO work out why and fix.
-              self.target = agent_group(options[:group])
+              target = agent_group(options[:group])
               if target.empty?
                 responder.value("There are no agents in group: #{options[:group]}")
                 return
