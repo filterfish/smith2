@@ -4,32 +4,17 @@ module Smith
     class List < CommandBase
       def execute
         responder.value do
-          if options[:all]
-            if agents.empty?
-              nil
-            else
-              if options[:long]
-                tabulate(long_format(agents), :header => "total #{agents.count}")
-              else
-                short_format(agents)
-              end
-            end
-          else
-            running_agents = agents.state(:running)
-            if running_agents.empty?
-              nil
-            else
-              if options[:long]
-                tabulate(long_format(running_agents), :header => "total #{running_agents.count}")
-              else
-                short_format(running_agents)
-              end
-            end
-          end
+          a = (options[:all]) ? agents : agents.state(:running)
+          (a.empty?) ? nil : format(a, options[:long])
         end
       end
 
       private
+
+      def format(agents, long)
+        a = (target.empty?) ? agents : agents.select {|z| target.select {|y| z.name == y } }.flatten
+        (long) ? tabulate(long_format(a), :header => "total #{a.count}") : short_format(a)
+      end
 
       def long_format(agents)
         agents.map do |a|
