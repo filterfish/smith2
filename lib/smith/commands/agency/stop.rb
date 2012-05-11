@@ -9,6 +9,11 @@ module Smith
       include Common
 
       def execute
+
+        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        #!!!!!!!!!!!! See not about target at end of this file !!!!!!!!!!!!!!
+        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
         case target.first
         when 'agency'
           running_agents = agents.state(:running)
@@ -31,8 +36,8 @@ module Smith
           # any other specified agents.
           if options[:group]
             begin
-              target = agent_group(options[:group])
-              if target.empty?
+              agents_to_stop = agent_group(options[:group])
+              if agents_to_stop.empty?
                 responder.value("There are no agents in group: #{options[:group]}")
                 return
               end
@@ -40,16 +45,18 @@ module Smith
               responder.value(e)
               return
             end
+          else
+            agents_to_stop = target
           end
 
-          ret = target.inject([]) do |acc,agent_name|
+          ret = agents_to_stop.inject([]) do |acc,agent_name|
             acc << if agents[agent_name].running?
                      agents[agent_name].stop
                      nil
-            else
-              logger.warn { "Agent not running: #{agent_name}" }
-              agent_name
-            end
+                   else
+                     logger.warn { "Agent not running: #{agent_name}" }
+                     agent_name
+                   end
           end
           responder.value((ret.compact.empty?) ? nil : "Agent(s) not running: #{ret.compact.join(", ")}")
         end
@@ -65,3 +72,12 @@ module Smith
     end
   end
 end
+
+
+# A note about target.
+#
+# Target is a method and if you assign something to it strange things happen --
+# even if the code doesn't get run! I'm not strictly sure what's going on but I
+# think it's something to do with the a variable aliasing a method of the same
+# name. So even though the code isn't being run it gets compiled and that
+# somehow aliases the method. This looks like a bug in yarv to me.
