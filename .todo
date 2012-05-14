@@ -310,9 +310,15 @@
 * Add support for flapping in the agent monitor. At the very least allow the
   agent stop message to be queued (this might be fraught however).
 
+* Add durable to each message.
+
+* /var/cache/smith/acl is not being created properly.
 
 
                           ~~~~~~~~ BUGS  ~~~~~~~~
+
+* Fix bug where there are too many logging file descriptors open. This manifests
+  when you pop > ~300 messages off a queue.
 
 * Add the internal (to smith) pb directory to the pb load path. [done]
 
@@ -349,3 +355,37 @@
 
 * Start should check to see if the agent exists before starting it. See Use
   PidFile.find_files to determine ... This would fix the problem.
+
+
+* Fix this bug. I think it's probably due to blah ||= blah. But that's just a guess.
+
+  2012/05/14 06:23:08.057818543 [10753]   ERROR -              Smith::AgentBootstrap:55  - ArgumentError: Unknown option: monitor
+          /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/smith-0.5.8/lib/smith/agent.rb:102:in `merge_options'
+          /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/smith-0.5.8/lib/smith/agent.rb:95:in `block in options'
+          /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/smith-0.5.8/lib/smith/agent.rb:95:in `each'
+          /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/smith-0.5.8/lib/smith/agent.rb:95:in `options'
+          /var/lib/digivizer/collection/digivizer-collection/agents/twitter_agent.rb:9:in `<class:TwitterAgent>'
+          /var/lib/digivizer/collection/digivizer-collection/agents/twitter_agent.rb:7:in `<top (required)>'
+          /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/smith-0.5.8/lib/smith/bootstrap.rb:40:in `load'
+          /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/smith-0.5.8/lib/smith/bootstrap.rb:40:in `load_agent'
+          /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/smith-0.5.8/lib/smith/bootstrap.rb:146:in `block in <main>'
+          /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/smith-0.5.8/lib/smith.rb:156:in `call'
+          /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/smith-0.5.8/lib/smith.rb:156:in `block (2 levels) in start'
+          /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/amqp-0.9.5.pre/lib/amqp/channel.rb:241:in `call'
+          /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/amqp-0.9.5.pre/lib/amqp/channel.rb:241:in `block (2 levels) in initialize'
+          /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/amq-client-0.9.2/lib/amq/client/async/callbacks.rb:63:in `call'
+          /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/amq-client-0.9.2/lib/amq/client/async/callbacks.rb:63:in `block in exec_callback_once_yielding_self'
+          /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/amq-client-0.9.2/lib/amq/client/async/callbacks.rb:63:in `each'
+          /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/amq-client-0.9.2/lib/amq/client/async/callbacks.rb:63:in `exec_callback_once_yielding_self'
+          /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/amq-client-0.9.2/lib/amq/client/async/channel.rb:400:in `handle_open_ok'
+          /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/amq-client-0.9.2/lib/amq/client/async/channel.rb:425:in `block in <class:Channel>'
+          /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/amq-client-0.9.2/lib/amq/client/async/adapter.rb:539:in `call'
+          /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/amq-client-0.9.2/lib/amq/client/async/adapter.rb:539:in `receive_frameset'
+          /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/amq-client-0.9.2/lib/amq/client/async/adapter.rb:519:in `receive_frame'
+          /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/amq-client-0.9.2/lib/amq/client/async/adapters/event_machine.rb:327:in `receive_data'
+          /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/eventmachine-1.0.0.beta.4/lib/eventmachine.rb:179:in `run_machine'
+          /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/eventmachine-1.0.0.beta.4/lib/eventmachine.rb:179:in `run'
+          /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/amqp-0.9.5.pre/lib/amqp/connection.rb:38:in `start'
+          /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/smith-0.5.8/lib/smith.rb:98:in `start'
+          /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/smith-0.5.8/lib/smith/bootstrap.rb:145:in `<main>'
+
