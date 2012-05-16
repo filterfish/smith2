@@ -11,38 +11,29 @@ module Smith
         when 1
           Messaging::Receiver.new(target.shift, :auto_ack => false).ready do |receiver|
             callback = proc do
-              work = proc do |n,iter|
+              work = proc do |acc,n,iter|
                 receiver.pop do |r|
-                  iter.return(r)
-                end
-              end
-
-              finished = proc do |result|
-                responder.value do
                   if options[:remove]
-                    logger.debug { "Removing #{result.size} message from #{result.first.queue_name}" }
-                    result.inject([]) do |a,r|
-                      a.tap do |acc|
-                        r.ack
-                        if options[:print]
-                          acc << print_message(r.payload)
-                        end
-                      end
-                    end
+                    r.ack
                   else
-                    result.inject([]) do |a,r|
-                      a.tap do |acc|
-                        r.reject(:requeue => true)
-                        if options[:print]
-                          acc << print_message(r.payload)
-                        end
-                      end
-                    end
-                  end.join("\n")
+                    r.reject(:requeue => true)
+                  end
+
+                  acc[:result] << print_message(r.payload) if options[:print]
+                  acc[:count] += 1
+
+                  iter.return(acc)
                 end
               end
 
-              EM::Iterator.new(0..options[:number] - 1).map(work, finished)
+              finished = proc do |acc|
+                responder.value do
+                  logger.debug { "Removing #{acc[:count]} message from #{receiver.queue_name}" }
+                  acc[:result].join("\n")
+                end
+              end
+
+              EM::Iterator.new(0..options[:number] - 1).inject({:count => 0, :result => []}, work, finished)
             end
 
             errback = proc {responder.value(nil)}
