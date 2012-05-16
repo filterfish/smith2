@@ -11,19 +11,19 @@ module Smith
 
       private
 
-      def format(agents, long)
-        a = (target.empty?) ? agents : agents.select {|z| target.select {|y| z.name == y } }.flatten
+      def format(a, long)
+        a = (target.empty?) ? a : a.select {|z| target.detect {|y| z.name == y } }.flatten
         (long) ? tabulate(long_format(a), :header => "total #{a.count}") : short_format(a)
       end
 
-      def long_format(agents)
-        agents.map do |a|
+      def long_format(a)
+        a.map do |a|
           [a.state, a.pid, (a.started_at) ? format_time(a.started_at) : '', (!(a.stopped? || a.null?) && !a.alive?) ? '(agent dead)' : "", a.name]
         end
       end
 
-      def short_format(agents)
-        agents.map(&:name).sort.join(" ")
+      def short_format(a)
+        a.map(&:name).sort.join(" ")
       end
 
       def format_time(t)
