@@ -17,11 +17,11 @@ module Smith
     def self.run(command, args, vars)
       # Change _ to - underscores look so ugly as a command name.
       command = command.gsub(/-/, '_')
-      logger.debug { "Agency command: #{command}#{(args.empty?) ? '' : " #{args.join(', ')}"}." }
-
       load_command(command)
 
       clazz = Commands.const_get(Extlib::Inflection.camelize(command)).new
+
+      logger.debug { "#{(Command.agency?) ? 'Agency' : 'Smithctl'} command: #{command}#{(args.empty?) ? '' : " #{args.join(', ')}"}." }
 
       begin
 
@@ -83,12 +83,12 @@ module Smith
       end.flatten.map {|p| to_command_name(p) }
     end
 
-    private
-
     # Check to see if the command is an agency or smithctl command.
     def self.agency?
       Smith.constants.include?(:Agency)
     end
+
+    private
 
     # Return the full path of the ruby class.
     def self.command_path(command)
