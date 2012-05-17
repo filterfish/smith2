@@ -110,7 +110,7 @@ module Smith
         logger.verbose { "Payload content: [queue]: #{denormalized_queue_name}, [metadata type]: #{message.type}, [message]: #{message.inspect}" }
         if message.initialized?
           increment_counter
-          exchange.publish(message.encode, opts, &block)
+          exchange.publish(message.encode, opts.merge(:type => message.type), &block)
         else
           raise IncompletePayload, "Message is incomplete: #{message.to_s}"
         end
