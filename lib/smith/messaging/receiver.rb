@@ -114,16 +114,16 @@ module Smith
           responder = Responder.new
           if reply_to
             responder.callback do |return_value|
-              Sender.new(@metadata.reply_to, :auto_delete => true).ready do |sender|
-                logger.verbose { "Replying on: #{@metadata.reply_to}" } if logger.level == 0
-                sender.publish(ACL::Payload.new(:default).content(return_value), sender.options.publish(:correlation_id => @metadata.message_id))
+              Sender.new(metadata.reply_to, :auto_delete => true).ready do |sender|
+                logger.verbose { "Replying on: #{metadata.reply_to}" } if logger.level == 0
+                sender.publish(ACL::Payload.new(:default).content(return_value), sender.options.publish(:correlation_id => metadata.message_id))
               end
             end
           else
             # Null responder. If a call on the responder is made log a warning. Something is wrong.
             responder.callback do |return_value|
               logger.error { "You are responding to a message that has no reply_to on queue: #{denormalized_queue_name}." }
-              logger.verbose { "Queue options: #{@metadata.exchange}." }
+              logger.verbose { "Queue options: #{metadata.exchange}." }
             end
           end
 
@@ -132,16 +132,16 @@ module Smith
 
         # acknowledge the message.
         def ack(multiple=false)
-          @metadata.ack(multiple) unless @nil_message
+          metadata.ack(multiple) unless @nil_message
         end
 
         # reject the message. Optionally requeuing it.
         def reject(opts={})
-          @metadata.reject(opts) unless @nil_message
+          metadata.reject(opts) unless @nil_message
         end
 
         def reply_to
-          @metadata.reply_to
+          metadata.reply_to
         end
 
         # Republish the message to the end of the same queue. This is useful
