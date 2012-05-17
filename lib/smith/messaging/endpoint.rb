@@ -80,12 +80,6 @@ module Smith
         end
       end
 
-      def timeout(timeout, blk=nil, &block)
-        cancel_timeout
-        blk ||= block
-        @timeout = EventMachine::Timer.new(timeout, blk)
-      end
-
       protected
 
       attr_accessor :exchange, :queue, :options
@@ -100,10 +94,6 @@ module Smith
 
       def normalise(name)
         "#{Smith.config.smith.namespace}.#{name}"
-      end
-
-      def cancel_timeout
-        @timeout.cancel if @timeout
       end
 
       private
