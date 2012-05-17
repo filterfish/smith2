@@ -5,7 +5,7 @@ module Smith
 
       include Logger
 
-      attr_accessor :options
+      attr_accessor :options, :message_id
 
       def initialize(queue_name, opts={})
         @auto_ack = (opts.has_key?(:auto_ack)) ? opts.delete(:auto_ack) : true
@@ -180,11 +180,19 @@ module Smith
 
         # The payload type. This returns the protocol buffers class name as a string.
         def payload_type
-          @metadata.type
+          metadata.type
         end
 
         def queue_name
           denormalized_queue_name
+        end
+
+        # Check that the correlation_id matches the message_id assuming there
+        # is a message id! This is only applicable for a message reply.
+        # NOTE This is broken.
+        def correlation_id_match?
+          pp @receiver.message_id, metadata.correlation_id
+          !!(@receiver.message_id && metadata.correlation_id == receiver.message_id)
         end
 
         private
