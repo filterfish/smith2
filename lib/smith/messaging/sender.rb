@@ -91,7 +91,19 @@ module Smith
         end
       end
 
+      def timeout(timeout, blk=nil, &block)
+        cancel_timeout
+        blk ||= block
+
+        @timeout_duration = timeout
+        @timeout_proc = blk
+      end
+
       private
+
+      def cancel_timeout
+        @timeout.cancel if @timeout
+      end
 
       def _publish(message, opts, &block)
         logger.verbose { "Publishing to: [queue]: #{denormalized_queue_name}. [options]: #{opts}" }
