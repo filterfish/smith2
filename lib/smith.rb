@@ -30,6 +30,10 @@ module Smith
       @handler = handler
     end
 
+    def environment
+      ENV['SMITH_ENV'] || 'development'
+    end
+
     def config
       Config.get
     end
