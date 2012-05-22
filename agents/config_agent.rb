@@ -7,7 +7,7 @@ class ConfigAgent < Smith::Agent
   options :monitor => false
 
   def run
-    config = Smith::AgentConfig.new('/var/cache/smith', 'agent_config')
+    config = Smith::AgentConfig.new(Smith.config.agency.cache_path, 'agent_config')
 
     receiver('agent.config.request', :type => :agent_config_request) do |r|
       logger.info("Reading config for: #{r.payload.agent}")
