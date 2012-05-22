@@ -23,6 +23,10 @@ module Smith
         a.subscribe.ack = true
       end
 
+      o.agency do |a|
+        a.timeout = 30
+      end
+
       o.logging do |l|
         l.trace = false
         l.level = :debug
