@@ -39,7 +39,7 @@ module Smith
       private
 
       def send_agent_control_message(agent, message)
-        Messaging::Sender.new(agent.control_queue_name, :durable => false, :auto_delete => true).ready do |sender|
+        Messaging::Sender.new(agent.control_queue_name, :durable => false, :auto_delete => true, :persistent => true,  :strict => true).ready do |sender|
           sender.publish(ACL::Payload.new(:agent_command).content(message))
         end
       end

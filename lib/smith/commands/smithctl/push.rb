@@ -23,7 +23,7 @@ module Smith
                      end
                    end
 
-            Smith::Messaging::Sender.new(target.first, :auto_delete => options[:dynamic], :persistent => true, :nowait => false, :strict => true).ready do |sender|
+            Messaging::Sender.new(target.first, :auto_delete => options[:dynamic], :persistent => true, :nowait => false, :strict => true).ready do |sender|
 
               work = proc do |n,iter|
                 sender.publish(json_to_payload(data, options[:type])) do
@@ -48,7 +48,7 @@ module Smith
       private
 
       def json_to_payload(data, type)
-        Smith::ACL::Payload.new(type.to_sym).content do |m|
+        ACL::Payload.new(type.to_sym).content do |m|
           MultiJson.load(data, :symbolize_keys => true).each do |k,v|
             m.send("#{k}=".to_sym, v)
           end
