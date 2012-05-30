@@ -15,19 +15,16 @@ module Smith
 
     include Logger
 
-    DEFAULT_AGENCY_TIMEOUT = 60
-
     def initialize(options={})
       log_level((options[:log_level_given]) ? options[:log_level].to_sym : :info)
-      @timeout = (options[:timeout_given]) ? options[:timeout] : DEFAULT_AGENCY_TIMEOUT
+      @timeout = (options[:timeout_given]) ? options[:timeout] : Smith.config.agency.timeout
     end
 
     def send_command(command, args, &blk)
       begin
         send("#{Command.command_type(command)}_command", command, args, &blk)
       rescue Smith::Command::UnknownCommandError => e
-        puts e.message
-        Smith.stop(true)
+        blk.call(e.message)
       end
     end
 
@@ -36,8 +33,7 @@ module Smith
     def smithctl_command(command, args, &blk)
       responder = Messaging::Responder.new
       responder.callback do |v|
-        puts v if v && !v.empty?
-        Smith.stop(true)
+        blk.call(v)
       end
 
       Command.run(command, args, :responder => responder)
@@ -46,7 +42,7 @@ module Smith
     def agency_command(command, args, &blk)
       Messaging::Sender.new('agency.control', :auto_delete => false, :durable => false, :persistent => true,  :strict => true).ready do |sender|
 
-        sender.timeout(@timeout) { puts "Timeout. Is the agency still running"; Smith.stop(true) }
+        sender.timeout(@timeout) { blk.call("Timeout. Is the agency still running?") }
 
         payload = ACL::Payload.new(:agency_command).content(:command => command, :args => args)
 
@@ -57,8 +53,7 @@ module Smith
         end
 
         errback = proc do
-          puts "Agency not running"
-          Smith.stop(true)
+          blk.call("Agency not running.")
         end
 
         sender.consumers?(callback, errback)
@@ -103,7 +98,7 @@ Usage:
 
   control = SmithControl.new(opts)
 
-  Smith.start(:quiet => false) do
+  Smith.start do
     control.send_command(command, args) do |result|
       puts result if result && !result.empty?
       Smith.stop(true)
