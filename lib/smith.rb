@@ -26,10 +26,6 @@ module Smith
       @channel
     end
 
-    def on_error=(handler)
-      @handler = handler
-    end
-
     def environment
       ENV['SMITH_ENV'] || 'development'
     end
@@ -85,8 +81,15 @@ module Smith
       EM.reactor_running?
     end
 
-    def on_error(&blk)
-      @on_error = blk
+    # Define a channel error handler.
+    def on_error(chain=false, &blk)
+      # This strikes me as egregiously wrong but I don't know how to
+      # overwrite an already existing handler.
+      if chain
+        Smith.channel.callbacks[:error] << blk
+      else
+        Smith.channel.callbacks[:error] = [blk]
+      end
     end
 
     def start(opts={}, &block)
@@ -141,16 +144,11 @@ module Smith
           # will get overwhelmed and the whole thing will collapse in on itself.
           channel.prefetch(1)
 
-          if @on_error
-            channel.on_error(&@on_error)
-          else
-            # Log the error and stop the agency when there are channel errors.
-            # TODO Add recovery instead of stopping the agency.
-            channel.on_error do |ch,channel_close|
-              logger.fatal { "Channel level exception: #{channel_close.reply_text}. Class id: #{channel_close.class_id}, Method id: #{channel_close.method_id}, Status code : #{channel_close.reply_code}" }
-              logger.fatal { "Agency is exiting" }
-              Smith.stop(true)
-            end
+          # Set up a default handler.
+          on_error do |ch,channel_close|
+            logger.fatal { "Channel level exception: #{channel_close.reply_code}: #{channel_close.reply_text}" }
+            logger.fatal { "Exiting" }
+            Smith.stop(true)
           end
 
           # Set up auto-recovery. This will ensure that the AMQP gem reconnects each
