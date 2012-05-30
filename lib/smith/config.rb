@@ -3,11 +3,16 @@ module Smith
   class Config
 
     @@config = Optimism.new.tap do |o|
+      o.agency do |a|
+        a.timeout = 30
+      end
+
       o.agent do |a|
         a.monitor = false
         a.singleton = true
         a.metadata = ''
       end
+
       o.amqp do |a|
         a.publish do |p|
           p.ack = true
@@ -17,6 +22,7 @@ module Smith
         a.pop.ack = true
         a.subscribe.ack = true
       end
+
       o.logging do |l|
         l.trace = false
         l.level = :debug
