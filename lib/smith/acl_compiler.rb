@@ -19,10 +19,12 @@ module Smith
       @cache_path = Smith.acl_cache_path
     end
 
-    # Compile any protocol buffer files. This checks the timestamp
-    # to see if the file needs compiling.
+    # Compile any protocol buffer files. This checks the timestamp to see if
+    # the file needs compiling. This is done in a subprocess to stop the agency
+    # from dying. I think it's a problem with the class being loaded twice but
+    # I don't actually know that so this could be considered a bit brute force.
     def compile
-      fork do
+      Process.fork do
         logger.debug { "Protocol buffer cache path: #{@cache_path}" }
         Smith.acl_path.each do |path|
           results = {}
@@ -35,6 +37,7 @@ module Smith
           end
         end
       end
+      Process.wait
       @cache_path
     end
 
