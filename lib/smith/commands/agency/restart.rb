@@ -12,7 +12,7 @@ module Smith
       include Common
 
       def execute
-        Messaging::Sender.new('agency.control', :auto_delete => true, :durable => false, :strict => true).ready do |sender|
+        Messaging::Sender.new('agency.control', :auto_delete => false, :durable => false, :strict => true).ready do |sender|
           payload = ACL::Payload.new(:agency_command).content(:command => 'stop', :args => target)
 
           sender.publish_and_receive(payload) do |r|

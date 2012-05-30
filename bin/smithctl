@@ -65,7 +65,7 @@ module Smith
     end
 
     def agency_command(command, args, &blk)
-      Messaging::Sender.new('agency.control', :auto_delete => true, :durable => false, :persistent => true,  :strict => true).ready do |sender|
+      Messaging::Sender.new('agency.control', :auto_delete => false, :durable => false, :persistent => true,  :strict => true).ready do |sender|
 
         sender.timeout(@timeout) { puts "Timeout. Is the agency still running"; Smith.stop(true) }
 
@@ -124,11 +124,7 @@ Usage:
 
   control = SmithControl.new(opts)
 
-  Smith.on_error do
-    Smith.stop(true)
-  end
-
-  Smith.start(:quiet => true) do
+  Smith.start(:quiet => false) do
     control.send_command(command, args) do |result|
       puts result if result && !result.empty?
       Smith.stop(true)

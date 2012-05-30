@@ -17,7 +17,7 @@ module Smith
             when 'running'
               if agent_process.last_keep_alive
                 if agent_process.last_keep_alive > agent_process.started_at
-                  if (Time.now.utc.to_i - agent_process.last_keep_alive) > 10
+                  if (Time.now.to_i - agent_process.last_keep_alive) > 10
                     logger.fatal { "Agent not responding: #{agent_process.name}" }
                     agent_process.no_process_running
                   end
@@ -26,7 +26,7 @@ module Smith
                 end
               end
             when 'starting'
-              if (Time.now.utc.to_i - agent_process.started_at) > 10
+              if (Time.now.to_i - agent_process.started_at) > 10
                 logger.error { "No response from agent for > 10 seconds. Agent probably didn't start" }
                 agent_process.not_responding
               else
@@ -36,7 +36,7 @@ module Smith
               logger.info { "Agent is shutting down: #{agent_process.name}" }
             when 'dead'
               logger.info { "Restarting dead agent: #{agent_process.name}" }
-              Messaging::Sender.new('agency.control', :auto_delete => true, :durable => false, :strict => true).ready do |sender|
+              Messaging::Sender.new('agency.control', :auto_delete => false, :durable => false, :strict => true).ready do |sender|
                 sender.publish_and_receive(ACL::Payload.new(:agency_command).content(:command => 'start', :args => [agent_process.name])) do |r|
                   logger.debug { "Agent restart message acknowledged: #{agent_process.name}" }
                 end

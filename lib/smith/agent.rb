@@ -149,15 +149,15 @@ module Smith
     end
 
     def acknowledge_start
-      sender('agent.lifecycle', :auto_delete => true, :durable => false, :dont_cache => true) do |ack_start_queue|
-        message = {:state => 'acknowledge_start', :pid => $$.to_s, :name => self.class.to_s, :metadata => agent_options[:metadata], :started_at => Time.now.utc.to_i.to_s}
+      sender('agent.lifecycle', :auto_delete => false, :durable => false, :dont_cache => true) do |ack_start_queue|
+        message = {:state => 'acknowledge_start', :pid => $$, :name => self.class.to_s, :metadata => agent_options[:metadata], :started_at => Time.now.to_i}
         ack_start_queue.publish(ACL::Payload.new(:agent_lifecycle).content(agent_options.merge(message)))
       end
     end
 
     def acknowledge_stop(&block)
-      sender('agent.lifecycle', :auto_delete => true, :durable => false, :dont_cache => true) do |ack_stop_queue|
-        message = {:state => 'acknowledge_stop', :pid => $$.to_s, :name => self.class.to_s}
+      sender('agent.lifecycle', :auto_delete => false, :durable => false, :dont_cache => true) do |ack_stop_queue|
+        message = {:state => 'acknowledge_stop', :pid => $$, :name => self.class.to_s}
         ack_stop_queue.publish(ACL::Payload.new(:agent_lifecycle).content(message), &block)
       end
     end
@@ -165,8 +165,8 @@ module Smith
     def start_keep_alive
       if agent_options[:monitor]
         EventMachine::add_periodic_timer(1) do
-          sender('agent.keepalive', :auto_delete => true, :durable => false, :dont_cache => true) do |keep_alive_queue|
-            message = {:name => self.class.to_s, :pid => $$.to_s, :time => Time.now.utc.to_i.to_s}
+          sender('agent.keepalive', :auto_delete => false, :durable => false, :dont_cache => true) do |keep_alive_queue|
+            message = {:name => self.class.to_s, :pid => $$, :time => Time.now.to_i}
             keep_alive_queue.consumers? do |sender|
               keep_alive_queue.publish(ACL::Payload.new(:agent_keepalive).content(message))
             end

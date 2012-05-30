@@ -84,7 +84,7 @@ module Smith
 
     def send_dead_message
       logger.debug { "Sending dead message to agency: #{@agent_name}" }
-      Messaging::Sender.new('agent.lifecycle', :auto_delete => true, :durable => false).ready do |sender|
+      Messaging::Sender.new('agent.lifecycle', :auto_delete => false, :durable => false).ready do |sender|
         sender.publish(ACL::Payload.new(:agent_lifecycle).content(:state => 'dead', :name => @agent_name))
       end
     end

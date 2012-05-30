@@ -15,7 +15,7 @@ module Smith
     property :path,             String, :required => true
     property :name,             String, :required => true
     property :state,            String, :required => true
-    property :pid,              String
+    property :pid,              Integer
     property :started_at,       Integer
     property :last_keep_alive,  Integer
     property :metadata,         String
@@ -95,7 +95,7 @@ module Smith
     # Start an agent. This forks and execs the bootstrapper class
     # which then becomes responsible for managing the agent process.
     def self.start(agent_process)
-      agent_process.started_at = Time.now.utc
+      agent_process.started_at = Time.now
       agent_process.pid = fork do
 
         # Detach from the controlling terminal
