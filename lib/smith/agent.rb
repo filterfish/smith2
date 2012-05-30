@@ -5,8 +5,6 @@ module Smith
 
     include Logger
 
-    @@agent_options = Smith.config.agent
-
     attr_reader :factory, :name, :pid
 
     def initialize(options={})
@@ -90,19 +88,10 @@ module Smith
       # Options supported:
       # :monitor,   the agency will monitor the agent & if dies restart.
       # :singleton, only every have one agent. If this is set to false
-      #             multiple agents are allow.
+      #             multiple agents are allowed.
       def options(opts)
-        opts.each { |k,v| merge_options(k, v) }
+        Smith.config.agent._merge!(opts)
       end
-
-      def merge_options(option, value)
-        if @@agent_options[option]
-          @@agent_options[option] = value
-        else
-          raise ArgumentError, "Unknown option: #{option}"
-        end
-      end
-      private :merge_options
     end
 
     protected
@@ -193,7 +182,7 @@ module Smith
     end
 
     def agent_options
-      @@agent_options._child
+      Smith.config.agent._child
     end
 
     def control_queue_name
