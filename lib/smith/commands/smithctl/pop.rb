@@ -9,7 +9,20 @@ module Smith
         when 0
           responder.value("No queue specified. Please specify a queue.")
         when 1
-          Messaging::Receiver.new(target.shift, :auto_ack => false).ready do |receiver|
+
+          queue = target.first
+
+          # What to do if there is a channel error.
+          Smith.on_error do |ch,channel_close|
+            case channel_close.reply_code
+            when 404
+              responder.value("Queue does not exist: #{queue}")
+            else
+              responder.value("Unknown error: #{channel_close.reply_text}")
+            end
+          end
+
+          Messaging::Receiver.new(queue, :auto_ack => false, :passive => true).ready do |receiver|
             callback = proc do
               work = proc do |acc,n,iter|
                 receiver.pop do |r|

@@ -34,18 +34,6 @@ module Smith
     private
 
     def smithctl_command(command, args, &blk)
-      Smith.channel.on_error do |ch,channel_close|
-        case channel_close.reply_code
-        when 404
-          puts "No such queue: #{extract_queue(channel_close.reply_text)}"
-        when 406
-          puts "Queue in use: #{extract_queue(channel_close.reply_text)}"
-        else
-          puts channel_close.reply_text
-          puts channel_close.reply_code
-        end
-      end
-
       responder = Messaging::Responder.new
       responder.callback do |v|
         puts v if v && !v.empty?
@@ -53,15 +41,6 @@ module Smith
       end
 
       Command.run(command, args, :responder => responder)
-    end
-
-    def extract_queue(message)
-      match = /.*?'(.*?)'.*$/.match(message) #[1]
-      if match && match[1]
-        match[1].sub(/smith\./, '')
-      else
-        message
-      end
     end
 
     def agency_command(command, args, &blk)

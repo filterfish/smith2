@@ -7,6 +7,17 @@ module Smith
         when 0
           responder.value("No queue specified. Please specify a queue.")
         else
+          Smith.on_error do |ch,channel_close|
+            case channel_close.reply_code
+            when 404
+              responder.value("No such queue: #{extract_queue(channel_close.reply_text)}")
+            when 406
+              responder.value("Queue not empty: #{extract_queue(channel_close.reply_text)}. Use -f to force remove")
+            else
+              responder.value("Unknown error: #{channel_close.reply_text}")
+            end
+          end
+
           target.each do |queue_name|
             Smith.channel.queue("smith.#{queue_name}", :passive => true) do |queue|
               queue_options = (options[:force]) ? {} : {:if_unused => true, :if_empty => true}
@@ -25,6 +36,15 @@ module Smith
 
         opt    :force,   "force the removal even if there are messages on the queue", :short => :f
         opt    :verbose, "print the number of messages deleted", :short => :v
+      end
+
+      def extract_queue(message)
+        match = /.*?'(.*?)'.*$/.match(message) #[1]
+        if match && match[1]
+          match[1].sub(/smith\./, '')
+        else
+          message
+        end
       end
     end
   end
