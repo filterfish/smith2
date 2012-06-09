@@ -23,6 +23,7 @@ spec = Gem::Specification.new do |s|
   s.add_dependency "state_machine", "1.1.2"
   s.add_dependency "trollop", ">= 1.16.2"
   s.add_dependency "yajl-ruby", ">= 1.1.0"
+  s.add_dependency "multi_json", ">= 1.3.2"
 
   binaries = %w{agency smithctl}
   libraries = Dir.glob("lib/**/*")
