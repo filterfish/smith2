@@ -1,6 +1,6 @@
 spec = Gem::Specification.new do |s|
   s.name = 'smith'
-  s.version = File.read('./VERSION')
+  s.version = File.read('./lib/smith/version.rb')
   s.date = '2012-02-22'
   s.summary = 'Multi-agent framework'
   s.email = "rgh@filterfish.org"
