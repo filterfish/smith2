@@ -145,6 +145,8 @@
   * dump a specific queues' acl.
   * add a --kill option to the agency. This is addition to the stop agency
     command
+  * add a --list option to the config command
+  * add a --clear-cache option to the acls command.
 
   In fact look at smith1 agency to see what options it had.
 
@@ -314,11 +316,20 @@
 
 * /var/cache/smith/acl is not being created properly.
 
+* Fix the formatting of return data from the commands. I'm relying on pp and
+  it's not working particularly well.
+
+* Define === for the options Aray in BaseCommand. I can then just have a case
+  statement for each option. This is the closest I'm going to get to pattern
+  matching.
+
+* Use git instead of leveldb for the agent config. This can then be used to
+  implement rollback.
 
                           ~~~~~~~~ BUGS  ~~~~~~~~
 
 * Fix bug where there are too many logging file descriptors open. This manifests
-  when you pop > ~300 messages off a queue.
+  when you pop > ~300 messages off a queue. [done]
 
 * Add the internal (to smith) pb directory to the pb load path. [done]
 
@@ -329,14 +340,6 @@
   of using a case statement.
 
 * Fix bug where I get an exception if the pb class has already been loaded:
-
-  /usr/local/ruby-1.9.3-p0/lib/ruby/gems/1.9.1/gems/ruby_protobuf-0.4.11/lib/protobuf/message/message.rb:43:in `define_field': Field tag 1 has already been used in Smith::ACL::AgencyCommand. (Protobuf::TagCollisionError)  
-          from /usr/local/ruby-1.9.3-p0/lib/ruby/gems/1.9.1/gems/ruby_protobuf-0.4.11/lib/protobuf/message/message.rb:23:in `required'
-          from /var/cache/smith/pb/agency_command.pb.rb:18:in `<class:AgencyCommand>'
-          from /var/cache/smith/pb/agency_command.pb.rb:16:in `<module:ACL>'
-          from /var/cache/smith/pb/agency_command.pb.rb:15:in `<module:Smith>'
-          from /var/cache/smith/pb/agency_command.pb.rb:14:in `<top (required)>'
-
   In practice this only happens when a pb is compiled. [done]
 
 * Fix force in protocol_buffer_compiler. There's no way to currently force the
@@ -344,7 +347,7 @@
 
 * Fix the incredibly slow Payload creation time. It's about 500 times slower
   than instantiating the protocol buffer itself. [ I think this is fixed -- it
-  fas due to not using lazy log messages. Needs cheeking.]
+  was due to not using lazy log messages. Needs checking.]
 
 * Make sure all time fields in pb files are integers.
 
