@@ -1,6 +1,8 @@
+Kernel.load './lib/smith/version.rb'
+
 spec = Gem::Specification.new do |s|
   s.name = 'smith'
-  s.version = File.read('./lib/smith/version.rb')
+  s.version = Smith::VERSION
   s.date = '2012-02-22'
   s.summary = 'Multi-agent framework'
   s.email = "rgh@filterfish.org"
