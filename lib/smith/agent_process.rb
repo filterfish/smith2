@@ -69,7 +69,7 @@ module Smith
     def alive?
       if self.pid
         begin
-          Process.kill(0, self.pid.to_i)
+          Process.kill(0, self.pid)
           true
         rescue Exception
           false
@@ -121,7 +121,7 @@ module Smith
       end
 
       # We don't want any zombies.
-      Process.detach(agent_process.pid.to_i)
+      Process.detach(agent_process.pid)
     end
 
     def self.acknowledge_start(agent_process)
@@ -146,7 +146,7 @@ module Smith
       if agent_process.pid
         logger.info { "Sending kill signal: #{agent_process.name}(#{agent_process.pid})" }
         begin
-          Process.kill('TERM', agent_process.pid.to_i)
+          Process.kill('TERM', agent_process.pid)
         rescue
           logger.error { "Process does not exist. PID is stale: #{agent_process.pid}: #{agent_process.name}" }
         end
