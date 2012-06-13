@@ -11,7 +11,7 @@ module Smith
       def execute
 
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        #!!!!!!!!!!!! See not about target at end of this file !!!!!!!!!!!!!!
+        #!!!!!!!!!!!! See note about target at end of this file !!!!!!!!!!!!!!
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         # Sort out any groups. If the group option is set it will override
