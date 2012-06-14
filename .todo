@@ -147,6 +147,8 @@
     command
   * add a --list option to the config command
   * add a --clear-cache option to the acls command.
+  * add a --agency & --smithctl option to the version command.
+  * add a -1 option to all the commands that need it (eg list, agents)
 
   In fact look at smith1 agency to see what options it had.
 
