@@ -30,9 +30,12 @@ module Smith
           results = {}
           path_glob(path) do |p|
             if should_compile?(p)
-              logger.info { "Compiling: #{p}" }
-              # TODO put some error handling here.
-              Protobuf::Compiler.compile(p.basename, p.dirname, @cache_path)
+              begin
+                logger.info { "Compiling: #{p}" }
+                Protobuf::Compiler.compile(p.basename, p.dirname, @cache_path)
+              rescue Racc::ParseError => e
+                logger.error { "Cannot parse: #{p}" }
+              end
             end
           end
         end
