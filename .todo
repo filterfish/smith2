@@ -136,21 +136,25 @@
   is noisy.
 
 * Add command line options to the agency:
-  * dump the config -- this should be in smithctl
   * daemonise the agency (and create the pid file.) [done]
   * specify the pid file. [done]
   * specify the environment
   * specify a different config file.
   * start the agency with a clean db
   * dump a specific queues' acl.
-  * add a --kill option to the agency. This is addition to the stop agency
-    command
-  * add a --list option to the config command
-  * add a --clear-cache option to the acls command.
-  * add a --agency & --smithctl option to the version command.
-  * add a -1 option to all the commands that need it (eg list, agents)
 
   In fact look at smith1 agency to see what options it had.
+
+* Add smitch options/commands
+  * dump the config -- this should be in smithctl
+  * sort the long output of the list command.
+  * add --kill option to the agency. This is addition to the stop agency command
+  * add --list option to the config command
+  * add --path to the agents command: displays the load path.
+  * add --clear-cache option to the acls command.
+  * add --agency & --smithctl option to the version command.
+  * add --one-column (-1) option to all the commands that need it (eg list, agents)
+  * add --pretty-print option to pop command 
 
 * Write a startup script.
 
@@ -328,7 +332,38 @@
 * Use git instead of leveldb for the agent config. This can then be used to
   implement rollback.
 
+* Have the equivelent of a utmp log.
+
                           ~~~~~~~~ BUGS  ~~~~~~~~
+
+/usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/logging-1.7.2/lib/logging/appenders/rolling_file.rb:145:in `initialize': Too many open files - /var/log/smith/smith.log (Errno::EMFILE)
+        from /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/logging-1.7.2/lib/logging/appenders/rolling_file.rb:145:in `new'
+        from /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/logging-1.7.2/lib/logging/appenders/rolling_file.rb:145:in `initialize'
+        from /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/smith-0.5.10/lib/smith/logger.rb:43:in `new'
+        from /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/smith-0.5.10/lib/smith/logger.rb:43:in `log_appender'
+        from /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/smith-0.5.10/lib/smith/logger.rb:78:in `__setup'
+        from /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/smith-0.5.10/lib/smith/logger.rb:69:in `logger'
+        from /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/smith-0.5.10/lib/smith/messaging/endpoint.rb:25:in `block in ready'
+        from /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/amqp-0.9.5.pre/lib/amqp/exchange.rb:339:in `call'
+        from /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/amqp-0.9.5.pre/lib/amqp/exchange.rb:339:in `block (2 levels) in initialize'
+        from /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/amq-client-0.9.2/lib/amq/client/async/callbacks.rb:63:in `call'
+        from /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/amq-client-0.9.2/lib/amq/client/async/callbacks.rb:63:in `block in exec_callback_once_yielding_self'
+        from /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/amq-client-0.9.2/lib/amq/client/async/callbacks.rb:63:in `each'
+        from /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/amq-client-0.9.2/lib/amq/client/async/callbacks.rb:63:in `exec_callback_once_yielding_self'
+        from /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/amq-client-0.9.2/lib/amq/client/async/exchange.rb:241:in `handle_declare_ok'
+        from /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/amq-client-0.9.2/lib/amq/client/async/exchange.rb:255:in `block in <class:Exchange>'
+        from /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/amq-client-0.9.2/lib/amq/client/async/adapter.rb:539:in `call'
+        from /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/amq-client-0.9.2/lib/amq/client/async/adapter.rb:539:in `receive_frameset'
+        from /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/amq-client-0.9.2/lib/amq/client/async/adapter.rb:519:in `receive_frame'
+        from /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/amq-client-0.9.2/lib/amq/client/async/adapters/event_machine.rb:327:in `receive_data'
+        from /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/eventmachine-1.0.0.beta.4/lib/eventmachine.rb:179:in `run_machine'
+        from /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/eventmachine-1.0.0.beta.4/lib/eventmachine.rb:179:in `run'
+        from /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/amqp-0.9.5.pre/lib/amqp/connection.rb:38:in `start'
+        from /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/smith-0.5.10/lib/smith.rb:105:in `start'
+        from /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/smith-0.5.10/bin/agency:46:in `run'
+        from /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/smith-0.5.10/bin/agency:83:in `<top (required)>'
+        from /usr/local/ruby-1.9.3-p194/bin/agency:23:in `load'
+        from /usr/local/ruby-1.9.3-p194/bin/agency:23:in `<main>'
 
 * Fix bug where there are too many logging file descriptors open. This manifests
   when you pop > ~300 messages off a queue. [done]
@@ -394,3 +429,7 @@
           /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/smith-0.5.8/lib/smith.rb:98:in `start'
           /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/smith-0.5.8/lib/smith/bootstrap.rb:145:in `<main>'
 
+
+* Fix file descriptor error in the logging code. I assume it's because the
+  logger is being opened multiple times. See if including Logger in the Smith
+  class fixes it.
