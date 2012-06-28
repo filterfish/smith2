@@ -150,8 +150,16 @@ module Smith
 
     def acknowledge_start
       sender('agent.lifecycle', :auto_delete => false, :durable => false, :dont_cache => true) do |ack_start_queue|
-        message = {:state => 'acknowledge_start', :pid => $$, :name => self.class.to_s, :metadata => agent_options[:metadata], :started_at => Time.now.to_i}
-        ack_start_queue.publish(ACL::Payload.new(:agent_lifecycle).content(agent_options.merge(message)))
+        payload = ACL::Payload.new(:agent_lifecycle).content do |p|
+          p.state = 'acknowledge_start'
+          p.pid = $$
+          p.name = self.class.to_s
+          p.metadata = agent_options[:metadata]
+          p.monitor = agent_options[:monitor]
+          p.singleton = agent_options[:singleton]
+          p.started_at = Time.now.to_i
+        end
+        ack_start_queue.publish(payload)
       end
     end
 
