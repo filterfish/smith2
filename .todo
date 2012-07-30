@@ -392,8 +392,8 @@
     then there is a exchange/queue leak.
   * I think there is another case but I cannot think of it.
 
-* Start should check to see if the agent exists before starting it. See Use
-  PidFile.find_files to determine ... This would fix the problem.
+* Start should check to see if the agent exists before starting it. Do not use
+  pid files
 
 
 * Fix this bug. I think it's probably due to blah ||= blah. But that's just a guess.
@@ -427,4 +427,13 @@
           /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/amqp-0.9.5.pre/lib/amqp/connection.rb:38:in `start'
           /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/smith-0.5.8/lib/smith.rb:98:in `start'
           /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/smith-0.5.8/lib/smith/bootstrap.rb:145:in `<main>'
+
+
+
+* Not sure what this actually is. I assume it's because ret is a RuntimeError
+  but I've no idea how this might be so.
+
+  smith-0.5.10/lib/smith/application/agency.rb:22:in `block (4 levels) in setup_queues': undefined method `empty?' for #<RuntimeError: Group does not exist: ndb> (NoMethodError)
+        from /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/eventmachine-1.0.0.beta.4/lib/em/deferrable.rb:151:in `call'
+        from /usr/local/ruby-1.9.3-p194/lib/ruby/gems/1.9.1/gems/eventmachine-1.0.0.beta.4/lib/em/deferrable.rb:151:in `set_deferred_status'
 
