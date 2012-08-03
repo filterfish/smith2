@@ -230,6 +230,7 @@ require_relative 'smith/agent_monitoring'
 require_relative 'smith/command'
 require_relative 'smith/command_base'
 require_relative 'smith/exceptions'
+require_relative 'smith/object_count'
 require_relative 'smith/version'
 
 require_relative 'smith/messaging/amqp_options'
