@@ -4,6 +4,7 @@ module Smith
   class Agent
 
     include Logger
+    include Smith::ObjectCount
 
     attr_reader :factory, :name, :pid
 
@@ -107,6 +108,8 @@ module Smith
         logger.debug { "Command received on agent control queue: #{r.payload.command} #{r.payload.options}" }
 
         case r.payload.command
+        when 'object_count'
+          object_count(r.payload.options.first.to_i).each{|o| logger.info{o}}
         when 'stop'
           acknowledge_stop { Smith.stop }
         when 'log_level'
