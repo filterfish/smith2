@@ -4,10 +4,10 @@ require 'extlib/string'
 
 module Smith
   module Commands
-    class Acls < CommandBase
+    class Acl < CommandBase
       def execute
         responder.value do
-          if options[:show]
+          if options[:show_given]
             if target.empty?
               "You must supply an ACL file name."
             else
@@ -35,6 +35,12 @@ module Smith
                 end
               end.join("\n")
             end
+          elsif options[:clean_given]
+            Pathname.glob(Smith.acl_cache_path.join("*.pb.rb")).each {|p| p.unlink}
+            ""
+          elsif options[:compile_given]
+            Pathname.glob(Smith.compile_acls)
+            ""
           else
             join_string = (options[:long]) ? "\n" : " "
             Pathname.glob(Smith.acl_path.map {|p| "#{p}#{File::SEPARATOR}*"}).map do |p|
@@ -53,8 +59,10 @@ module Smith
       def options_spec
         banner "List and display acl files."
 
-        opt    :long, "format the listing", :short => :l
-        opt    :show, "show the contents of the acl file", :short => :s
+        opt    :long,     "format the listing", :short => :l
+        opt    :show,     "show the contents of the acl file", :short => :s
+        opt    :clean,    "remove all compiled acls", :short => :none
+        opt    :compile,  "compile all acls", :short => :none
       end
     end
   end
