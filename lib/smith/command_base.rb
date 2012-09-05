@@ -43,6 +43,10 @@ module Smith
       @parser.opt(*opt_spec)
     end
 
+    def conflicts(*syms)
+      @parser.conflicts(*syms)
+    end
+
     def options_spec
       banner "You should really set a proper banner notice for this command."
     end
