@@ -13,7 +13,13 @@ module Smith
 
       def format(a, long)
         a = (target.empty?) ? a : a.select {|z| target.detect {|y| z.name == y } }.flatten
-        (long) ? tabulate(long_format(a), :header => "total #{a.count}") : short_format(a)
+        if options[:long_given]
+          tabulate(long_format(a), :header => "total #{a.count}")
+        elsif options[:one_column_given]
+          short_format(a, "\n")
+        else
+          short_format(a)
+        end
       end
 
       def long_format(a)
@@ -22,8 +28,8 @@ module Smith
         end
       end
 
-      def short_format(a)
-        a.map(&:name).sort.join(" ")
+      def short_format(a, sep=' ')
+        a.map(&:name).sort.join(sep)
       end
 
       def format_time(t)
@@ -41,8 +47,11 @@ module Smith
       def options_spec
         banner "List the running agents."
 
-        opt    :long, "the number of times to send the message", :short => :l
-        opt    :all,  "show all agents in all states", :short => :a
+        opt         :long,       "the number of times to send the message", :short => :l
+        opt         :one_column, "the number of times to send the message", :short => :s
+        opt         :all,        "show all agents in all states", :short => :a
+
+        conflicts   :one_column, :long
       end
     end
   end

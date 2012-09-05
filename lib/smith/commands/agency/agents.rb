@@ -20,7 +20,8 @@ module Smith
               end
             end
           end.flatten
-          (agent_paths.empty?) ? "" : agent_paths.sort.join(" ")
+          separator = (options[:one_column]) ? "\n" : " "
+          (agent_paths.empty?) ? "" : agent_paths.sort.join(separator)
         end
       end
 
@@ -28,6 +29,8 @@ module Smith
 
       def options_spec
         banner "List all available agents."
+
+        opt    :one_column, "the number of times to send the message", :short => :s
       end
     end
   end
