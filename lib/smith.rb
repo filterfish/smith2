@@ -71,7 +71,7 @@ module Smith
     # being it's how it's going to be. This will really start
     # to be a problem when there are a lot of acls.
     def load_acls
-      acl_cache_path.each_child do |acl_file|
+      Pathname.glob(Smith.acl_cache_path.join("*.pb.rb"))do |acl_file|
         logger.verbose { "Loading acl file: #{acl_file}" }
         require acl_file
       end
