@@ -106,8 +106,8 @@ module Smith
       end
 
       def _publish(message, opts, &block)
-        logger.verbose { "Publishing to: [queue]: #{denormalized_queue_name}. [options]: #{opts}" }
-        logger.verbose { "Payload content: [queue]: #{denormalized_queue_name}, [metadata type]: #{message.type}, [message]: #{message.inspect}" }
+        logger.verbose { "Publishing to: [queue]: #{denormalised_queue_name}. [options]: #{opts}" }
+        logger.verbose { "Payload content: [queue]: #{denormalised_queue_name}, [metadata type]: #{message.type}, [message]: #{message.inspect}" }
         if message.initialized?
           increment_counter
           exchange.publish(message.encode, opts.merge(:type => message.type), &block)

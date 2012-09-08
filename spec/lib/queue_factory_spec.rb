@@ -24,7 +24,7 @@ describe Smith::QueueFactory do
       factory.queues.size.should == 2
 
       factory.each_queue do |queue|
-        queue.should == factory.queues[queue.denormalized_queue_name]
+        queue.should == factory.queues[queue.denormalised_queue_name]
       end
     end
 
@@ -42,7 +42,7 @@ describe Smith::QueueFactory do
       queue = factory.create('random.queue.name', :sender)
       queue.should be_a_kind_of(Smith::Messaging::Sender)
       queue.send(:queue_name).should == 'smith.random.queue.name'
-      queue.denormalized_queue_name.should == 'random.queue.name'
+      queue.denormalised_queue_name.should == 'random.queue.name'
 
       queue.send(:options).queue.should == Smith.config.amqp.queue._child
     end
@@ -61,7 +61,7 @@ describe Smith::QueueFactory do
       queue = factory.create('random.queue.name', :receiver)
       queue.should be_a_kind_of(Smith::Messaging::Receiver)
       queue.send(:queue_name).should == 'smith.random.queue.name'
-      queue.denormalized_queue_name.should == 'random.queue.name'
+      queue.denormalised_queue_name.should == 'random.queue.name'
 
       queue.send(:options).queue.should == Smith.config.amqp.queue._child
     end
