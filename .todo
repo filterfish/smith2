@@ -143,6 +143,7 @@
   * start the agency with a clean db
   * dump a specific queues' acl.
   * specify the agency log level
+  * add acl reload function to the agency.
 
   In fact look at smith1 agency to see what options it had.
 
@@ -154,15 +155,13 @@
   * add --path to the agents command: displays the load path.
   * add --clear-cache option to the acls command.
   * add --agency & --smithctl option to the version command.
-  * add --one-column (-1) option to all the commands that need it (eg list, agents)
   * add --pretty-print option to pop command
   * add queue length command.
 
-  * push should read from stdin. It should read as many lines as there are.
+  * push should read from stdin. It should read as many lines as there are. [done]
+  * add --one-column (-1) option to all the commands that need it (eg list, agents) [done]
 
   In fact look at smith1 agency to see what options it had.
-
-* conflicts in trollop doesn't seem to work. Fix.
 
 * Write a startup script.
 
