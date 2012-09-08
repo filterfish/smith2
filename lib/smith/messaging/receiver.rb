@@ -19,9 +19,9 @@ module Smith
       # block. +subscribe+ will automatically acknowledge the message unless
       # the options sets :ack to false.
       def subscribe(&block)
-        if !@queue.subscribed?
+#        if !@queue.subscribed?
           opts = options.subscribe
-          logger.verbose { "Subscribing to: [queue]:#{denormalized_queue_name} [options]:#{opts}" }
+          logger.verbose { "Subscribing to: [queue]:#{denormalised_queue_name} [options]:#{opts}" }
           queue.subscribe(opts) do |metadata,payload|
             if payload
               if @payload_type.empty? || @payload_type.include?(metadata.type.to_sym)
@@ -33,11 +33,11 @@ module Smith
                 raise IncorrectPayloadType, "This queue can only accept the following payload types: #{@payload_type.to_a.to_s}"
               end
             else
-              logger.verbose { "Received null message on: #{denormalized_queue_name} [options]:#{opts}" }
+              logger.verbose { "Received null message on: #{denormalised_queue_name} [options]:#{opts}" }
             end
           end
         else
-          logger.error { "Queue is already subscribed too. Not listening on: #{denormalise_queue_name}" }
+          logger.error { "Queue is already subscribed too. Not listening on: #{denormalised_queue_name}" }
         end
       end
 
@@ -68,8 +68,8 @@ module Smith
       # to auto ack or not. This is because it can get called twice and we don't
       # want to ack more than once or an error will be thrown.
       def thread(reply, &block)
-        logger.verbose { "Threads: [queue]: #{denormalized_queue_name}: #{threading?}" }
-        logger.verbose { "auto_ack: [queue]: #{denormalized_queue_name}: #{auto_ack?}" }
+        logger.verbose { "Threads: [queue]: #{denormalised_queue_name}: #{threading?}" }
+        logger.verbose { "auto_ack: [queue]: #{denormalised_queue_name}: #{auto_ack?}" }
         if threading?
           EM.defer do
             block.call(reply)
@@ -100,10 +100,10 @@ module Smith
 
           if undecoded_payload
             @payload = ACL::Payload.decode(undecoded_payload, metadata.type)
-            logger.verbose { "Received content on: [queue]: #{denormalized_queue_name}." }
-            logger.verbose { "Payload content: [queue]: #{denormalized_queue_name}, [metadata type]: #{metadata.type}, [message]: #{payload.inspect}" }
+            logger.verbose { "Received content on: [queue]: #{denormalised_queue_name}." }
+            logger.verbose { "Payload content: [queue]: #{denormalised_queue_name}, [metadata type]: #{metadata.type}, [message]: #{payload.inspect}" }
           else
-            logger.verbose { "Received nil content on: [queue]: #{denormalized_queue_name}." }
+            logger.verbose { "Received nil content on: [queue]: #{denormalised_queue_name}." }
             @payload = nil
             @nil_message = true
           end
@@ -122,7 +122,7 @@ module Smith
           else
             # Null responder. If a call on the responder is made log a warning. Something is wrong.
             responder.callback do |return_value|
-              logger.error { "You are responding to a message that has no reply_to on queue: #{denormalized_queue_name}." }
+              logger.error { "You are responding to a message that has no reply_to on queue: #{denormalised_queue_name}." }
               logger.verbose { "Queue options: #{metadata.exchange}." }
             end
           end
@@ -159,8 +159,8 @@ module Smith
               o[:type] = metadata.type
             end
 
-            logger.verbose { "Requeuing to: #{denormalized_queue_name}. [options]: #{opts}" }
-            logger.verbose { "Requeuing to: #{denormalized_queue_name}. [message]: #{ACL::Payload.decode(@undecoded_payload, metadata.type)}" }
+            logger.verbose { "Requeuing to: #{denormalised_queue_name}. [options]: #{opts}" }
+            logger.verbose { "Requeuing to: #{denormalised_queue_name}. [message]: #{ACL::Payload.decode(@undecoded_payload, metadata.type)}" }
 
             @receiver.send(:exchange).publish(@undecoded_payload, opts)
           end
@@ -184,7 +184,7 @@ module Smith
         end
 
         def queue_name
-          denormalized_queue_name
+          denormalised_queue_name
         end
 
         # Check that the correlation_id matches the message_id assuming there
@@ -226,8 +226,8 @@ module Smith
           delay * (current_requeue_number + 1)
         end
 
-        def denormalized_queue_name
-          @receiver.denormalized_queue_name
+        def denormalised_queue_name
+          @receiver.denormalised_queue_name
         end
 
         def normalised_queue_name

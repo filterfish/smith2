@@ -138,7 +138,7 @@ module Smith
               p.rss = (File.read("/proc/#{pid}/statm").split[1].to_i * 4) / 1024 # This assumes the page size is 4K & is MB
               p.up_time = (Time.now - @start_time).to_i
               factory.each_queue do |q|
-                p.queues << ACL::AgentStats::QueueStats.new(:name => q.denormalized_queue_name, :type => q.class.to_s, :length => q.counter)
+                p.queues << ACL::AgentStats::QueueStats.new(:name => q.denormalised_queue_name, :type => q.class.to_s, :length => q.counter)
               end
             end
 
