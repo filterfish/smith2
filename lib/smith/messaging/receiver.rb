@@ -12,6 +12,8 @@ module Smith
         @threading = (opts.has_key?(:threading)) ? opts.delete(:threading) : false
         @payload_type = (opts.key?(:type)) ? [opts.delete(:type)].flatten : []
 
+        @factory = QueueFactory.new
+
         super(queue_name, AmqpOptions.new(opts))
       end
 
@@ -25,7 +27,7 @@ module Smith
           queue.subscribe(opts) do |metadata,payload|
             if payload
               if @payload_type.empty? || @payload_type.include?(metadata.type.to_sym)
-                thread(Reply.new(self, metadata, payload)) do |reply|
+                thread(Reply.new(self, metadata, payload, @factory)) do |reply|
                   increment_counter
                   block.call(reply)
                 end
@@ -36,9 +38,9 @@ module Smith
               logger.verbose { "Received null message on: #{denormalised_queue_name} [options]:#{opts}" }
             end
           end
-        else
-          logger.error { "Queue is already subscribed too. Not listening on: #{denormalised_queue_name}" }
-        end
+#        else
+          # logger.error { "Queue is already subscribed too. Not listening on: #{denormalised_queue_name}" }
+#        end
       end
 
       # pops a message off the queue and passes the headers and payload
@@ -47,7 +49,7 @@ module Smith
       def pop(&block)
         opts = options.pop
         @queue.pop(opts) do |metadata, payload|
-          thread(Reply.new(self, metadata, (payload.nil?) ? nil : payload)) do |reply|
+          thread(Reply.new(self, metadata, (payload.nil?) ? nil : payload), @factory) do |reply|
             block.call(reply)
           end
         end
@@ -87,16 +89,15 @@ module Smith
       # this really needs to be reviewed. FIXME review this class.
       class Reply
 
-        include Logger
-
         attr_reader :metadata, :payload, :time
 
-        def initialize(receiver, metadata, undecoded_payload)
+        def initialize(receiver, metadata, undecoded_payload, factory)
           @undecoded_payload = undecoded_payload
           @receiver = receiver
           @exchange = receiver.send(:exchange)
           @metadata = metadata
           @time = Time.now
+          @factory = factory
 
           if undecoded_payload
             @payload = ACL::Payload.decode(undecoded_payload, metadata.type)
@@ -114,9 +115,15 @@ module Smith
           responder = Responder.new
           if reply_to
             responder.callback do |return_value|
-              Sender.new(metadata.reply_to, :auto_delete => true).ready do |sender|
-                logger.verbose { "Replying on: #{metadata.reply_to}" } if logger.level == 0
-                sender.publish(ACL::Payload.new(:default).content(return_value), sender.options.publish(:correlation_id => metadata.message_id))
+              logger.verbose { "Replying on: #{metadata.reply_to}" } if logger.level == 0
+              pp metadata.reply_to
+              @factory.sender(metadata.reply_to, :auto_delete => true, :immediate => true, :mandatory => true) do |sender|
+                pp sender.object_id
+                #payload = Smith::ACL::Factory.create(:default, return_value)
+
+                payload = ACL::Payload.new(:default).content(:list => return_value)
+
+                sender.publish(payload, :correlation_id => metadata.message_id)
               end
             end
           else
