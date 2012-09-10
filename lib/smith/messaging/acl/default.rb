@@ -1,4 +1,7 @@
 # -*- encoding: utf-8 -*-
+
+require 'yajl'
+
 module Smith
   module ACL
 
@@ -29,11 +32,15 @@ module Smith
         @message.to_s
       end
 
+      def to_hash
+        @message && @message.to_hash
+      end
+
       def inspect
         "<#{self.class.to_s}> -> #{(self.respond_to?(:to_hash)) ? self.to_hash : self.to_s}"
       end
 
-      def as_json
+      def to_json
         Yajl.dump(@message)
       end
 
