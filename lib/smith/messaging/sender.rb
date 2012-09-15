@@ -2,67 +2,6 @@
 module Smith
   module Messaging
 
-    class MessageTimeout
-      def on_timeout(timeout, &block)
-        cancel_timeout
-        @timeout_proc = block || proc {raise ACLTimeoutError, "Message not received within the timeout period: #{message_id}"}
-        @timeout_duration = timeout
-      end
-
-      def set_timeout
-        if @timeout_duration
-          @timeout = EventMachine::Timer.new(@timeout_duration, @timeout_proc)
-        else
-          raise ArgumentError, "on_timeout not set."
-        end
-      end
-
-      def timeout?
-        !@timeout_duration.nil?
-      end
-
-      def cancel_timeout
-        @timeout.cancel if @timeout
-      end
-    end
-
-    class MessageCorrelation
-      def initialize
-        @messages_ids = Set.new
-        @messages_ids_fifo = []
-      end
-
-      # This is the same as random and should be factored out.
-      # TODO factor this out.
-      def next_message_id
-        SecureRandom.hex(8).tap do |id|
-          @messages_ids_fifo.insert(0, id)
-          @messages_ids.add(id)
-          pp @messages_ids
-          pp @messages_ids_fifo
-        end
-      end
-
-      # Check that the correlation_id corresponds to an actual message.
-      # If the messages matches the fifo it returns true. If it doesn't
-      # it checks to see if the correlation id is known and throws an
-      # ACLOutOfOrderError. If the correlation id dosen't exist it
-      # throws and ACLUnknownMesageError.
-      def validate?(correlation_id)
-        if correlation_id == @messages_ids_fifo.pop
-          @messages_ids.delete(correlation_id)
-          puts 'all good'
-          true
-        else
-          if @messages_ids.delete?(correlation_id)
-            raise ACLOutOfOrderError, correlation_id
-          else
-            raise ACLUnknownMesageError, correlation_id
-          end
-        end
-      end
-    end
-
     class Sender < Endpoint
 
       include Logger
@@ -72,7 +11,7 @@ module Smith
       def initialize(queue_name, opts={})
         @auto_ack = opts.delete(:auto_ack) || true
         @threading = opts.delete(:threading) || false
-        @mesage_ids = MessageCorrelation.new
+        @reply_procs = {}
 
         super(queue_name, AmqpOptions.new(opts))
       end
@@ -89,24 +28,27 @@ module Smith
       def new_publish(message, opts={}, &block)
         reply_queue = opts.delete(:reply_queue)
 
-        if reply_queue
-          reply_queue = random if reply_queue.empty?
-
-          # @message_id = opts[:message_id] || random
-          # logger.verbose{"message_id: #{@message_id}"}
-
+        if @reply_proc
           @reply_queue_completion ||= setup_reply_queue(reply_queue)
           @timeout ||= MessageTimeout.new(20)
 
           @reply_queue_completion.completion do |receiver|
             receiver.subscribe do |reply|
-              puts reply.metadata.correlation_id
-              @mesage_ids.validate?(reply.metadata.correlation_id)
-              @timeout.cancel_timeout
-              block.call(reply)
+              logger.debug { "correlation_id: #{reply.metadata.correlation_id}" }
+
+              reply_proc = @reply_procs.delete(reply.metadata.correlation_id)
+              if reply_proc
+                reply_proc.call(reply)
+              else
+                logger.error { "Reply message has no correlation_id: #{reply.inspect}" }
+              end
             end
 
-            _publish(message, options.publish(opts, {:reply_to => reply_queue, :message_id => @mesage_ids.next_message_id}))
+            message_id = random
+            logger.debug { "message_id: #{message_id}" }
+
+            @reply_procs[message_id] = @reply_proc
+            _publish(message, options.publish(opts, {:reply_to => receiver.denormalised_queue_name, :message_id => message_id}))
           end
         else
           _publish(message, options.publish(opts), &block)
@@ -143,10 +85,12 @@ module Smith
       # every reply. It means that I don't have to create and teardown a
       # new exchange/queue for every message. If no queue_name is given
       # a random one will be assigned.
-      def setup_reply_queue(reply_queue_name, opts={}, &block)
-        EM::Completion.new.tap do |completion|
+      def on_reply(reply_queue_name=random, opts={}, &block)
+        @reply_proc = block
+        @reply_queue_completion = EM::Completion.new.tap do |completion|
           Receiver.new(reply_queue_name, :auto_delete => true).ready do |receiver|
             completion.succeed(receiver)
+            logger.debug { "Receive queue set up: #{reply_queue_name}" }
           end
         end
       end
@@ -197,10 +141,34 @@ module Smith
         if message.initialized?
           increment_counter
           type = (message.respond_to?(:_type)) ? message._type : message.type
-          exchange.publish(message.encode, opts.merge(:type => _type), &block)
+          exchange.publish(message.encode, opts.merge(:type => type), &block)
         else
           raise IncompletePayload, "Message is incomplete: #{message.to_s}"
         end
+      end
+    end
+
+    class MessageTimeout
+      def on_timeout(timeout, &block)
+        cancel_timeout
+        @timeout_proc = block || proc {raise ACLTimeoutError, "Message not received within the timeout period: #{message_id}"}
+        @timeout_duration = timeout
+      end
+
+      def set_timeout
+        if @timeout_duration
+          @timeout = EventMachine::Timer.new(@timeout_duration, @timeout_proc)
+        else
+          raise ArgumentError, "on_timeout not set."
+        end
+      end
+
+      def timeout?
+        !@timeout_duration.nil?
+      end
+
+      def cancel_timeout
+        @timeout.cancel if @timeout
       end
     end
   end
