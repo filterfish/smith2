@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 require 'amqp'
 require 'tmpdir'
+require "socket"
 require 'logging'
 require 'pathname'
 require 'fileutils'
@@ -40,6 +41,11 @@ module Smith
 
     def agent_paths
       path_to_pathnames(config.agency.agent_path)
+    end
+
+    # Convenience method to get the hostname
+    def hostname
+      Socket.gethostname
     end
 
     def acl_path
