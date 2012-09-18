@@ -1,5 +1,12 @@
                           ~~~~~~~~ TODO  ~~~~~~~~
 
+Priority
+
+* Add a queue length method to smith:
+
+  Smith.queue_length("queue name") do |length|
+  end
+
 * If an agent hasn't started after 20 seconds (ie there are no keepalives)
   set the state to dead.
 
@@ -138,22 +145,36 @@
 * Add command line options to the agency:
   * daemonise the agency (and create the pid file.) [done]
   * specify the pid file. [done]
-  * specify the environment
+  * specify the environment.
   * specify a different config file.
-  * start the agency with a clean db
+  * start the agency with a clean db.
   * dump a specific queues' acl.
+  * dump all messages in a queue to file.
+  * dump and load command. dump dumps all messages in a queue to a file and
+    load reads the file and writes it to the same queue. Preserve the queue
+    name in the dump file.
 
 * Add smitch options/commands
-  * dump the config -- this should be in smithctl
-  * add a --kill option to the agency. This is addition to the stop agency command
+  * dump the config -- this should be in smithctl.
+  * add command to give details on queues and the various queue options.
+  * add --kill option to the agency. This is addition to the stop agency command.
+  * add --all option to the pop command and optimise so if the --print is not
+    set just purge the queue.
+  * add --sort-by-time option to the list command
   * add --list option to the config command
   * add --path to the agents command: displays the load path.
   * add --clear-cache option to the acls command.
   * add --agency & --smithctl option to the version command.
-  * add --one-column (-1) option to all the commands that need it (eg list, agents)
-  * add --pretty-print option to pop command
+  * add --one-column (-1) option to all the commands that need it (eg list, agents).
+  * add --pretty-print option to pop command.
+
+  * order the list command alphabetically.
 
   In fact look at smith1 agency to see what options it had.
+
+* Allow ACL types to be specified using their camel case representation.
+
+* Use prefetch with the pop command.
 
 * Write a startup script.
 
@@ -249,6 +270,9 @@
 * When an ACL is incomplete add code to check which field is missing. At the
   moment an exception is being raised, the problem is that I've overloaded the
   #inspect and it doesn't display what field is nil.
+
+* Allow none Smith::ACL packages. Applications shouldn't use the Smith::ACL
+  namespace.
 
 * Add message versioning.
 
