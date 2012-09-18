@@ -1,5 +1,12 @@
                           ~~~~~~~~ TODO  ~~~~~~~~
 
+Priority
+
+* Add a queue length method to smith:
+
+  Smith.queue_length("queue name") do |length|
+  end
+
 * If an agent hasn't started after 20 seconds (ie there are no keepalives)
   set the state to dead.
 
@@ -138,9 +145,9 @@
 * Add command line options to the agency:
   * daemonise the agency (and create the pid file.) [done]
   * specify the pid file. [done]
-  * specify the environment
+  * specify the environment.
   * specify a different config file.
-  * start the agency with a clean db
+  * start the agency with a clean db.
   * dump a specific queues' acl.
   * specify the agency log level
   * add acl reload function to the agency.
@@ -162,6 +169,10 @@
   * add --one-column (-1) option to all the commands that need it (eg list, agents) [done]
 
   In fact look at smith1 agency to see what options it had.
+
+* Allow ACL types to be specified using their camel case representation.
+
+* Use prefetch with the pop command.
 
 * Write a startup script.
 
@@ -257,6 +268,9 @@
 * When an ACL is incomplete add code to check which field is missing. At the
   moment an exception is being raised, the problem is that I've overloaded the
   #inspect and it doesn't display what field is nil.
+
+* Allow none Smith::ACL packages. Applications shouldn't use the Smith::ACL
+  namespace.
 
 * Add message versioning.
 
