@@ -22,9 +22,9 @@ module Smith
 
   class << self
 
-    def channel
-      raise RuntimeError, "You must run this in a Smith.start block" if @channel.nil?
-      @channel
+    def connection
+      raise RuntimeError, "You must run this in a Smith.start block" if @connection.nil?
+      @connection
     end
 
     def environment
@@ -87,17 +87,6 @@ module Smith
       EM.reactor_running?
     end
 
-    # Define a channel error handler.
-    def on_error(chain=false, &blk)
-      # This strikes me as egregiously wrong but I don't know how to
-      # overwrite an already existing handler.
-      if chain
-        Smith.channel.callbacks[:error] << blk
-      else
-        Smith.channel.callbacks[:error] = [blk]
-      end
-    end
-
     def start(opts={}, &block)
       EM.epoll if EM.epoll?
       EM.kqueue if EM.kqueue?
@@ -143,25 +132,7 @@ module Smith
         # This will be the last thing run by the reactor.
         shutdown_hook { logger.debug { "Reactor Stopped" } }
 
-        AMQP::Channel.new(connection) do |channel,ok|
-          @channel = channel
-          # Set up QOS. If you do not do this then the subscribe in receive_message
-          # will get overwhelmed and the whole thing will collapse in on itself.
-          channel.prefetch(1)
-
-          # Set up a default handler.
-          on_error do |ch,channel_close|
-            logger.fatal { "Channel level exception: #{channel_close.reply_code}: #{channel_close.reply_text}" }
-            logger.fatal { "Exiting" }
-            Smith.stop(true)
-          end
-
-          # Set up auto-recovery. This will ensure that the AMQP gem reconnects each
-          # channel and sets up the various exchanges & queues.
-          channel.auto_recovery = true
-
-          block.call
-        end
+        block.call
       end
     end
 
@@ -229,7 +200,6 @@ end
 
 require_relative 'smith/object_count'
 require_relative 'smith/cache'
-require_relative 'smith/agent'
 require_relative 'smith/agent_cache'
 require_relative 'smith/agent_process'
 require_relative 'smith/agent_monitoring'
@@ -243,6 +213,7 @@ require_relative 'smith/messaging/amqp_options'
 require_relative 'smith/messaging/queue_factory'
 require_relative 'smith/messaging/acl/default'
 require_relative 'smith/messaging/payload'
+require_relative 'smith/messaging/util'
 require_relative 'smith/messaging/endpoint'
 require_relative 'smith/messaging/responder'
 require_relative 'smith/messaging/receiver'

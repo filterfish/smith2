@@ -4,7 +4,7 @@ module Smith
     class AmqpOptions
       include Logger
 
-      attr_accessor :queue_name
+      attr_accessor :routing_key
 
       def initialize(options={})
         @options = options

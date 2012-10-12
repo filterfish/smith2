@@ -1,251 +1,234 @@
 # -*- encoding: utf-8 -*-
+
+require_relative 'message_counter'
+require_relative 'requeue'
+
 module Smith
   module Messaging
-    class Receiver < Endpoint
+    class Receiver
 
       include Logger
+      include Util
 
-      attr_accessor :options, :message_id
+      attr_accessor :queue_name
 
-      def initialize(queue_name, opts={})
-        @auto_ack = (opts.has_key?(:auto_ack)) ? opts.delete(:auto_ack) : true
-        @threading = (opts.has_key?(:threading)) ? opts.delete(:threading) : false
-        @payload_type = (opts.key?(:type)) ? [opts.delete(:type)].flatten : []
+      def initialize(queue_name, opts={}, &blk)
+        @queue_name = queue_name
+        @normalised_queue_name = normalise(queue_name)
 
-        @factory = QueueFactory.new
+        @foo_options = {
+          :auto_ack => option_or_default(opts, :auto_ack, true),
+          :threading => option_or_default(opts, :threading, false)}
 
-        super(queue_name, AmqpOptions.new(opts))
+        @payload_type = option_or_default(opts, :type, []) {|v| [v].flatten }
+
+        prefetch = option_or_default(opts, :prefetch, Smith.config.agent.prefetch)
+
+        @options = AmqpOptions.new(opts)
+        @options.routing_key = @normalised_queue_name
+
+        @message_counter = MessageCounter.new(queue_name)
+
+        @queue_completion = EM::Completion.new
+        @exchange_completion = EM::Completion.new
+        @requeue_options_completion = EM::Completion.new
+
+        @reply_queues = {}
+
+        open_channel(:prefetch => prefetch) do |channel|
+          channel.direct(@normalised_queue_name, @options.exchange) do |exchange|
+            @exchange_completion.succeed(exchange)
+          end
+        end
+
+        open_channel(:prefetch => prefetch) do |channel|
+          channel.queue(@normalised_queue_name, @options.queue) do |queue|
+            @exchange_completion.completion do |exchange|
+              queue.bind(exchange, :routing_key => @queue_name)
+              @queue_completion.succeed(queue)
+              @requeue_options_completion.succeed(:exchange => exchange, :queue => queue)
+            end
+          end
+        end
+
+        blk.call(self) if blk
+
+        start_garbage_collection
+      end
+
+      def start_garbage_collection
+        logger.debug { "Starting the garbage collector." }
+        EM.add_periodic_timer(20) do
+          @reply_queues.each do |queue_name,queue|
+            queue.status do |number_of_messages, number_of_consumers|
+              if number_of_messages == 0 && number_of_consumers == 0
+                queue.delete do |delete_ok|
+                  @reply_queues.delete(queue_name)
+                  logger.debug { "Unused reply queue deleted: #{queue_name}" }
+                end
+              end
+            end
+          end
+        end
+      end
+
+      private :start_garbage_collection
+
+      def setup_reply_queue(reply_queue_name, &blk)
+        if @reply_queues[reply_queue_name]
+          blk.call(@reply_queues[reply_queue_name])
+        else
+          @exchange_completion.completion do |exchange|
+            puts "Attaching to reply queue: #{reply_queue_name}"
+            Smith::Messaging::Sender.new(reply_queue_name, :auto_delete => false, :immediate => true, :mandatory => true) do |sender|
+              @reply_queues[reply_queue_name] = sender
+              blk.call(sender)
+            end
+          end
+        end
       end
 
       # Subscribes to a queue and passes the headers and payload into the
       # block. +subscribe+ will automatically acknowledge the message unless
       # the options sets :ack to false.
-      def subscribe(&block)
-#        if !@queue.subscribed?
-          opts = options.subscribe
-          logger.verbose { "Subscribing to: [queue]:#{denormalised_queue_name} [options]:#{opts}" }
-          queue.subscribe(opts) do |metadata,payload|
-            if payload
-              if @payload_type.empty? || @payload_type.include?(metadata.type.to_sym)
-                thread(Reply.new(self, metadata, payload, @factory)) do |reply|
-                  increment_counter
-                  block.call(reply)
+      def subscribe(&blk)
+        @queue_completion.completion do |queue|
+          @requeue_options_completion.completion do |requeue_options|
+            if !queue.subscribed?
+              opts = @options.subscribe
+              logger.debug { "Subscribing to: [queue]:#{@queue_name} [options]:#{opts}" }
+              queue.subscribe(opts) do |metadata,payload|
+                if payload
+                  on_message(metadata, payload, requeue_options, &blk)
+                else
+                  logger.verbose { "Received null message on: #{@queue_name} [options]:#{opts}" }
                 end
-              else
-                raise IncorrectPayloadType, "This queue can only accept the following payload types: #{@payload_type.to_a.to_s}"
               end
             else
-              logger.verbose { "Received null message on: #{denormalised_queue_name} [options]:#{opts}" }
+              logger.error { "Queue is already subscribed too. Not listening on: #{@queue_name}" }
             end
           end
-#        else
-          # logger.error { "Queue is already subscribed too. Not listening on: #{denormalised_queue_name}" }
-#        end
+        end
       end
 
       # pops a message off the queue and passes the headers and payload
       # into the block. +pop+ will automatically acknowledge the message
       # unless the options sets :ack to false.
-      def pop(&block)
-        opts = options.pop
-        @queue.pop(opts) do |metadata, payload|
-          thread(Reply.new(self, metadata, (payload.nil?) ? nil : payload), @factory) do |reply|
-            block.call(reply)
+      def pop(&blk)
+        opts = @options.pop
+        @queue_completion.completion do |queue|
+          @requeue_options_completion.completion do |requeue_options|
+            queue.pop(opts) do |metadata, payload|
+              if payload
+                on_message(metadata, payload, requeue_options, &blk)
+              end
+            end
           end
         end
       end
 
-      def threading?
-        @threading
-      end
-
-      def auto_ack?
-        @auto_ack
-      end
-
-      private
-
-      # Controls whether to use threads or not. Given that I need to ack in the
-      # thread (TODO check this) I also need to pass in a flag to say whether
-      # to auto ack or not. This is because it can get called twice and we don't
-      # want to ack more than once or an error will be thrown.
-      def thread(reply, &block)
-        logger.verbose { "Threads: [queue]: #{denormalised_queue_name}: #{threading?}" }
-        logger.verbose { "auto_ack: [queue]: #{denormalised_queue_name}: #{auto_ack?}" }
-        if threading?
-          EM.defer do
-            block.call(reply)
-            reply.ack if auto_ack?
+      def on_message(metadata, payload, requeue_options, &blk)
+        if @payload_type.empty? || @payload_type.include?(metadata.type.to_sym)
+          @message_counter.increment_counter
+          if metadata.reply_to
+            setup_reply_queue(metadata.reply_to) do |queue|
+              Foo.new(metadata, payload, @foo_options.merge(:reply_queue => queue), requeue_options, &blk)
+            end
+          else
+            Foo.new(metadata, payload, @foo_options, requeue_options, &blk)
           end
         else
-          block.call(reply)
-          reply.ack if auto_ack?
+          raise IncorrectPayloadType, "This queue can only accept the following payload types: #{@payload_type.to_a.to_s}"
         end
       end
 
-      # I'm not terribly happy about this class. It's publicly visible and it contains
-      # some gross violations of Ruby's protection mechanism. I suspect it's an indication
-      # of a more fundamental design flaw. I will leave it as is for the time being but
-      # this really needs to be reviewed. FIXME review this class.
-      class Reply
+      private :on_message
 
-        attr_reader :metadata, :payload, :time
+      def delete(&blk)
+        @queue_completion.completion do |queue|
+          queue.delete(&blk)
+        end
+      end
 
-        def initialize(receiver, metadata, undecoded_payload, factory)
-          @undecoded_payload = undecoded_payload
-          @receiver = receiver
-          @exchange = receiver.send(:exchange)
-          @metadata = metadata
-          @time = Time.now
-          @factory = factory
-
-          if undecoded_payload
-            @payload = ACL::Payload.decode(undecoded_payload, metadata.type)
-            logger.verbose { "Received content on: [queue]: #{denormalised_queue_name}." }
-            logger.verbose { "Payload content: [queue]: #{denormalised_queue_name}, [metadata type]: #{metadata.type}, [message]: #{payload.inspect}" }
-          else
-            logger.verbose { "Received nil content on: [queue]: #{denormalised_queue_name}." }
-            @payload = nil
-            @nil_message = true
+      def status(&blk)
+        @queue_completion.completion do |queue|
+          queue.status do |num_messages, num_consumers|
+            blk.call(num_messages, num_consumers)
           end
         end
+      end
 
-        # Reply to a message. If reply_to header is not set a error will be logged
-        def reply(&block)
-          responder = Responder.new
-          if reply_to
-            responder.callback do |return_value|
-              logger.verbose { "Replying on: #{metadata.reply_to}" } if logger.level == 0
-              pp metadata.reply_to
-              @factory.sender(metadata.reply_to, :auto_delete => true, :immediate => true, :mandatory => true) do |sender|
-                pp sender.object_id
-                #payload = Smith::ACL::Factory.create(:default, return_value)
+      def requeue_parameters(opts={})
+        @requeue_options_completion.completion do |requeue_options|
+          requeue_options.merge!(opts)
+        end
+      end
 
-                payload = ACL::Payload.new(:default).content(:list => return_value)
+      def on_requeue(&blk)
+        @requeue_options_completion.completion do |requeue_options|
+          requeue_options.merge!(:on_requeue => blk)
+        end
+      end
 
-                sender.publish(payload, :correlation_id => metadata.message_id)
-              end
-            end
-          else
-            # Null responder. If a call on the responder is made log a warning. Something is wrong.
-            responder.callback do |return_value|
-              logger.error { "You are responding to a message that has no reply_to on queue: #{denormalised_queue_name}." }
-              logger.verbose { "Queue options: #{metadata.exchange}." }
-            end
+      def on_requeue_error(&blk)
+        @requeue_options_completion.completion do |requeue_options|
+          requeue_options.merge!(:on_requeue_error => blk)
+        end
+      end
+    end
+
+
+    class Foo
+      attr_accessor :metadata
+
+      def initialize(metadata, data, opts={}, requeue_opts, &blk)
+        @metadata = metadata
+        @reply_queue = opts[:reply_queue]
+        @requeue_opts = requeue_opts
+
+
+        @time = Time.now
+        @message = ACL::Payload.decode(data, metadata.type)
+
+        if opts[:threading]
+          EM.defer do
+            blk.call(@message, self)
+            ack if opts[:auto_ack]
           end
-
-          block.call(responder)
+        else
+          blk.call(@message, self)
+          ack if opts[:auto_ack]
         end
+      end
 
-        # acknowledge the message.
-        def ack(multiple=false)
-          metadata.ack(multiple) unless @nil_message
+      # Send a message to the reply_to queue as specified in the message header.
+      def reply(acl=nil, &blk)
+        raise ArgumentError, "you cannot supply an ACL and a blcok." if acl && blk
+        raise ArgumentError, "you must supply either an ACL or a blcok." if acl.nil? && blk.nil?
+
+        if reply_to
+          @reply_queue.publish((blk) ? blk.call : acl, :correlation_id => @metadata.message_id)
+        else
+          include Logger
+          logger.error { "You are replying to a message that has no reply_to: #{@metadata.exchange}." }
         end
+      end
 
-        # reject the message. Optionally requeuing it.
-        def reject(opts={})
-          metadata.reject(opts) unless @nil_message
-        end
+      # Requeue the current mesage on the current queue. A requeue number is
+      # added to the message header which is used to ensure the correct number
+      # of requeues.
+      def requeue
+        Requeue.new(@message, @metadata, @requeue_opts).requeue
+      end
 
-        def reply_to
-          metadata.reply_to
-        end
+      # acknowledge the message.
+      def ack(multiple=false)
+        @metadata.ack(multiple)
+      end
 
-        # Republish the message to the end of the same queue. This is useful
-        # for when the agent encounters an error and needs to requeue the message.
-        def requeue(delay, count, strategy, &block)
-          requeue_with_strategy(delay, count, strategy) do
-
-            # Sort out the options. Receiver#queue is private hence the send. I know, I know.
-            opts = @receiver.send(:queue).opts.tap do |o|
-              o.delete(:queue)
-              o.delete(:exchange)
-
-              o[:headers] = increment_requeue_count(metadata.headers)
-              o[:routing_key] = normalised_queue_name
-              o[:type] = metadata.type
-            end
-
-            logger.verbose { "Requeuing to: #{denormalised_queue_name}. [options]: #{opts}" }
-            logger.verbose { "Requeuing to: #{denormalised_queue_name}. [message]: #{ACL::Payload.decode(@undecoded_payload, metadata.type)}" }
-
-            @receiver.send(:exchange).publish(@undecoded_payload, opts)
-          end
-        end
-
-        def on_requeue_error(&block)
-          @on_requeue_error = block
-        end
-
-        def on_requeue(&block)
-          @on_requeue = block
-        end
-
-        def current_requeue_number
-          metadata.headers['requeue'] || 0
-        end
-
-        # The payload type. This returns the protocol buffers class name as a string.
-        def payload_type
-          metadata.type
-        end
-
-        def queue_name
-          denormalised_queue_name
-        end
-
-        # Check that the correlation_id matches the message_id assuming there
-        # is a message id! This is only applicable for a message reply.
-        # NOTE This is broken.
-        def correlation_id_match?
-          pp @receiver.message_id, metadata.correlation_id
-          !!(@receiver.message_id && metadata.correlation_id == receiver.message_id)
-        end
-
-        private
-
-        def requeue_with_strategy(delay, count, strategy, &block)
-          if current_requeue_number < count
-            method = "#{strategy}_strategy".to_sym
-            if respond_to?(method, true)
-              cumulative_delay = send(method, delay)
-              @on_requeue.call(cumulative_delay, current_requeue_number + 1)
-              EM.add_timer(cumulative_delay) do
-                block.call(cumulative_delay, current_requeue_number + 1)
-              end
-            else
-              raise RuntimeError, "Unknown requeue strategy. #{method}"
-            end
-          else
-            @on_requeue_error.call(cumulative_delay, current_requeue_number)
-          end
-        end
-
-        def exponential_no_initial_delay_strategy(delay)
-          delay * (2 ** current_requeue_number - 1)
-        end
-
-        def exponential_strategy(delay)
-          delay * (2 ** current_requeue_number)
-        end
-
-        def linear_strategy(delay)
-          delay * (current_requeue_number + 1)
-        end
-
-        def denormalised_queue_name
-          @receiver.denormalised_queue_name
-        end
-
-        def normalised_queue_name
-          @receiver.queue_name
-        end
-
-        def increment_requeue_count(headers)
-          headers.tap do |m|
-            m['requeue'] = (m['requeue']) ? m['requeue'] + 1 : 1
-          end
-        end
+      # reject the message. Optionally requeuing it.
+      def reject(opts={})
+        @metadata.reject(opts)
       end
     end
   end

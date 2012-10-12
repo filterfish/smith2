@@ -2,18 +2,50 @@
 module Smith
   module Messaging
 
-    class Sender < Endpoint
+    class Sender
 
       include Logger
+      include Util
 
-      attr_accessor :options
+      attr_accessor :queue_name
 
-      def initialize(queue_name, opts={})
-        @auto_ack = opts.delete(:auto_ack) || true
-        @threading = opts.delete(:threading) || false
-        @reply_procs = {}
+      def initialize(queue_name, opts={}, &blk)
 
-        super(queue_name, AmqpOptions.new(opts))
+        @reply_container = {}
+
+        @queue_name = queue_name
+        normalised_queue_name = normalise(queue_name)
+
+        prefetch = option_or_default(opts, :prefetch, Smith.config.agent.prefetch)
+
+        @options = AmqpOptions.new(opts)
+        @options.routing_key = normalised_queue_name
+
+        @message_counts = Hash.new(0)
+
+        @exchange_completion = EM::Completion.new
+        @queue_completion = EM::Completion.new
+        @channel_completion = EM::Completion.new
+
+        open_channel(:prefetch => prefetch) do |channel|
+          @channel_completion.succeed(channel)
+          channel.direct(normalised_queue_name, @options.exchange) do |exchange|
+
+            exchange.on_return do |basic_return,metadata,payload|
+              logger.error { "#{ACL::Payload.decode(payload.clone, metadata.type)} returned! Exchange: #{reply_code.exchange}, reply_code = #{basic_return.reply_code}, reply_text = #{basic_return.reply_text}" }
+              logger.error { "Properties: #{metadata.properties}" }
+            end
+
+            channel.queue(normalised_queue_name, @options.queue) do |queue|
+              queue.bind(exchange, :routing_key => normalised_queue_name)
+
+              @queue_completion.succeed(queue)
+              @exchange_completion.succeed(exchange)
+            end
+          end
+        end
+
+        blk.call(self) if blk
       end
 
       # If reply queue is set the block will be called when the message
@@ -25,72 +57,66 @@ module Smith
       #
       # If the :reply_queue is an empty string then a random queue name
       # will be generated.
-      def new_publish(message, opts={}, &block)
-        reply_queue = opts.delete(:reply_queue)
-
-        if @reply_proc
-          @reply_queue_completion ||= setup_reply_queue(reply_queue)
-          @timeout ||= MessageTimeout.new(20)
-
-          @reply_queue_completion.completion do |receiver|
-            receiver.subscribe do |reply|
-              logger.debug { "correlation_id: #{reply.metadata.correlation_id}" }
-
-              reply_proc = @reply_procs.delete(reply.metadata.correlation_id)
-              if reply_proc
-                reply_proc.call(reply)
-              else
-                logger.error { "Reply message has no correlation_id: #{reply.inspect}" }
-              end
-            end
-
+      def publish(payload, opts={}, &blk)
+        if @reply_queue_completion
+          @reply_queue_completion.completion do |reply_queue|
             message_id = random
-            logger.debug { "message_id: #{message_id}" }
+            logger.verbose { "message_id: #{message_id}" }
 
-            @reply_procs[message_id] = @reply_proc
-            _publish(message, options.publish(opts, {:reply_to => receiver.denormalised_queue_name, :message_id => message_id}))
+            #### !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ####
+            #### TODO if there is a timeout delete  ####
+            #the proc from the @reply_container.    ####
+            #### !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ####
+            @reply_container[message_id] = {:reply_proc => @reply_proc, :timeout => @timeout.clone.tap {|t| t.set_timeout(message_id) }}
+            _publish(ACL::NewPayload.new(payload), @options.publish(opts, {:reply_to => reply_queue.queue_name, :message_id => message_id}))
           end
         else
-          _publish(message, options.publish(opts), &block)
-        end
-      end
-
-      # Publish a message. If the on_reply method has been called it will
-      # setup the correct headers so that reply messages can be tracked.
-      def publish(message, opts={}, &block)
-
-        # !!!!!!!!!!!!!!!!!!!!!!!!!! Add the message_id to a FIFO so the on_reply
-        # !!!!!!!!!!!!!!!!!!!!!!!!!! get match the correlation_id. You probably
-        # !!!!!!!!!!!!!!!!!!!!!!!!!! need something to make sure that is doesn't
-        # !!!!!!!!!!!!!!!!!!!!!!!!!! get too big.
-
-        if @reply_queue_name
-          message_id = random
-          @timeout.set_timeout
-
-          # Make sure the reply queue has been setup properly. Otherwise
-          # you WILL LOSE messages.
-          @completion.completion do
-            _publish(message, options.publish(opts, {:reply_to => @reply_queue_name, :message_id => @mesage_ids.next_message_id}), &block)
-          end
-        else
-          _publish(message, options.publish(opts), &block)
+          _publish(ACL::NewPayload.new(payload), @options.publish(opts), &blk)
         end
       end
 
       # Set up a listener that will receive replies from the published
       # messages. You must publish with intent to reply -- tee he.
       #
-      # If you pass in a queue_name the same queue name will get used for
-      # every reply. It means that I don't have to create and teardown a
-      # new exchange/queue for every message. If no queue_name is given
-      # a random one will be assigned.
-      def on_reply(reply_queue_name=random, opts={}, &block)
-        @reply_proc = block
-        @reply_queue_completion = EM::Completion.new.tap do |completion|
-          Receiver.new(reply_queue_name, :auto_delete => true).ready do |receiver|
-            completion.succeed(receiver)
-            logger.debug { "Receive queue set up: #{reply_queue_name}" }
+      # If you pass in a queue_name the same queue name will get used for every
+      # reply. This means that there are no create and teardown costs for every
+      # for every message. If no queue_name is given a random one will be
+      # assigned.
+      def on_reply(opts={}, &blk)
+        @reply_proc = blk
+        @timeout = opts.delete(:timeout) || MessageTimeout.new(Smith.config.agency.timeout, :queue_name => @queue_name)
+        reply_queue_name = opts.delete(:reply_queue_name) || random
+
+        options = {:auto_delete => false, :auto_ack => false}.merge(opts)
+
+        logger.debug { "reply queue: #{reply_queue_name}" }
+
+        @reply_queue_completion ||= EM::Completion.new.tap do |completion|
+          Receiver.new(reply_queue_name, options) do |queue|
+            queue.subscribe do |payload, receiver|
+              @reply_container.delete(receiver.correlation_id).tap do |reply|
+                if reply
+                  reply[:timeout].cancel_timeout
+                  reply[:reply_proc].call(payload, receiver)
+                else
+                  logger.error { "Reply message has no correlation_id: #{reply.inspect}" }
+                end
+              end
+            end
+
+            EM.next_tick do
+              completion.succeed(queue)
+            end
+          end
+        end
+      end
+
+      def delete(&blk)
+        @queue_completion.completion do |queue|
+          queue.delete do
+            @channel_completion.completion do |channel|
+              channel.close(&blk)
+            end
           end
         end
       end
@@ -100,64 +126,64 @@ module Smith
         @reply_error = blk
       end
 
-      def on_timeout(duration=20, blk=nil, &block)
-        blk ||= block
-        @timeout = MessageTimeout.new(duration, &blk)
+      def status(&blk)
+        @queue_completion.completion do |queue|
+          queue.status do |num_messages, num_consumers|
+            blk.call(num_messages, num_consumers)
+          end
+        end
       end
 
-      # Deprecated.
-      def publish_and_receive(message, &block)
-        message_id = random
-        Receiver.new(message_id, :auto_delete => true).ready do |receiver|
+      def counter
+        @message_counts[@queue_name]
+      end
 
-          receiver.subscribe do |r|
-            raise "Incorrect correlation_id: #{metadata.correlation_id}" if r.metadata.correlation_id != message_id
-
-            @timeout.cancel_timeout if @timeout
-
-            block.call(r)
-
-            # Cancel the receive queue. Queues get left behind because the reply queue is
-            # still listening. By cancelling the consumer it releases the queue and exchange.
-            r.metadata.channel.consumers.each do |k,v|
-              if k.start_with?(receiver.queue_name)
-                logger.verbose { "Cancelling: #{k}" }
-                v.cancel
-              end
-            end
-          end
-
-          # DO NOT MOVE THIS OUTSIDE THE READY BLOCK: YOU WILL LOSE MESSAGES. The reason is
-          # that a message can be published and responded too before the receive queue is set up.
-          _publish(message, options.publish(:reply_to => message_id, :message_id => message_id, :type => message.type))
+      # Define a channel error handler.
+      def on_error(chain=false, &blk)
+        # This strikes me as egregiously wrong but I don't know how to
+        # overwrite an already existing handler.
+        if chain
+          #Smith.channel.callbacks[:error] << blk
+        else
+          #Smith.channel.callbacks[:error] = [blk]
         end
       end
 
       private
 
-      def _publish(message, opts, &block)
-        logger.verbose { "Publishing to: [queue]: #{denormalised_queue_name}. [options]: #{opts}" }
-        logger.verbose { "Payload content: [queue]: #{denormalised_queue_name}, [metadata type]: #{message.type}, [message]: #{message.inspect}" }
+      def _publish(message, opts, &blk)
+        logger.verbose { "Publishing to: [queue]: #{@queue_name}. [options]: #{opts}" }
+        logger.verbose { "Payload content: [queue]: #{@queue_name}, [metadata type]: #{message._type}, [message]: #{message.inspect}" }
         if message.initialized?
           increment_counter
           type = (message.respond_to?(:_type)) ? message._type : message.type
-          exchange.publish(message.encode, opts.merge(:type => type), &block)
+          @exchange_completion.completion do |exchange|
+            exchange.publish(message.encode, opts.merge(:type => type), &blk)
+          end
         else
           raise IncompletePayload, "Message is incomplete: #{message.to_s}"
         end
       end
+
+      def increment_counter(value=1)
+        @message_counts[@queue_name] += value
+      end
     end
 
-    class MessageTimeout
-      def on_timeout(timeout, &block)
-        cancel_timeout
-        @timeout_proc = block || proc {raise ACLTimeoutError, "Message not received within the timeout period: #{message_id}"}
+    class Timeout
+      def initialize(timeout, opts={}, &blk)
+        @timeout_proc = blk || proc { |message_id| raise ACLTimeoutError, "Message not received within the timeout period#{(message_id) ? ": #{message_id}" : ""}" }
         @timeout_duration = timeout
+        @queue_name = opts[:queue_name]
       end
 
-      def set_timeout
+      def set_timeout(message_id)
+        @message_id = message_id
+        cancel_timeout
         if @timeout_duration
-          @timeout = EventMachine::Timer.new(@timeout_duration, @timeout_proc)
+          @timeout = EventMachine::Timer.new(@timeout_duration) do
+            @timeout_proc.call(message_id, @queue_name)
+          end
         else
           raise ArgumentError, "on_timeout not set."
         end
