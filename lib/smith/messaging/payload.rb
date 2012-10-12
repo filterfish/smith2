@@ -36,6 +36,7 @@ module Smith
     end
 
     class Factory
+      include Logger
 
       @@acl_classes = {:default => Default}
 
@@ -44,7 +45,7 @@ module Smith
           type = type.to_s
 
           unless @@acl_classes.include?(type)
-            logger.debug { "Loding ACL: #{type}" }
+            logger.debug { "Loading ACL: #{type}" }
             # decorate the ACL class
             @@acl_classes[type] = clazz(type).send(:include, ACLInstanceMethods)
             @@acl_classes[type].send(:define_method, :_type) {type}

@@ -6,6 +6,7 @@
 $: << File.dirname(__FILE__) + '/..'
 
 require 'smith'
+require 'smith/agent'
 
 module Smith
   class AgentBootstrap
