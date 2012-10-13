@@ -157,9 +157,9 @@ module Smith
           p.state = 'acknowledge_start'
           p.pid = $$
           p.name = self.class.to_s
-          p.metadata = agent_options[:metadata]
-          p.monitor = agent_options[:monitor]
-          p.singleton = agent_options[:singleton]
+          p.metadata = Smith.config.agent.metadata
+          p.monitor = Smith.config.agent.monitor
+          p.singleton = Smith.config.agent.singleton
           p.started_at = Time.now.to_i
         end
         ack_start_queue.publish(payload)
@@ -174,7 +174,7 @@ module Smith
     end
 
     def start_keep_alive
-      if agent_options[:monitor]
+      if Smith.config.agent.monitor
         EventMachine::add_periodic_timer(1) do
           sender('agent.keepalive', :auto_delete => false, :durable => false, :dont_cache => true) do |keep_alive_queue|
             message = {:name => self.class.to_s, :pid => $$, :time => Time.now.to_i}
@@ -190,10 +190,6 @@ module Smith
 
     def queues
       @factory
-    end
-
-    def agent_options
-      Smith.config.agent._child
     end
 
     def control_queue_name

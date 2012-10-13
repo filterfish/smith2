@@ -44,13 +44,13 @@ describe Smith::QueueFactory do
       queue.send(:queue_name).should == 'smith.random.queue.name'
       queue.denormalized_queue_name.should == 'random.queue.name'
 
-      queue.send(:options).queue.should == Smith.config.amqp.queue._child
+      queue.send(:options).queue.should == Smith.config.amqp.queue.to_hash
     end
 
     it 'should correctly set additional queue options' do
       queue = factory.create('random.queue.name', :receiver, :auto_delete => false)
 
-      queue.send(:options).queue.should == Smith.config.amqp.queue._child.merge(:auto_delete => false)
+      queue.send(:options).queue.should == Smith.config.amqp.queue.to_hash.merge(:auto_delete => false)
     end
   end
 
@@ -63,13 +63,13 @@ describe Smith::QueueFactory do
       queue.send(:queue_name).should == 'smith.random.queue.name'
       queue.denormalized_queue_name.should == 'random.queue.name'
 
-      queue.send(:options).queue.should == Smith.config.amqp.queue._child
+      queue.send(:options).queue.should == Smith.config.amqp.queue.to_hash
     end
 
     it 'should correctly set additional queue options' do
       queue = factory.create('random.queue.name', :receiver, :auto_delete => false)
 
-      queue.send(:options).queue.should == Smith.config.amqp.queue._child.merge(:auto_delete => false)
+      queue.send(:options).queue.should == Smith.config.amqp.queue.to_hash.merge(:auto_delete => false)
     end
 
     it 'should correctly set endpoint options' do

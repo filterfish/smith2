@@ -12,23 +12,23 @@ module Smith
       end
 
       def exchange(*extra_opts)
-        merge(Smith.config.amqp.exchange._child, @options, extra_opts)
+        merge(Smith.config.amqp.exchange.to_hash, @options, extra_opts)
       end
 
       def queue(*extra_opts)
-        merge(Smith.config.amqp.queue._child, @options, extra_opts)
+        merge(Smith.config.amqp.queue.to_hash, @options, extra_opts)
       end
 
       def pop(*extra_opts)
-        merge(Smith.config.amqp.pop._child, @options, extra_opts)
+        merge(Smith.config.amqp.pop.to_hash, @options, extra_opts)
       end
 
       def publish(*extra_opts)
-        merge(Smith.config.amqp.publish._child, {:routing_key => queue_name}, extra_opts)
+        merge(Smith.config.amqp.publish.to_hash, {:routing_key => queue_name}, extra_opts)
       end
 
       def subscribe(*extra_opts)
-        merge(Smith.config.amqp.subscribe._child, extra_opts)
+        merge(Smith.config.amqp.subscribe.to_hash, extra_opts)
       end
 
       private
