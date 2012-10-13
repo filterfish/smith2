@@ -24,7 +24,7 @@ module Smith
       end
 
       def publish(*extra_opts)
-        merge(Smith.config.amqp.publish._child, {:routing_key => routing_key, :persistent => true}, extra_opts)
+        merge(Smith.config.amqp.publish.to_hash, {:routing_key => queue_name, :persistent => true}, extra_opts)
       end
 
       def subscribe(*extra_opts)
