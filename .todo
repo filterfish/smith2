@@ -1,11 +1,24 @@
                           ~~~~~~~~ TODO  ~~~~~~~~
 
 Priority
+~~~~~~~~
 
 * Add a queue length method to smith:
 
   Smith.queue_length("queue name") do |length|
   end
+
+* Ensure the garbage collector deletes the corresponding exchange.
+
+Good Ideas
+~~~~~~~~~~
+
+* At the moment there is a global SMITH_HOME. This causes problems when you have
+  multiple agent paths. Make SMITH_HOME the same as each agent path.
+
+Normal
+~~~~~~
+
 
 * If an agent hasn't started after 20 seconds (ie there are no keepalives)
   set the state to dead.
@@ -169,6 +182,8 @@ Priority
   * add --pretty-print option to pop command.
 
   * order the list command alphabetically.
+  * list -l <agent name> should always show the agent whatever it's state. It
+    currently requires -a option to list the agent if it's dead.
 
   In fact look at smith1 agency to see what options it had.
 
