@@ -4,23 +4,25 @@ module Smith
   module Commands
     class ObjectCount < CommandBase
       def execute
-        responder.value do
-          target.each do |agent|
-            if agents[agent].running?
-              send_agent_control_message(agents[agent], :command => 'object_count', :options => [options[:threshold].to_s])
-            end
+        if target.size > 1
+          responder.succeed("You can only specify one agent at at time.")
+        else
+          object_count(target.first) do |objects|
+            responder.succeed(objects)
           end
-          nil
+        end
+      end
+
+      def object_count(agent, &blk)
+        if agents[agent].running?
+          Messaging::Sender.new(agent.control_queue_name, :durable => false, :auto_delete => true, :persistent => true,  :strict => true) do |sender|
+            sender.on_reply(blk)
+            sender.publish(ACL::Payload.new(:agent_command, :command => 'object_count', :options => [options[:threshold].to_s]))
+          end
         end
       end
 
       private
-
-      def send_agent_control_message(agent, message)
-        Messaging::Sender.new(agent.control_queue_name, :durable => false, :auto_delete => true, :persistent => true,  :strict => true).ready do |sender|
-          sender.publish(ACL::Payload.new(:agent_command).content(message))
-        end
-      end
 
       def options_spec
         banner "Dump the ruby ObjectSpace stats. This is purely for debuging purposes only."

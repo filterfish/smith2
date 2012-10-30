@@ -26,7 +26,12 @@ module Smith
               lagents.invalidate(agent_name)
               lagents[agent_name].start
             end
+            iter.next
           end
+
+          done = -> { responder.succeed('') }
+
+          EM::Iterator.new(target).each(worker, done)
         end
       end
 

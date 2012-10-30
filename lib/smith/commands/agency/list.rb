@@ -3,10 +3,8 @@ module Smith
   module Commands
     class List < CommandBase
       def execute
-        responder.value do
-          a = (options[:all]) ? agents : agents.state(:running)
-          (a.empty?) ? nil : format(a, options[:long])
-        end
+        selected_agents = (options[:all]) ? agents : agents.state(:running)
+        responder.succeed((selected_agents.empty?) ? '' : format(selected_agents, options[:long]))
       end
 
       private

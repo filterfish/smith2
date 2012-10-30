@@ -20,18 +20,16 @@ module Smith
                     end
                   end
                 end
+              end
 
-                case acls.length
-                when 0
-                  "ACL file does not exist."
-                when 1
-                  if target.length == 1
-                    "\n#{indent_acl(acls.first.read)}\n"
-                  else
-                    "\n#{acl} ->\n#{indent_acl(acls.first.read)}"
-                  end
+              case acls.length
+              when 0
+                "ACL file does not exist."
+              when 1
+                if target.length == 1
+                  "\n#{indent_acl(acls.first.read)}\n"
                 else
-                  "There are multiple ACLs with the name: #{target}"
+                  "\n#{acl} ->\n#{indent_acl(acls.first.read)}"
                 end
               end.join("\n")
             end
@@ -47,6 +45,11 @@ module Smith
               p.basename(".proto")
             end.sort.join(join_string)
           end
+        else
+          join_string = (options[:long]) ? "\n" : " "
+          Pathname.glob(Smith.acl_path.map {|p| "#{p}#{File::SEPARATOR}*"}).map do |p|
+            p.basename(".proto")
+          end.sort.join(join_string)
         end
       end
 
