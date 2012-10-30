@@ -3,11 +3,7 @@ module Smith
   module Commands
     class Metadata < CommandBase
       def execute
-        responder.value do
-          target.inject([]) do |acc,agent_name|
-            acc.tap { |a| a << ["#{agent_name}: #{agents[agent_name].metadata}"] }
-          end.join("\n")
-        end
+        responder.succeed(target.inject([]) { |acc,agent_name| acc.tap { |a| a << ["#{agent_name}: #{agents[agent_name].metadata}"] } }.join("\n"))
       end
 
       private

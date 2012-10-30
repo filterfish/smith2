@@ -3,19 +3,19 @@ module Smith
   module Commands
     class Version < CommandBase
       def execute
-        # FIXME Puts some error handling for when the agency isn't running in a git repo.
+        version do |v|
+          responder.succeed(v)
+        end
+      end
+
+      def version(&blk)
         if options[:git]
-          EM.system('git describe') do |output,status|
-            responder.value do
-              if status.exitstatus == 0
-                output.strip
-              else
-                'The agency is not running in a git repo.'
-              end
-            end
+          # EM.system doesn't do any shell expansion so do it ourselves.
+          EM.system("sh -c 'git describe 2> /dev/null'") do |output,status|
+            blk.call((status.exitstatus == 0) ? output.strip : 'The agency is not running in a git repo.')
           end
         else
-          responder.value(Smith::VERSION)
+          blk.call(Smith::VERSION)
         end
       end
 

@@ -38,9 +38,9 @@ module Smith
         clazz.execute
 
       rescue Trollop::CommandlineError => e
-        vars[:responder].value(clazz.format_help(:prefix => "Error: #{e.message}.\n"))
+        vars[:responder].succeed(clazz.format_help(:prefix => "Error: #{e.message}.\n"))
       rescue Trollop::HelpNeeded
-        vars[:responder].value(clazz.format_help)
+        vars[:responder].succeed(clazz.format_help)
       end
     end
 

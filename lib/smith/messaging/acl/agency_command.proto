@@ -3,3 +3,7 @@ message AgencyCommand {
   required string command = 1;
   repeated string args = 2;
 }
+
+message AgencyCommandResponse {
+  optional string response = 1;
+}

@@ -3,10 +3,14 @@ module Smith
   module Commands
     class Kill < CommandBase
       def execute
-        target.each do |agent_name|
+        work = ->(agent_name, iter) do
           agents[agent_name].kill
+          iter.next
         end
-        responder.value
+
+        done = -> { responder.succeed('') }
+
+        EM::Iterator.new(target).each(work, done)
       end
 
       private

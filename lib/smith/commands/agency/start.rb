@@ -9,7 +9,12 @@ module Smith
       include Common
 
       def execute
+        start do |value|
+          responder.succeed(value)
+        end
+      end
 
+      def start(&blk)
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         #!!!!!!!!!!!! See note about target at end of this file !!!!!!!!!!!!!!
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -20,40 +25,45 @@ module Smith
           begin
             agents_to_start = agent_group(options[:group])
             if agents_to_start.empty?
-              responder.value("There are no agents in group: #{options[:group]}")
-              return
+              blk.call("Agent group is empty. No agents started: #{options[:group]}")
+            else
+              start_agents(agents_to_start, &blk)
             end
           rescue RuntimeError => e
-            responder.value(e.message)
-            return
+            blk.call(e.message)
           end
         else
-          agents_to_start = target
-        end
-
-        responder.value do
-          if agents_to_start.empty?
-            "Start what? No agent specified."
-          else
-            agents_to_start.map do |agent|
-              agents[agent].name = agent
-              if agents[agent].path
-                if options[:kill]
-                  agents[agent].kill
-                end
-                agents[agent].start
-                nil
-              else
-                "Unknown agent: #{agents[agent].name}".tap do |m|
-                  logger.error { m }
-                end
-              end
-            end.compact.join("\n")
-          end
+          start_agents(target, &blk)
         end
       end
 
       private
+
+      def start_agents(agents_to_start, &blk)
+        if agents_to_start.empty?
+          blk.call("Start what? No agent specified.")
+        else
+          worker = ->(agent_name, iter) do
+            agents[agent_name].name = agent_name
+            if agents[agent_name].path
+              if options[:kill]
+                agents[agent_name].kill
+              end
+              agents[agent_name].start
+              iter.return(agent_name)
+            else
+              logger.error { m }
+              iter.return("Unknown agent: #{agents[agent_name].name}")
+            end
+          end
+
+          done = ->(started_agents) do
+            blk.call(started_agents.compact.join("\n"))
+          end
+
+          EM::Iterator.new(agents_to_start).map(worker, done)
+        end
+      end
 
       def options_spec
         banner "Start an agent/agents or group of agents."
@@ -70,6 +80,6 @@ end
 #
 # Target is a method and if you assign something to it strange things happen --
 # even if the code doesn't get run! I'm not strictly sure what's going on but I
-# think it's something to do with the a variable aliasing a method of the same
+# think it's something to do with variable aliasing a method of the same
 # name. So even though the code isn't being run it gets compiled and that
 # somehow aliases the method. This looks like a bug in yarv to me.

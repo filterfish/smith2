@@ -5,24 +5,23 @@ module Smith
       def execute
         case target.size
         when 0
-          responder.value("No queue specified. Please specify a queue.")
+          responder.succeed("No queue specified. Please specify a queue.")
         else
-          Smith.on_error do |ch,channel_close|
+          @on_channel_error = proc do |ch,channel_close|
             case channel_close.reply_code
             when 404
-              responder.value("No such queue: #{extract_queue(channel_close.reply_text)}")
+              responder.succeed("No such queue: #{extract_queue(channel_close.reply_text)}")
             when 406
-              responder.value("Queue not empty: #{extract_queue(channel_close.reply_text)}. Use -f to force remove")
+              responder.succeed("Queue not empty: #{extract_queue(channel_close.reply_text)}.")
             else
-              responder.value("Unknown error: #{channel_close.reply_text}")
+              responder.succeed("Unknown error: #{channel_close.reply_text}")
             end
           end
 
           target.each do |queue_name|
-            Smith.channel.queue("smith.#{queue_name}", :passive => true) do |queue|
-              queue_options = (options[:force]) ? {} : {:if_unused => true, :if_empty => true}
-              queue.delete(queue_options) do |delete_ok|
-                responder.value((options[:verbose]) ? delete_ok.message_count.to_s : nil)
+            delete_queue(queue_name) do |delete_ok|
+              delete_exchange(queue_name) do |delete_ok|
+                responder.succeed((options[:verbose]) ? delete_ok.message_count.to_s : nil)
               end
             end
           end
@@ -36,6 +35,30 @@ module Smith
 
         opt    :force,   "force the removal even if there are messages on the queue", :short => :f
         opt    :verbose, "print the number of messages deleted", :short => :v
+      end
+
+      def delete_exchange(exchange_name, &blk)
+        AMQP::Channel.new(Smith.connection) do |channel,ok|
+          channel.on_error(&@on_channel_error)
+          channel.direct("smith.#{exchange_name}", :passive => true) do |exchange|
+            exchange_options = (options[:force]) ? {} : {:if_unused => true}
+            exchange.delete(exchange_options) do |delete_ok|
+              blk.call(delete_ok)
+            end
+          end
+        end
+      end
+
+      def delete_queue(queue_name, &blk)
+        AMQP::Channel.new(Smith.connection) do |channel,ok|
+          channel.on_error(&@on_channel_error)
+          channel.queue("smith.#{queue_name}", :passive => true) do |queue|
+            queue_options = (options[:force]) ? {} : {:if_unused => true, :if_empty => true}
+            queue.delete(queue_options) do |delete_ok|
+              blk.call(delete_ok)
+            end
+          end
+        end
       end
 
       def extract_queue(message)

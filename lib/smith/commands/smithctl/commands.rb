@@ -4,7 +4,7 @@ module Smith
     class Commands < CommandBase
       def execute
         commands = (target.empty?) ? Command.commands : target
-        responder.value(format(commands))
+        responder.succeed(format(commands))
       end
 
       def format(commands)

@@ -1,60 +1,67 @@
 # -*- encoding: utf-8 -*-
 require 'yajl'
 
+require 'smith/messaging/queue'
+
 module Smith
   module Commands
     class Pop < CommandBase
       def execute
+        pop
+      end
+
+      def pop
         case target.size
         when 0
-          responder.value("No queue specified. Please specify a queue.")
+          "No queue specified. Please specify a queue."
         when 1
 
           queue = target.first
 
-          # What to do if there is a channel error.
-          Smith.on_error do |ch,channel_close|
-            case channel_close.reply_code
-            when 404
-              responder.value("Queue does not exist: #{queue}")
-            else
-              responder.value("Unknown error: #{channel_close.reply_text}")
-            end
-          end
+          Messaging::Queue.number_of_messages(queue) do |queue_length|
 
-          Messaging::Receiver.new(queue, :auto_ack => false, :passive => true).ready do |receiver|
-            callback = proc do
-              work = proc do |acc,n,iter|
-                receiver.pop do |r|
-                  if options[:remove]
-                    r.ack
-                  else
-                    r.reject(:requeue => true)
+            # Number of messages on the queue.
+            number_to_remove = (options[:number] > queue_length) ? queue_length : options[:number]
+
+            Messaging::Receiver.new(queue, :auto_ack => false, :prefetch => number_to_remove, :passive => true) do |receiver|
+
+              receiver.on_channel_error do |ch,channel_close|
+                case channel_close.reply_code
+                when 404
+                  responder.succeed("Queue does not exist: #{queue}")
+                else
+                  responder.succeed("Unknown error: #{channel_close.reply_text}")
+                end
+              end
+
+              worker = proc do |acc, n, iter|
+                receiver.pop do |payload,r|
+                  if payload
+                    acc[:result] << print_message(payload) if options[:print]
+                    acc[:count] += 1
+
+                    if n == number_to_remove - 1
+                      if options[:remove]
+                        r.ack(true)
+                      else
+                        r.reject(:requeue => true)
+                      end
+                    end
                   end
-
-                  acc[:result] << print_message(r.payload) if options[:print]
-                  acc[:count] += 1
-
                   iter.return(acc)
                 end
               end
 
               finished = proc do |acc|
-                responder.value do
-                  logger.debug { "Removing #{acc[:count]} message from #{receiver.queue_name}" }
-                  acc[:result].join("\n")
-                end
+                logger.debug { "Removing #{acc[:count]} message from #{receiver.queue_name}" }
+                responder.succeed(acc[:result].join("\n"))
               end
 
-              EM::Iterator.new(0..options[:number] - 1).inject({:count => 0, :result => []}, work, finished)
+              EM::Iterator.new(0...number_to_remove).inject({:count => 0, :result => [], :ack => nil}, worker, finished)
             end
-
-            errback = proc {responder.value(nil)}
-
-            receiver.messages?(callback, errback)
           end
         else
-          responder.value("You can only specify one queue at a time")
+          "You can only specify one queue at a time"
         end
       end
 
