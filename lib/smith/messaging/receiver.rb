@@ -29,6 +29,7 @@ module Smith
 
         @message_counter = MessageCounter.new(queue_name)
 
+        @channel_completion = EM::Completion.new
         @queue_completion = EM::Completion.new
         @exchange_completion = EM::Completion.new
         @requeue_options_completion = EM::Completion.new
@@ -36,6 +37,7 @@ module Smith
         @reply_queues = {}
 
         open_channel(:prefetch => prefetch) do |channel|
+          @channel_completion.succeed(channel)
           channel.direct(@normalised_queue_name, @options.exchange) do |exchange|
             @exchange_completion.succeed(exchange)
           end
@@ -51,14 +53,14 @@ module Smith
           end
         end
 
-        blk.call(self) if blk
-
         start_garbage_collection
+
+        blk.call(self) if blk
       end
 
       def start_garbage_collection
         logger.debug { "Starting the garbage collector." }
-        EM.add_periodic_timer(20) do
+        EM.add_periodic_timer(5) do
           @reply_queues.each do |queue_name,queue|
             queue.status do |number_of_messages, number_of_consumers|
               if number_of_messages == 0 && number_of_consumers == 0
@@ -72,6 +74,10 @@ module Smith
         end
       end
 
+      def ack(multiple=false)
+        @channel_completion.completion {|channel| channel.ack(multiple) }
+      end
+
       private :start_garbage_collection
 
       def setup_reply_queue(reply_queue_name, &blk)
@@ -79,7 +85,7 @@ module Smith
           blk.call(@reply_queues[reply_queue_name])
         else
           @exchange_completion.completion do |exchange|
-            puts "Attaching to reply queue: #{reply_queue_name}"
+            logger.debug { "Attaching to reply queue: #{reply_queue_name}" }
             Smith::Messaging::Sender.new(reply_queue_name, :auto_delete => false, :immediate => true, :mandatory => true) do |sender|
               @reply_queues[reply_queue_name] = sender
               blk.call(sender)
@@ -121,9 +127,19 @@ module Smith
             queue.pop(opts) do |metadata, payload|
               if payload
                 on_message(metadata, payload, requeue_options, &blk)
+              else
+                blk.call(nil,nil)
               end
             end
           end
+        end
+      end
+
+      # Define a channel error handler.
+      def on_error(chain=false, &blk)
+        # TODO Check that this chains callbacks
+        @channel_completion.completion do |channel|
+          channel.on_error(&blk)
         end
       end
 
@@ -144,6 +160,23 @@ module Smith
 
       private :on_message
 
+      # def delete(&blk)
+      #   @queue_completion.completion do |queue|
+      #     queue.delete do
+      #       @exchange_completion.completion do |exchange|
+      #         exchange.delete do
+      #           @channel_completion.completion do |channel|
+      #             channel.close(&blk)
+      #           end
+      #         end
+      #       end
+      #     end
+      #   end
+      # end
+
+
+      # I've a feeling this should be replaced by the above code.
+      # TODO Check this is correct.
       def delete(&blk)
         @queue_completion.completion do |queue|
           queue.delete(&blk)
@@ -179,13 +212,14 @@ module Smith
 
 
     class Foo
+      include Smith::Logger
+
       attr_accessor :metadata
 
       def initialize(metadata, data, opts={}, requeue_opts, &blk)
         @metadata = metadata
         @reply_queue = opts[:reply_queue]
         @requeue_opts = requeue_opts
-
 
         @time = Time.now
         @message = ACL::Payload.decode(data, metadata.type)
@@ -206,10 +240,9 @@ module Smith
         raise ArgumentError, "you cannot supply an ACL and a blcok." if acl && blk
         raise ArgumentError, "you must supply either an ACL or a blcok." if acl.nil? && blk.nil?
 
-        if reply_to
+        if @metadata.reply_to
           @reply_queue.publish((blk) ? blk.call : acl, :correlation_id => @metadata.message_id)
         else
-          include Logger
           logger.error { "You are replying to a message that has no reply_to: #{@metadata.exchange}." }
         end
       end
@@ -229,6 +262,11 @@ module Smith
       # reject the message. Optionally requeuing it.
       def reject(opts={})
         @metadata.reject(opts)
+      end
+
+      # the correlation_id
+      def correlation_id
+        @metadata.correlation_id
       end
     end
   end

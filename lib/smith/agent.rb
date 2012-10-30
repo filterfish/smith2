@@ -71,9 +71,7 @@ module Smith
 
     def receiver(queue_name, opts={})
       queues.receiver(queue_name, opts) do |receiver|
-        receiver.subscribe do |r|
-          yield r
-        end
+        yield receiver
       end
     end
 
@@ -104,56 +102,59 @@ module Smith
 
     def setup_control_queue
       logger.debug { "Setting up control queue: #{control_queue_name}" }
-      receiver(control_queue_name, :auto_delete => true, :durable => false) do |r|
-        logger.debug { "Command received on agent control queue: #{r.payload.command} #{r.payload.options}" }
 
-        case r.payload.command
-        when 'object_count'
-          object_count(r.payload.options.first.to_i).each{|o| logger.info{o}}
-        when 'stop'
-          acknowledge_stop { Smith.stop }
-        when 'log_level'
-          begin
-            level = r.payload.options.first
-            logger.info { "Setting log level to #{level} for: #{name}" }
-            log_level(level)
-          rescue ArgumentError => e
-            logger.error { "Incorrect log level: #{level}" }
+      Messaging::Receiver.new(control_queue_name, :durable => false, :auto_delete => true) do |receiver|
+        receiver.subscribe do |payload|
+          logger.debug { "Command received on agent control queue: #{payload.command} #{payload.options}" }
+
+          case payload.command
+          when 'object_count'
+            object_count(payload.options.first.to_i).each{|o| logger.info{o}}
+          when 'stop'
+            acknowledge_stop { Smith.stop }
+          when 'log_level'
+            begin
+              level = payload.options.first
+              logger.info { "Setting log level to #{level} for: #{name}" }
+              log_level(level)
+            rescue ArgumentError => e
+              logger.error { "Incorrect log level: #{level}" }
+            end
+          else
+            logger.warn { "Unknown command: #{level} -> #{level.inspect}" }
           end
-        else
-          logger.warn { "Unknown command: #{level} -> #{level.inspect}" }
         end
       end
     end
 
     def setup_stats_queue
+      puts "setting stats"
       # instantiate this queue without using the factory so it doesn't show
       # up in the stats.
-      sender('agent.stats', :dont_cache => true, :durable => false, :auto_delete => false) do |stats_queue|
+      Messaging::Sender.new('agent.stats', :dont_cache => true, :durable => false, :auto_delete => false) do |stats_queue|
         EventMachine.add_periodic_timer(2) do
-          callback = proc do |consumers|
-            payload = ACL::Payload.new(:agent_stats).content do |p|
-              p.agent_name = self.name
-              p.pid = self.pid
-              p.rss = (File.read("/proc/#{pid}/statm").split[1].to_i * 4) / 1024 # This assumes the page size is 4K & is MB
-              p.up_time = (Time.now - @start_time).to_i
-              factory.each_queue do |q|
-                p.queues << ACL::AgentStats::QueueStats.new(:name => q.denormalised_queue_name, :type => q.class.to_s, :length => q.counter)
+          stats_queue.number_of_consumers do |consumers|
+            if consumers > 0
+              payload = ACL::Factory.create(:agent_stats) do |p|
+                p.agent_name = self.name
+                p.pid = self.pid
+                p.rss = (File.read("/proc/#{pid}/statm").split[1].to_i * 4) / 1024 # This assumes the page size is 4K & is MB
+                p.up_time = (Time.now - @start_time).to_i
+                factory.each_queue do |q|
+                  p.queues << ACL::Factory.create('agent_stats::queue_stats', :name => q.denormalised_queue_name, :type => q.class.to_s, :length => q.counter)
+                end
               end
+
+              stats_queue.publish(payload)
             end
-
-            stats_queue.publish(payload)
           end
-
-          # The errback argument is set to nil so as to suppress the default message.
-          stats_queue.consumers?(callback, nil)
         end
       end
     end
 
     def acknowledge_start
-      sender('agent.lifecycle', :auto_delete => false, :durable => false, :dont_cache => true) do |ack_start_queue|
-        payload = ACL::Payload.new(:agent_lifecycle).content do |p|
+      Messaging::Sender.new('agent.lifecycle', :auto_delete => false, :durable => false) do |ack_start_queue|
+        payload = ACL::Factory.create(:agent_lifecycle) do |p|
           p.state = 'acknowledge_start'
           p.pid = $$
           p.name = self.class.to_s
@@ -167,19 +168,21 @@ module Smith
     end
 
     def acknowledge_stop(&block)
-      sender('agent.lifecycle', :auto_delete => false, :durable => false, :dont_cache => true) do |ack_stop_queue|
+      Messaging::Sender.new('agent.lifecycle', :auto_delete => false, :durable => false) do |ack_stop_queue|
         message = {:state => 'acknowledge_stop', :pid => $$, :name => self.class.to_s}
-        ack_stop_queue.publish(ACL::Payload.new(:agent_lifecycle).content(message), &block)
+        ack_stop_queue.publish(ACL::Factory.create(:agent_lifecycle, message), &block)
       end
     end
 
     def start_keep_alive
       if Smith.config.agent.monitor
         EventMachine::add_periodic_timer(1) do
-          sender('agent.keepalive', :auto_delete => false, :durable => false, :dont_cache => true) do |keep_alive_queue|
+          Messaging::Sender.new('agent.keepalive', :auto_delete => false, :durable => false) do |keep_alive_queue|
             message = {:name => self.class.to_s, :pid => $$, :time => Time.now.to_i}
-            keep_alive_queue.consumers? do |sender|
-              keep_alive_queue.publish(ACL::Payload.new(:agent_keepalive).content(message))
+            keep_alive_queue.consumers do |consumers|
+              if consumers > 0
+                keep_alive_queue.publish(ACL::Factory.create(:agent_keepalive, message))
+              end
             end
           end
         end

@@ -10,10 +10,11 @@ $:.unshift(File.dirname(__FILE__) + '/../lib')
 
 require 'smith'
 
+include Smith::Logger
+
 module Smith
   class SmithControl
 
-    include Logger
 
     def initialize(options={})
       log_level((options[:log_level_given]) ? options[:log_level].to_sym : :info)
@@ -31,32 +32,28 @@ module Smith
     private
 
     def smithctl_command(command, args, &blk)
-      responder = Messaging::Responder.new
-      responder.callback do |v|
-        blk.call(v)
-      end
-
-      Command.run(command, args, :responder => responder)
+      Command.run(command, args, :responder => EM::Completion.new.tap { |c| c.completion(blk) })
     end
 
     def agency_command(command, args, &blk)
-      Messaging::Sender.new('agency.control', :auto_delete => false, :durable => false, :persistent => true,  :strict => true).ready do |sender|
+      Messaging::Sender.new('agency.control', :auto_delete => false, :durable => false, :persistent => true,  :strict => true) do |sender|
 
-        sender.timeout(@timeout) { blk.call("Timeout. Is the agency still running?") }
+        timeout = Messaging::Timeout.new(5) { |message_id| blk.call("Timeout. Is the agency still running?") }
 
-        payload = ACL::Payload.new(:agency_command).content(:command => command, :args => args)
-
-        callback = proc do |sender|
-          sender.publish_and_receive(payload) do |r|
-            blk.call(r.payload)
-          end
+        sender.on_reply(:timeout => timeout) do |reply_payload, r|
+          r.ack
+          blk.call(reply_payload[:response])
         end
 
-        errback = proc do
-          blk.call("Agency not running.")
-        end
+        # callback = proc do |sender|
+          sender.publish(Smith::ACL::Factory.create(:agency_command, :command => command, :args => args))
+        # end
 
-        sender.consumers?(callback, errback)
+        # errback = proc do
+        #   blk.call("Agency not running.")
+        # end
+
+        # sender.consumers?(callback, errback)
       end
     end
   end

@@ -5,20 +5,21 @@ module Smith
     module Util
 
       def number_of_messages
-        status do |_, num_consumers|
-          yield num_consumers
+        status do |num_messages, _|
+          yield num_messages
         end
       end
 
       def number_of_consumers
-        status do |num_messages, _|
-          yield num_messages
+        status do |_, num_consumers|
+          yield num_consumers
         end
       end
 
       private
 
       include AmqpErrors
+      include Logging
 
       def open_channel(opts={}, &blk)
         AMQP::Channel.new(Smith.connection) do |channel,ok|
@@ -34,14 +35,7 @@ module Smith
           prefetch = opts[:prefetch] || Smith.config.agent.prefetch
 
           channel.prefetch(prefetch)
-          logger.debug { "AMQP prefetch set to: #{prefetch}" }
-
-          # Set up the default error handler.
-          # on_error do |ch,channel_close|
-          #   logger.fatal { "Channel level exception: #{channel_close.reply_code}: #{channel_close.reply_text}" }
-          #   logger.fatal { "Exiting" }
-          #   Smith.stop(true)
-          # end
+          logger.verbose { "AMQP prefetch set to: #{prefetch}" }
 
           blk.call(channel)
         end

@@ -84,7 +84,7 @@ module Smith
       # assigned.
       def on_reply(opts={}, &blk)
         @reply_proc = blk
-        @timeout = opts.delete(:timeout) || MessageTimeout.new(Smith.config.agency.timeout, :queue_name => @queue_name)
+        @timeout = opts.delete(:timeout) || Timeout.new(Smith.config.agency.timeout, :queue_name => @queue_name)
         reply_queue_name = opts.delete(:reply_queue_name) || random
 
         options = {:auto_delete => false, :auto_ack => false}.merge(opts)
@@ -114,8 +114,12 @@ module Smith
       def delete(&blk)
         @queue_completion.completion do |queue|
           queue.delete do
-            @channel_completion.completion do |channel|
-              channel.close(&blk)
+            @exchange_completion.completion do |exchange|
+              exchange.delete do
+                @channel_completion.completion do |channel|
+                  channel.close(&blk)
+                end
+              end
             end
           end
         end
@@ -134,18 +138,26 @@ module Smith
         end
       end
 
+      def message_count(&blk)
+        status do |messages|
+          blk.call(messages)
+        end
+      end
+
+      def consumer_count(&blk)
+        status do |_, consumers|
+          blk.call(consumers)
+        end
+      end
+
       def counter
         @message_counts[@queue_name]
       end
 
       # Define a channel error handler.
       def on_error(chain=false, &blk)
-        # This strikes me as egregiously wrong but I don't know how to
-        # overwrite an already existing handler.
-        if chain
-          #Smith.channel.callbacks[:error] << blk
-        else
-          #Smith.channel.callbacks[:error] = [blk]
+        @channel_completion.completion do |channel|
+          channel.on_error(&blk)
         end
       end
 

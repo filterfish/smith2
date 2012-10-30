@@ -65,6 +65,13 @@ module Smith
       end
     end
 
+    def add_callback(state, &blk)
+      AgentProcess.state_machine do
+        puts "changing callback"
+        after_transition :on => state, :do => blk
+      end
+    end
+
     # Check to see if the agent is alive.
     def alive?
       if self.pid
@@ -128,18 +135,20 @@ module Smith
     end
 
     def self.stop(agent_process)
-      Messaging::Sender.new(agent_process.control_queue_name, :durable => false, :auto_delete => true).ready do |sender|
-        callback = proc {|sender| sender.publish(ACL::Payload.new(:agent_command).content(:command => 'stop')) }
-        errback = proc do
-          logger.warn { "Agent is not listening. Setting state to dead." }
-          agent_process.no_process_running
+      Messaging::Sender.new(agent_process.control_queue_name, :durable => false, :auto_delete => true) do |sender|
+        sender.consumer_count do |count|
+          if count > 0
+            sender.publish(ACL::Factory.create(:agent_command, :command => 'stop'))
+          else
+            logger.warn { "Agent is not listening. Setting state to dead." }
+            agent_process.no_process_running
+          end
         end
-
-        sender.consumers?(callback, errback)
       end
     end
 
     def self.acknowledge_stop(agent_process)
+      pp :stopped
     end
 
     def self.kill(agent_process)
@@ -172,10 +181,8 @@ module Smith
 
   AgentProcess.state_machine do
     after_transition :on => :start, :do => AgentProcessObserver.method(:start)
-    after_transition :on => :acknowledge_start, :do => AgentProcessObserver.method(:acknowledge_start)
     after_transition :on => :stop, :do => AgentProcessObserver.method(:stop)
     after_transition :on => :kill, :do => AgentProcessObserver.method(:kill)
-    after_transition :on => :acknowledge_stop, :do => AgentProcessObserver.method(:acknowledge_stop)
     after_transition :on => :not_responding, :do => AgentProcessObserver.method(:reap_agent)
   end
 end

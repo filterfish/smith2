@@ -116,15 +116,16 @@ module Smith
           logger.info { "Connection to AMQP server restored" }
         end
 
-        connection.on_error do |connection, reason|
-          case reason.reply_code
+        connection.on_error do |connection, connection_close|
+          case connection_close.reply_code
           when 320
             logger.warn { "AMQP server shutdown. Waiting." }
           else
             if @handler
               @handler.call(connection, reason)
             else
-              logger.error { "AMQP Server error: #{reason.reply_code}: #{reason.reply_text}" }
+              logger.error { "AMQP Server error: #{connection_close.reply_code}: #{connection_close.reply_text}" }
+              EM.stop_event_loop
             end
           end
         end
@@ -145,7 +146,9 @@ module Smith
 
       if running?
         if immediately
-          @connection.close { EM.stop_event_loop }
+          EM.next_tick do
+            @connection.close { EM.stop_event_loop }
+          end
         else
           EM.add_timer(1) do
             @connection.close { EM.stop_event_loop }
@@ -214,7 +217,6 @@ require_relative 'smith/messaging/queue_factory'
 require_relative 'smith/messaging/acl/default'
 require_relative 'smith/messaging/payload'
 require_relative 'smith/messaging/util'
-require_relative 'smith/messaging/endpoint'
 require_relative 'smith/messaging/responder'
 require_relative 'smith/messaging/receiver'
 require_relative 'smith/messaging/sender'
