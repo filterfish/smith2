@@ -15,39 +15,42 @@ module Smith
     end
 
     def setup_queues
-      Messaging::Receiver.new('agency.control', :auto_delete => false, :durable => false, :strict => true).ready do |receiver|
-        receiver.subscribe do |r|
-          r.reply do |responder|
-            # Add a logger proc to the responder chain.
-            responder.callback { |ret| logger.debug { ret } if ret && !ret.empty? }
+      Messaging::Receiver.new('agency.control', :auto_delete => false, :durable => false, :persistent => false, :strict => true) do |receiver|
+        receiver.subscribe do |payload, responder|
 
-            begin
-              Command.run(r.payload.command, r.payload.args, :agency => self,  :agents => @agent_processes, :responder => responder)
-            rescue Command::UnknownCommandError => e
-              responder.value("Unknown command: #{r.payload.command}")
+          completion = EM::Completion.new.tap do |c|
+            c.completion do |value|
+              pp value
+              responder.reply(Smith::ACL::Factory.create(:agency_command_response, :response => value))
             end
           end
-        end
-      end
 
-      Messaging::Receiver.new('agent.lifecycle', :auto_delete => false, :durable => false).ready do |receiver|
-        receiver.subscribe do |r|
-          case r.payload.state
-          when 'dead'
-            dead(r.payload)
-          when 'acknowledge_start'
-            acknowledge_start(r.payload)
-          when 'acknowledge_stop'
-            acknowledge_stop(r.payload)
-          else
-            logger.warn { "Unknown command received on agent.lifecycle queue: #{r.payload.state}" }
+          begin
+            Command.run(payload.command, payload.args, :agency => self,  :agents => @agent_processes, :responder => completion)
+          rescue Command::UnknownCommandError => e
+            responder.reply("Unknown command: #{payload.command}")
           end
         end
       end
 
-      Messaging::Receiver.new('agent.keepalive', :auto_delete => false, :durable => false).ready do |receiver|
-        receiver.subscribe do |r|
-          keep_alive(r.payload)
+      Messaging::Receiver.new('agent.lifecycle', :auto_delete => false, :durable => false) do |receiver|
+        receiver.subscribe do |payload, r|
+          case payload.state
+          when 'dead'
+            dead(payload)
+          when 'acknowledge_start'
+            acknowledge_start(payload)
+          when 'acknowledge_stop'
+            acknowledge_stop(payload)
+          else
+            logger.warn { "Unknown command received on agent.lifecycle queue: #{payload.state}" }
+          end
+        end
+      end
+
+      Messaging::Receiver.new('agent.keepalive', :auto_delete => false, :durable => false) do |receiver|
+        receiver.subscribe do |payload, r|
+          keep_alive(payload)
         end
       end
     end

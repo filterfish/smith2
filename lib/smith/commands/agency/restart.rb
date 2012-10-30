@@ -12,15 +12,19 @@ module Smith
       include Common
 
       def execute
-        Messaging::Sender.new('agency.control', :auto_delete => false, :durable => false, :strict => true).ready do |sender|
-          payload = ACL::Payload.new(:agency_command).content(:command => 'stop', :args => target)
+        Messaging::Sender.new('agency.control', :auto_delete => false, :durable => false, :strict => true) do |sender|
+          @sender = sender
 
-          sender.publish_and_receive(payload) do |r|
-            payload = ACL::Payload.new(:agency_command).content(:command => 'start', :args => target)
-            EM.add_timer(0.5) do
-              sender.publish_and_receive(payload) do |r|
-                responder.value
-              end
+          # agent is a method and as such I cannot pass it into the block.
+          # This just assigns it to a local method making it all work.
+
+          lagents = agents
+          # lagents.each do |agent_name|
+          worker = ->(agent_name, iter) do
+            lagents[agent_name].stop
+            lagents[agent_name].add_callback(:acknowledge_stop) do
+              lagents.invalidate(agent_name)
+              lagents[agent_name].start
             end
           end
         end

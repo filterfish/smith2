@@ -6,39 +6,14 @@ module Smith
       @cache = Cache.new
     end
 
-    def create(queue_name, type, opts={})
-      key = "#{type}:#{queue_name}"
-      if @cache[key]
-        @cache[key]
-      else
-        update_cache(key, opts) do |o|
-          case type
-          when :receiver
-            Messaging::Receiver.new(queue_name, o)
-          when :sender
-            Messaging::Sender.new(queue_name, o)
-          else
-            raise ArgumentError, "unknown queue type"
-          end
-        end
-      end
-    end
-
-    # Simple wrapper around create that runs Endpoint#ready and calls the block
-    def queue(queue_name, type, opts={}, &blk)
-      create(queue_name, type, opts).ready { |queue| blk.call(queue) }
-    end
-
-    # Convenience method that returns a Sender object. #ready is called by
-    # this method.
+    # Convenience method that returns a Sender object.
     def sender(queue_name, opts={}, &blk)
-      queue(queue_name, :sender, opts) { |sender| blk.call(sender) }
+      create(queue_name, :sender, opts) { |sender| blk.call(sender) }
     end
 
-    # Convenience method that returns a Receiver object. #ready is called by
-    # this method.
+    # Convenience method that returns a Receiver object.
     def receiver(queue_name, opts={}, &blk)
-      queue(queue_name, :receiver, opts) { |receiver| blk.call(receiver) }
+      create(queue_name, :receiver, opts) { |receiver| blk.call(receiver) }
     end
 
     # Passes each queue to the supplied block.
@@ -54,6 +29,22 @@ module Smith
     end
 
     private
+
+    def create(queue_name, type, opts={})
+      key = "#{type}:#{queue_name}"
+      if @cache[key]
+        @cache[key]
+      else
+        update_cache(key, opts) do |o|
+          case type
+          when :receiver
+            Messaging::Receiver.new(queue_name, o)
+          when :sender
+            Messaging::Sender.new(queue_name, o)
+          end
+        end
+      end
+    end
 
     def update_cache(queue_name, opts, &blk)
       dont_cache = (opts.has_key?(:dont_cache)) ? opts.delete(:dont_cache) : false
