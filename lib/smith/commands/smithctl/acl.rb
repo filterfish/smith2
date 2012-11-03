@@ -6,20 +6,19 @@ module Smith
   module Commands
     class Acl < CommandBase
       def execute
-        responder.value do
-          if options[:show_given]
-            if target.empty?
-              "You must supply an ACL file name."
-            else
-              target.map do |acl|
-                acls = Smith.acl_path.inject([]) do |a,path|
-                  a.tap do |acc|
-                    acl_file = path.join("#{acl.snake_case}.proto")
-                    if acl_file.exist?
-                      acc << acl_file
-                    end
-                  end
-                end
+        responder.succeed(_acl)
+      end
+
+      def _acl
+        if options[:show]
+          if target.empty?
+            "You must supply an ACL file name."
+          else
+            target.map do |acl|
+              if options[:source_given]
+                acls = find_acl(Smith.acl_cache_path, acl, 'pb.rb')
+              else
+                acls = find_acl(Smith.acl_path, acl, 'proto')
               end
 
               case acls.length
@@ -31,20 +30,17 @@ module Smith
                 else
                   "\n#{acl} ->\n#{indent_acl(acls.first.read)}"
                 end
-              end.join("\n")
-            end
-          elsif options[:clean_given]
-            Pathname.glob(Smith.acl_cache_path.join("*.pb.rb")).each {|p| p.unlink}
-            ""
-          elsif options[:compile_given]
-            Pathname.glob(Smith.compile_acls)
-            ""
-          else
-            join_string = (options[:long]) ? "\n" : " "
-            Pathname.glob(Smith.acl_path.map {|p| "#{p}#{File::SEPARATOR}*"}).map do |p|
-              p.basename(".proto")
-            end.sort.join(join_string)
+              else
+                "There are multiple ACLs with the name: #{target}"
+              end
+            end.join("\n")
           end
+        elsif options[:clean_given]
+          Pathname.glob(Smith.acl_cache_path.join("*.pb.rb")).each {|p| p.unlink}
+          ""
+        elsif options[:compile_given]
+          Pathname.glob(Smith.compile_acls)
+          ""
         else
           join_string = (options[:long]) ? "\n" : " "
           Pathname.glob(Smith.acl_path.map {|p| "#{p}#{File::SEPARATOR}*"}).map do |p|
@@ -55,6 +51,15 @@ module Smith
 
       private
 
+      def find_acl(path, acl, ext)
+        [path].flatten.inject([]) do |a,path|
+          a.tap do |acc|
+            acl_file = path.join("#{acl.snake_case}.#{ext}")
+            acc << acl_file if acl_file.exist?
+          end
+        end
+      end
+
       def indent_acl(acl)
         acl.split("\n").map { |l| l.sub(/^/, "  ") }.join("\n")
       end
@@ -64,6 +69,7 @@ module Smith
 
         opt    :long,     "format the listing", :short => :l
         opt    :show,     "show the contents of the acl file", :short => :s
+        opt    :source,   "show the contents of the generated acl file", :depends => :show
         opt    :clean,    "remove all compiled acls", :short => :none
         opt    :compile,  "compile all acls", :short => :none
       end
