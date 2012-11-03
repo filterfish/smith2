@@ -9,20 +9,19 @@ class ConfigAgent < Smith::Agent
   def run
     config = Smith::AgentConfig.new(Smith.config.agency.cache_path, 'agent_config')
 
-    receiver('agent.config.request', :type => :agent_config_request) do |r|
-      logger.info("Reading config for: #{r.payload.agent}")
-
-      pp config.for(r.payload.agent)
-
-      r.reply do |responder|
-        responder.value(config.for(r.payload.agent))
+    Smith::Messaging::Receiver.new('agent.config.request', :type => :agent_config_request) do |r|
+      r.subscribe do |payload, r|
+        logger.info("Reading config for: #{payload.agent}")
+        c = config.for(payload.agent) || Yajl::Encoder.encode({})
+        r.reply(Smith::ACL::Factory.create(:agent_config_response, :config => c))
       end
     end
 
-    receiver('agent.config.update', :type => :agent_config_update) do |r|
-      p = r.payload
-      logger.info("Updating config for: #{p.agent}")
-      config.update(p.agent, p.value)
+    Smith::Messaging::Receiver.new('agent.config.update', :type => :agent_config_update) do |r|
+      r.subscribe do |payload, r|
+        logger.info("Updating config for: #{payload.agent}")
+        config.update(payload.agent, payload.value)
+      end
     end
   end
 end
