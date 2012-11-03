@@ -51,7 +51,6 @@ module Smith
                 sender.publish(json_to_payload(m, options[:type])) do
                   iter.next
                 end
-              end
 
               done = proc do
                 responder.value
@@ -96,6 +95,9 @@ module Smith
         opt :file,    "read the data from the named file. One message per line", :type => :string, :conflicts => :message, :short => :f
         opt :number,  "the number of times to send the message", :type => :integer, :default => 1, :short => :n, :conflicts => :file
         opt :dynamic, "send message to a dynamic queue", :type => :boolean, :default => false, :short => :d
+
+        conflicts :reply, :number, :file
+        conflicts :message, :file
       end
 
       class FileReader
