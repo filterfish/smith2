@@ -19,15 +19,24 @@ module Smith
         else
           begin
             Messaging::Sender.new(target.first, :auto_delete => options[:dynamic], :persistent => true, :nowait => false, :strict => true) do |sender|
-              on_work = ->(message, iter) do
-                sender.publish(json_to_payload(message, options[:type])) do
-                  iter.next
+              if options[:reply]
+                timeout = Smith::Messaging::Timeout.new(options[:timeout]) do |message_id|
+                  blk.call("Timed out after: #{options[:timeout]} seconds for message: #{options[:message]}: message_id: #{message_id}")
                 end
+
+                sender.on_reply(:timeout => timeout) { |payload| blk.call(payload.to_hash) }
+                sender.publish(json_to_payload(options[:message], options[:type]))
+              else
+                on_work = ->(message, iter) do
+                  sender.publish(json_to_payload(message, options[:type])) do
+                    iter.next
+                  end
+                end
+
+                on_done = -> { blk.call("") }
+
+                iterator.each(on_work, on_done)
               end
-
-              on_done = -> { blk.call("") }
-
-              iterator.each(on_work, on_done)
             end
           rescue MultiJson::DecodeError => e
             blk.call(e)
@@ -60,10 +69,15 @@ module Smith
         banner "Send a message to a queue. The ACL can also be specified."
 
         opt :type,    "message type", :type => :string, :default => 'default', :short => :t
-        opt :message, "the message, as json", :type => :string, :conflicts => :file, :short => :m
-        opt :file,    "read messages from the named file", :type => :string, :conflicts => :message, :short => :f
+        opt :message, "the message, as json", :type => :string, :short => :m
+        opt :file,    "read messages from the named file", :type => :string, :short => :f
         opt :number,  "the number of times to send the message", :type => :integer, :default => 1, :short => :n
+        opt :reply,   "set a reply listener.", :short => :r
+        opt :timeout, "timeout when waiting for a reply", :type => :integer, :depends => :reply, :default => Smith.config.agency.timeout
         opt :dynamic, "send message to a dynamic queue", :type => :boolean, :default => false, :short => :d
+
+        conflicts :reply, :number, :file
+        conflicts :message, :file
       end
 
       class FileReader
