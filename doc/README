@@ -1,0 +1,6 @@
+The documentation uses textile formatting. To convert it to html you will need to:
+
+* Install the RedCloth gem
+* Run:
+
+  for i in *.textile; do redcloth $i > $(basename $i .textile).html; done
