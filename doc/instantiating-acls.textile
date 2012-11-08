@@ -1,0 +1,65 @@
+h1. Message Instantiation
+
+There are effectively three ways of creating a message. They all boil down to the
+same thing but different situations call for different means of instantiatioon:
+
+Lets start with an ACL defined as such:
+
+<pre><code>
+  package Smith.ACL;
+  message Test {
+    required string name = 1;
+    required string salutation = 2;
+  }
+</code></pre>
+
+h2. Method #1
+
+Method 1 simply returns an empty ACL. Data can be added using the ACL's
+accessor methods.
+
+<pre><code>
+  acl = Smith::ACL::Factory.create(:test)
+  acl.salutation = "Hey"
+  acl.name = "bob"
+</code></pre>
+
+Which gives:
+
+<pre><code>
+  acl.to_hash
+  => {:name=>"bob", :salutation=>"Hey"}
+</code></pre>
+
+h2. Method #2
+
+Method 2 allows you to pass a hash contain the data.
+
+<pre><code>
+  acl = Smith::ACL::Factory.create(:test, :salutation => "Hey", :name => "bob")
+</code></pre>
+
+Which also gives:
+
+<pre><code>
+  acl.to_hash
+  => {:name=>"bob", :salutation=>"Hey"}
+</code></pre>
+
+h2. Method #3
+
+Method is similar to method 2 but this time you pass a block to the create method.
+
+<pre><code>
+  acl = Smith::ACL::Factory.create(:test) do |a|
+    a.salutation = "Hey"
+    a.name = "bob"
+  end
+</code></pre>
+
+Which, predictably, gives:
+
+<pre><code>
+  acl.to_hash
+  => {:name=>"bob", :salutation=>"Hey"}
+</code></pre>
