@@ -8,12 +8,12 @@ module Smith
 
     # Convenience method that returns a Sender object.
     def sender(queue_name, opts={}, &blk)
-      create(queue_name, :sender, opts) { |sender| blk.call(sender) }
+      create(queue_name, :sender, opts, &blk)
     end
 
     # Convenience method that returns a Receiver object.
     def receiver(queue_name, opts={}, &blk)
-      create(queue_name, :receiver, opts) { |receiver| blk.call(receiver) }
+      create(queue_name, :receiver, opts, &blk)
     end
 
     # Passes each queue to the supplied block.
@@ -30,7 +30,7 @@ module Smith
 
     private
 
-    def create(queue_name, type, opts={})
+    def create(queue_name, type, opts={}, &blk)
       key = "#{type}:#{queue_name}"
       if @cache[key]
         @cache[key]
@@ -38,9 +38,9 @@ module Smith
         update_cache(key, opts) do |o|
           case type
           when :receiver
-            Messaging::Receiver.new(queue_name, o)
+            Messaging::Receiver.new(queue_name, o, &blk)
           when :sender
-            Messaging::Sender.new(queue_name, o)
+            Messaging::Sender.new(queue_name, o, &blk)
           end
         end
       end
