@@ -69,14 +69,12 @@ module Smith
       @on_started.call
     end
 
-    def receiver(queue_name, opts={})
-      queues.receiver(queue_name, opts) do |receiver|
-        yield receiver
-      end
+    def receiver(queue_name, opts={}, &blk)
+      queues.receiver(queue_name, opts, &blk)
     end
 
-    def sender(queue_name, opts={})
-      queues.sender(queue_name, opts) { |sender| yield sender }
+    def sender(queue_name, opts={}, &blk)
+      queues.sender(queue_name, opts, &blk)
     end
 
     class << self
