@@ -25,7 +25,7 @@ module Smith
 
             Messaging::Receiver.new(queue, :auto_ack => false, :prefetch => number_to_remove, :passive => true) do |receiver|
 
-              receiver.on_channel_error do |ch,channel_close|
+              receiver.on_error do |ch,channel_close|
                 case channel_close.reply_code
                 when 404
                   responder.succeed("Queue does not exist: #{queue}")
