@@ -39,8 +39,8 @@ module Smith
       def stop_all(&blk)
         agents.state(:running).each do |agent|
           agent.stop
-          blk.call('')
         end
+        blk.call('')
       end
 
       def stop_agent(&blk)
