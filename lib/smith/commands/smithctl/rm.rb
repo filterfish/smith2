@@ -7,14 +7,14 @@ module Smith
         when 0
           responder.succeed("No queue specified. Please specify a queue.")
         else
-          @on_channel_error = proc do |ch,channel_close|
+          @on_error = proc do |ch,channel_close|
             case channel_close.reply_code
             when 404
-              responder.succeed("No such queue: #{extract_queue(channel_close.reply_text)}")
+              responder.succeed("No such queue: [#{channel_close.reply_code}]: #{channel_close.reply_text}")
             when 406
-              responder.succeed("Queue not empty: #{extract_queue(channel_close.reply_text)}.")
+              responder.succeed("Queue not empty: [#{channel_close.reply_code}]: #{channel_close.reply_text}.")
             else
-              responder.succeed("Unknown error: #{channel_close.reply_text}")
+              responder.succeed("Unknown error: [#{channel_close.reply_code}]: #{channel_close.reply_text}")
             end
           end
 
@@ -39,7 +39,7 @@ module Smith
 
       def delete_exchange(exchange_name, &blk)
         AMQP::Channel.new(Smith.connection) do |channel,ok|
-          channel.on_error(&@on_channel_error)
+          channel.on_error(&@on_error)
           channel.direct("smith.#{exchange_name}", :passive => true) do |exchange|
             exchange_options = (options[:force]) ? {} : {:if_unused => true}
             exchange.delete(exchange_options) do |delete_ok|
@@ -51,7 +51,7 @@ module Smith
 
       def delete_queue(queue_name, &blk)
         AMQP::Channel.new(Smith.connection) do |channel,ok|
-          channel.on_error(&@on_channel_error)
+          channel.on_error(&@on_error)
           channel.queue("smith.#{queue_name}", :passive => true) do |queue|
             queue_options = (options[:force]) ? {} : {:if_unused => true, :if_empty => true}
             queue.delete(queue_options) do |delete_ok|
