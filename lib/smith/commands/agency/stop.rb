@@ -73,6 +73,7 @@ module Smith
       def stop_if_running(agent)
         if agent.running?
           agent.stop
+          nil
         else
           logger.warn { "Agent not running: #{agent.name}" }
           agent.name
