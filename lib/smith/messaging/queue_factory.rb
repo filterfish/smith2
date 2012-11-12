@@ -33,7 +33,7 @@ module Smith
     def create(queue_name, type, opts={}, &blk)
       key = "#{type}:#{queue_name}"
       if @cache[key]
-        @cache[key]
+        blk.call(@cache[key])
       else
         update_cache(key, opts) do |o|
           case type
