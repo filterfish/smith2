@@ -9,8 +9,6 @@ module Smith
     attr_reader :agents, :agent_processes
 
     def initialize(opts={})
-      DataMapper.setup(:default, "yaml:///#{Smith.config.agency.cache_path}")
-
       @agent_processes = AgentCache.new(:paths => opts.delete(:paths))
     end
 
@@ -88,12 +86,8 @@ module Smith
     def acknowledge_stop(agent_data)
       @agent_processes[agent_data.name].tap do |agent_process|
         if agent_data.pid == agent_process.pid
-          agent_process.pid = nil
-          agent_process.monitor = nil
-          agent_process.singleton = nil
-          agent_process.started_at = nil
-          agent_process.last_keep_alive = nil
           agent_process.acknowledge_stop
+          @agent_processes.delete(agent_data.name)
         else
           if agent_process.pid
             logger.error { "Agent reports different pid during acknowledge_stop: #{agent_data.name}" }

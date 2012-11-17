@@ -3,7 +3,12 @@ module Smith
   module Commands
     class List < CommandBase
       def execute
-        selected_agents = (options[:all]) ? agents : agents.state(:running)
+        if target.size > 0
+          selected_agents = target.map { |a| agents[a] }
+        else
+          selected_agents = (options[:all]) ? agents : agents.state(:running)
+        end
+
         responder.succeed((selected_agents.empty?) ? '' : format(selected_agents, options[:long]))
       end
 
@@ -22,7 +27,7 @@ module Smith
 
       def long_format(a)
         a.map do |a|
-          [a.state, a.pid, (a.started_at) ? format_time(a.started_at) : '', (!(a.stopped? || a.null?) && !a.alive?) ? '(agent dead)' : "", a.name]
+          [a.state, a.uuid, a.pid, (a.started_at) ? format_time(a.started_at) : '', (!(a.stopped? || a.null?) && !a.alive?) ? '(agent dead)' : "", a.name]
         end
       end
 
@@ -31,7 +36,7 @@ module Smith
       end
 
       def format_time(t)
-        (t) ? Time.at(t).strftime("%Y/%m/%d %H:%M:%S") : ''
+        (t) ? t.strftime("%Y/%m/%d %H:%M:%S") : ''
       end
 
       def tabulate(a, opts={})

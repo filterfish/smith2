@@ -180,7 +180,7 @@ module Smith
     end
 
     def acknowledge_start(&blk)
-      Messaging::Sender.new('agent.lifecycle', :auto_delete => false, :durable => false) do |ack_start_queue|
+      Messaging::Sender.new('agent.lifecycle', :auto_delete => false, :durable => false) do |queue|
         payload = ACL::Factory.create(:agent_lifecycle) do |p|
           p.state = 'acknowledge_start'
           p.pid = $$
@@ -190,25 +190,25 @@ module Smith
           p.singleton = Smith.config.agent.singleton
           p.started_at = Time.now.to_i
         end
-        ack_start_queue.publish(payload, &blk)
+        queue.publish(payload)
       end
     end
 
     def acknowledge_stop(&blk)
-      Messaging::Sender.new('agent.lifecycle', :auto_delete => false, :durable => false) do |ack_stop_queue|
+      Messaging::Sender.new('agent.lifecycle', :auto_delete => false, :durable => false) do |queue|
         message = {:state => 'acknowledge_stop', :pid => $$, :name => self.class.to_s}
-        ack_stop_queue.publish(ACL::Factory.create(:agent_lifecycle, message), &blk)
+        queue.publish(ACL::Factory.create(:agent_lifecycle, message), &blk)
       end
     end
 
     def start_keep_alive
       if Smith.config.agent.monitor
         EventMachine::add_periodic_timer(1) do
-          Messaging::Sender.new('agent.keepalive', :auto_delete => false, :durable => false) do |keep_alive_queue|
+          Messaging::Sender.new('agent.keepalive', :auto_delete => false, :durable => false) do |queue|
             message = {:name => self.class.to_s, :pid => $$, :time => Time.now.to_i}
-            keep_alive_queue.consumers do |consumers|
+            queue.consumers do |consumers|
               if consumers > 0
-                keep_alive_queue.publish(ACL::Factory.create(:agent_keepalive, message))
+                queue.publish(ACL::Factory.create(:agent_keepalive, message))
               end
             end
           end

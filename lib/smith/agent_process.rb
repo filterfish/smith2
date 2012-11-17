@@ -1,35 +1,42 @@
 # -*- encoding: utf-8 -*-
-require 'pp'
 require 'state_machine'
-require 'dm-observer'
+require 'securerandom'
+require 'forwardable'
+
+require 'protobuf/message/enum'
+require 'protobuf/message/message'
 
 module Smith
 
   class AgentProcess
 
     include Logger
-    include Extlib
-    include DataMapper::Resource
+    extend Forwardable
 
-    property :id,               Serial
-    property :path,             String, :required => true
-    property :name,             String, :required => true
-    property :state,            String, :required => true
-    property :pid,              Integer
-    property :started_at,       Integer
-    property :last_keep_alive,  Integer
-    property :metadata,         String
-    property :monitor,          Boolean
-    property :singleton,        Boolean
+    class AgentState < ::Protobuf::Message
+      required :string,   :_state, 0
+      required :string,   :path, 1
+      required :string,   :name, 2
+      required :string,   :uuid, 3
+      optional :int32,    :pid, 4
+      optional :int32,    :started_at, 5
+      optional :int32,    :last_keep_alive, 6
+      optional :string,   :metadata, 7
+      optional :bool,     :monitor, 8
+      optional :bool,     :singleton, 9
+    end
 
-    state_machine :initial => :null do
+    def_delegators :@agent_state, :path, :name, :uuid, :pid, :last_keep_alive, :metadata, :monitor, :singleton
+    def_delegators :@agent_state, :path=, :name=, :uuid=, :pid=, :last_keep_alive=, :metadata=, :monitor=, :singleton=
 
-      before_transition do |transition|
-        logger.debug { "Transition [#{name}]: :#{transition.from} -> :#{transition.to}" }
+    state_machine :initial => lambda {|o| o.send(:_state)}, :action => :save  do
+
+      before_transition do |_, transition|
+        puts { "Transition [#{name}]: :#{transition.from} -> :#{transition.to}" }
       end
 
-      after_failure do |transition|
-        logger.debug { "Illegal state change [#{name}]: :#{transition.from} -> :#{transition.event}" }
+      after_failure do |_, transition|
+        puts { "Illegal state change [#{name}]: :#{transition.from} -> :#{transition.event}" }
       end
 
       event :instantiate do
@@ -52,6 +59,10 @@ module Smith
         transition [:stopping] => :stopped
       end
 
+      event :null do
+        transition [:stopped] => :null
+      end
+
       event :no_process_running do
         transition [:unknown, :starting, :running, :stopping] => :dead
       end
@@ -65,9 +76,17 @@ module Smith
       end
     end
 
+    def started_at
+      Time.at(@agent_state.started_at)
+    end
+
+    def started_at=(time)
+      @agent_state.started_at = time.to_i
+    end
+
     def add_callback(state, &blk)
       AgentProcess.state_machine do
-        puts "changing callback"
+        puts "changing callback: :on => #{state}, :do => #{blk}"
         after_transition :on => state, :do => blk
       end
     end
@@ -90,19 +109,47 @@ module Smith
     def control_queue_name
       "agent.#{name.sub(/Agent$/, '').snake_case}.control"
     end
+
+    def initialize(db, attributes={})
+      @db = db
+      if attributes.is_a?(String)
+        @agent_state = AgentState.new.parse_from_string(attributes)
+      else
+        attr = attributes.merge(:_state => 'null', :uuid => SecureRandom.uuid)
+        @agent_state = AgentState.new(attr)
+        pp @agent_state
+      end
+
+      super()
+    end
+
+    def to_s
+      @agent_state.to_hash.tap do |h|
+        h[:state] = h.delete(:_state)
+      end
+    end
+
+    private
+
+    def _state
+      @agent_state._state || "null"
+    end
+
+    def save
+      @agent_state._state = state
+      # TODO This *must* change to uuid when I've worked out how to manage them.
+      @db.put(name, @agent_state.to_s)
+    end
   end
 
-  class AgentProcessObserver
+  module AgentProcessObserver
 
     include Logger
-    include DataMapper::Observer
-
-    observe AgentProcess
 
     # Start an agent. This forks and execs the bootstrapper class
     # which then becomes responsible for managing the agent process.
     def self.start(agent_process)
-      agent_process.started_at = Time.now
+      agent_process.started_at = Time.now.to_i
       agent_process.pid = fork do
 
         # Detach from the controlling terminal
@@ -134,6 +181,7 @@ module Smith
     end
 
     def self.acknowledge_start(agent_process)
+      pp :acknowledge_start
     end
 
     def self.stop(agent_process)
