@@ -46,6 +46,10 @@ module Smith
       !@cache[name].nil?
     end
 
+    def delete(name)
+      @cache.delete(name)
+    end
+
     def size
       @cache.size
     end

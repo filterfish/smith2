@@ -21,10 +21,7 @@ module Smith
 
       clazz = Commands.const_get(Extlib::Inflection.camelize(command)).new
 
-      logger.debug { "#{(Command.agency?) ? 'Agency' : 'Smithctl'} command: #{command}#{(args.empty?) ? '' : " #{args.join(', ')}"}." }
-
       begin
-
         clazz.parse_options(args)
 
         vars.each do |k,v|
