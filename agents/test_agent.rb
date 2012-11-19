@@ -4,19 +4,18 @@ class TestAgent < Smith::Agent
   options :monitor => false
 
   def run
-    n = 0
+    receiver('agent.test').subscribe do |payload|
 
-    sender('agent.barf') do |send_queue|
+      sender('agent.null') do |send_queue|
 
-      logger.debug { "Setting up reply handler." }
+        work = ->(n, iter) do
+          send_queue.publish(Smith::ACL::Factory.create(:default, :n => n))
+          iter.next
+        end
 
-      send_queue.on_reply do |r|
-        puts "Echoing payload: #{r.payload}"
-      end
+        done = -> { puts "done" }
 
-      receiver('agent.fast_test') do |queue|
-        puts "Sending message to #{send_queue.queue_name}"
-        send_queue.publish(Smith::ACL::Payload.new(:default).content("#{n +=1 } hey!"))
+        EM::Iterator.new(0..9).each(work, done)
       end
     end
   end
