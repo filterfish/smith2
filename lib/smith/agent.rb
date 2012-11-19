@@ -6,11 +6,12 @@ module Smith
     include Logger
     include Smith::ObjectCount
 
-    attr_reader :factory, :name, :pid
+    attr_reader :name, :pid, :uuid
 
-    def initialize(options={})
+    def initialize(uuid)
       @name = self.class.to_s
       @pid = $$
+      @uuid = uuid
 
       @factory = QueueFactory.new
 
@@ -113,7 +114,7 @@ module Smith
           when 'log_level'
             begin
               level = payload.options.first
-              logger.info { "Setting log level to #{level} for: #{name}" }
+              logger.info { "Setting log level to #{level} for: #{name} (#{uuid})" }
               log_level(level)
             rescue ArgumentError => e
               logger.error { "Incorrect log level: #{level}" }
@@ -126,7 +127,6 @@ module Smith
     end
 
     def setup_stats_queue
-      puts "setting stats"
       # instantiate this queue without using the factory so it doesn't show
       # up in the stats.
       Messaging::Sender.new('agent.stats', :dont_cache => true, :durable => false, :auto_delete => false) do |stats_queue|
@@ -134,11 +134,12 @@ module Smith
           stats_queue.number_of_consumers do |consumers|
             if consumers > 0
               payload = ACL::Factory.create(:agent_stats) do |p|
+                p.uuid = uuid
                 p.agent_name = self.name
                 p.pid = self.pid
                 p.rss = (File.read("/proc/#{pid}/statm").split[1].to_i * 4) / 1024 # This assumes the page size is 4K & is MB
                 p.up_time = (Time.now - @start_time).to_i
-                factory.each_queue do |q|
+                queues.each_queue do |q|
                   p.queues << ACL::Factory.create('agent_stats::queue_stats', :name => q.denormalised_queue_name, :type => q.class.to_s, :length => q.counter)
                 end
               end
@@ -152,14 +153,13 @@ module Smith
 
     def acknowledge_start
       Messaging::Sender.new('agent.lifecycle', :auto_delete => false, :durable => false) do |queue|
-        payload = ACL::Factory.create(:agent_lifecycle) do |p|
-          p.state = 'acknowledge_start'
+        payload = ACL::Factory.create(:agent_acknowledge_start) do |p|
+          p.uuid = uuid
           p.pid = $$
-          p.name = self.class.to_s
-          p.metadata = Smith.config.agent.metadata
-          p.monitor = Smith.config.agent.monitor
           p.singleton = Smith.config.agent.singleton
           p.started_at = Time.now.to_i
+          p.metadata = Smith.config.agent.metadata
+          p.monitor = Smith.config.agent.monitor
         end
         queue.publish(payload)
       end
@@ -167,8 +167,7 @@ module Smith
 
     def acknowledge_stop(&block)
       Messaging::Sender.new('agent.lifecycle', :auto_delete => false, :durable => false) do |queue|
-        message = {:state => 'acknowledge_stop', :pid => $$, :name => self.class.to_s}
-        queue.publish(ACL::Factory.create(:agent_lifecycle, message), &block)
+        queue.publish(ACL::Factory.create(:agent_acknowledge_stop, :uuid => uuid), &block)
       end
     end
 
@@ -176,7 +175,7 @@ module Smith
       if Smith.config.agent.monitor
         EventMachine::add_periodic_timer(1) do
           Messaging::Sender.new('agent.keepalive', :auto_delete => false, :durable => false) do |queue|
-            message = {:name => self.class.to_s, :pid => $$, :time => Time.now.to_i}
+            message = {:name => self.class.to_s, :uuid => uuid, :time => Time.now.to_i}
             queue.consumers do |consumers|
               if consumers > 0
                 queue.publish(ACL::Factory.create(:agent_keepalive, message))
@@ -194,11 +193,7 @@ module Smith
     end
 
     def control_queue_name
-      "#{default_queue_name}.control"
-    end
-
-    def default_queue_name
-      "agent.#{name.sub(/Agent$/, '').snake_case}"
+      "agent.control.#{uuid}"
     end
   end
 end

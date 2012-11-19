@@ -1,6 +1,5 @@
 # -*- encoding: utf-8 -*-
 require 'state_machine'
-require 'securerandom'
 require 'forwardable'
 
 require 'protobuf/message/enum'
@@ -10,41 +9,46 @@ module Smith
 
   class AgentProcess
 
-    include Logger
+    include Smith::Logger
     extend Forwardable
 
     class AgentState < ::Protobuf::Message
       required :string,   :_state, 0
-      required :string,   :path, 1
       required :string,   :name, 2
       required :string,   :uuid, 3
       optional :int32,    :pid, 4
       optional :int32,    :started_at, 5
       optional :int32,    :last_keep_alive, 6
-      optional :string,   :metadata, 7
-      optional :bool,     :monitor, 8
-      optional :bool,     :singleton, 9
+      optional :bool,     :singleton, 7
+      optional :string,   :metadata, 8
+      optional :bool,     :monitor, 9
     end
 
-    def_delegators :@agent_state, :path, :name, :uuid, :pid, :last_keep_alive, :metadata, :monitor, :singleton
-    def_delegators :@agent_state, :path=, :name=, :uuid=, :pid=, :last_keep_alive=, :metadata=, :monitor=, :singleton=
+    def_delegators :@agent_state, :name, :uuid, :pid, :last_keep_alive, :metadata, :monitor, :singleton
+    def_delegators :@agent_state, :name=, :uuid=, :pid=, :last_keep_alive=, :metadata=, :monitor=, :singleton=
 
     state_machine :initial => lambda {|o| o.send(:_state)}, :action => :save  do
 
       before_transition do |_, transition|
-        puts { "Transition [#{name}]: :#{transition.from} -> :#{transition.to}" }
+        logger.debug { "Transition [#{name}]: :#{transition.from} -> :#{transition.to}" }
       end
 
       after_failure do |_, transition|
-        puts { "Illegal state change [#{name}]: :#{transition.from} -> :#{transition.event}" }
-      end
-
-      event :instantiate do
-        transition [:null] => :stopped
+        logger.debug { "Illegal state change [#{name}]: :#{transition.from} -> :#{transition.event}" }
       end
 
       event :start do
-        transition [:null, :stopped, :dead] => :starting
+        transition [:null] => :checked
+      end
+
+      # I'm not terribly keen on this. On the one hand it means that the code
+      # for checking the existance of the agent is contained here on the other
+      # hand if the agent does not exist the state is checked which is not very
+      # indicative that a failure has occurred! It does work but not very nice.
+      # FIXME
+
+      event :check do
+        transition [:checked] => :starting
       end
 
       event :acknowledge_start do
@@ -56,11 +60,11 @@ module Smith
       end
 
       event :acknowledge_stop do
-        transition [:stopping] => :stopped
+        transition [:stopping] => :null
       end
 
       event :null do
-        transition [:stopped] => :null
+        transition [:check, :stopped] => :null
       end
 
       event :no_process_running do
@@ -91,6 +95,10 @@ module Smith
       end
     end
 
+    def delete
+      @db.delete(@agent_state.uuid)
+    end
+
     # Check to see if the agent is alive.
     def alive?
       if self.pid
@@ -107,7 +115,7 @@ module Smith
 
     # Return the agent control queue.
     def control_queue_name
-      "agent.#{name.sub(/Agent$/, '').snake_case}.control"
+      "agent.control.#{uuid}"
     end
 
     def initialize(db, attributes={})
@@ -115,12 +123,18 @@ module Smith
       if attributes.is_a?(String)
         @agent_state = AgentState.new.parse_from_string(attributes)
       else
-        attr = attributes.merge(:_state => 'null', :uuid => SecureRandom.uuid)
+        raise ArgumentError, "missing uuid option" if attributes[:uuid].nil?
+        attr = attributes.merge(:_state => 'null')
         @agent_state = AgentState.new(attr)
-        pp @agent_state
       end
 
       super()
+    end
+
+    def exists?
+      Smith.agent_paths.detect do |path|
+        Pathname.new(path).join("#{name.snake_case}.rb").exist?
+      end
     end
 
     def to_s
@@ -138,7 +152,7 @@ module Smith
     def save
       @agent_state._state = state
       # TODO This *must* change to uuid when I've worked out how to manage them.
-      @db.put(name, @agent_state.to_s)
+      @db.put(uuid, @agent_state.to_s)
     end
   end
 
@@ -146,12 +160,18 @@ module Smith
 
     include Logger
 
+    def self.start(agent_process)
+      if agent_process.exists?
+        agent_process.check
+      else
+        agent_process.delete
+      end
+    end
+
     # Start an agent. This forks and execs the bootstrapper class
     # which then becomes responsible for managing the agent process.
-    def self.start(agent_process)
-      agent_process.started_at = Time.now.to_i
-      agent_process.pid = fork do
-
+    def self.start_process(agent_process)
+      fork do
         # Detach from the controlling terminal
         unless Process.setsid
           raise 'Cannot detach from controlling terminal'
@@ -169,17 +189,16 @@ module Smith
         STDIN.reopen("/dev/null")
         STDERR.reopen(STDOUT)
 
-        bootstrapper = File.expand_path(File.join(File.dirname(__FILE__), 'bootstrap.rb'))
-
-        exec('ruby', bootstrapper, agent_process.path, agent_process.name, Smith.acl_cache_path.to_s)
+        bootstrapper = Pathname.new(__FILE__).dirname.join('bootstrap.rb').expand_path
+        exec('ruby', bootstrapper, agent_process.name, agent_process.uuid)
       end
 
       # We don't want any zombies.
       Process.detach(agent_process.pid)
     end
 
-    def self.acknowledge_start(agent_process)
-      pp :acknowledge_start
+    def self.acknowledge_start(agent_process, &blk)
+      logger.info { "Agent started: #{agent_process.uuid}" }
     end
 
     def self.stop(agent_process)
@@ -195,21 +214,30 @@ module Smith
       end
     end
 
-    def self.acknowledge_stop(agent_process)
-      pp :stopped
+    def self.no_process_running(agent_process)
+      agent_process.delete
     end
 
+
+    def self.acknowledge_stop(agent_process)
+      agent_process.delete
+      logger.info { "Agent stopped: #{agent_process.uuid}" }
+    end
+
+    # This needs to use the PID class to verify if an agent is still running.
+    # FIXME
     def self.kill(agent_process)
       if agent_process.pid
-        logger.info { "Sending kill signal: #{agent_process.name}(#{agent_process.pid})" }
+        logger.info { "Sending kill signal: #{agent_process.pid}: #{agent_process.uuid}" }
         begin
           Process.kill('TERM', agent_process.pid)
         rescue
-          logger.error { "Process does not exist. PID is stale: #{agent_process.pid}: #{agent_process.name}" }
+          logger.error { "Process does not exist. PID is stale: #{agent_process.pid}: #{agent_process.uuid}" }
         end
       else
-        logger.error { "Not sending kill signal, agent pid is not set: #{agent_process.name}" }
+        logger.error { "Not sending kill signal, agent pid is not set: #{agent_process.uuid}" }
       end
+      agent_process.delete
     end
 
     # If an agent is in an unknown state then this will check to see
@@ -218,19 +246,26 @@ module Smith
     # quite worked out what I'm going to do with it so I'll leave it
     # as is
     def self.reap_agent(agent_process)
-      logger.info { "Reaping agent: #{agent_process.name}" }
+      logger.info { "Reaping agent: #{agent_process.uuid}" }
       if Pathname.new('/proc').join(agent_process.pid.to_s).exist?
-        logger.warn { "Agent is still alive: #{agent_process.name}" }
+        logger.warn { "Agent is still alive: #{agent_process.uuid}" }
       else
-        logger.warn { "Agent is already dead: #{agent_process.name}" }
+        logger.warn { "Agent is already dead: #{agent_process.uuid}" }
       end
     end
   end
 
-  AgentProcess.state_machine do
+  AgentProcess.state_machine do |state_machine|
+    # Make sure the state machine gets a logger.
+    state_machine.class_eval { include Smith::Logger }
+
     after_transition :on => :start, :do => AgentProcessObserver.method(:start)
+    after_transition :on => :check, :do => AgentProcessObserver.method(:start_process)
     after_transition :on => :stop, :do => AgentProcessObserver.method(:stop)
     after_transition :on => :kill, :do => AgentProcessObserver.method(:kill)
     after_transition :on => :not_responding, :do => AgentProcessObserver.method(:reap_agent)
+    after_transition :on => :acknowledge_start, :do => AgentProcessObserver.method(:acknowledge_start)
+    after_transition :on => :acknowledge_stop, :do => AgentProcessObserver.method(:acknowledge_stop)
+    after_transition :on => :no_process_running, :do => AgentProcessObserver.method(:no_process_running)
   end
 end

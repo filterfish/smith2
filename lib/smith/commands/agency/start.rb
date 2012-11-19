@@ -44,16 +44,13 @@ module Smith
           blk.call("Start what? No agent specified.")
         else
           worker = ->(agent_name, iter) do
-            agents[agent_name].name = agent_name
-            if agents[agent_name].path
-              if options[:kill]
-                agents[agent_name].kill
-              end
-              agents[agent_name].start
-              iter.return(agent_name)
+            running_agents = agents.find_by_name(agent_name)
+            if !running_agents.empty? && running_agents.first.singleton
+              iter.return("Agent already running: #{agent_name}")
             else
-              logger.error { m }
-              iter.return("Unknown agent: #{agents[agent_name].name}")
+              agent = agents.create(agent_name)
+              agent.start
+              iter.return((agent.state == 'starting') ? "#{agent_name}: #{agent.uuid}" : '')
             end
           end
 
@@ -68,7 +65,6 @@ module Smith
       def options_spec
         banner "Start an agent/agents or group of agents."
 
-        opt    :kill,  "Reset the state of the agent before starting", :short => :k
         opt    :group, "Start everything in the specified group", :type => :string, :short => :g
       end
     end

@@ -1,12 +1,18 @@
 package Smith.ACL;
 
-// This should refactored into two: start and stop.
-message AgentLifecycle {
-  required string state = 1;
-  required string name = 2;
-  optional int64 pid = 3;
-  optional bool monitor = 4;
-  optional bool singleton = 5;
-  optional string metadata = 6;
-  optional int64 started_at = 7;
+message AgentAcknowledgeStart {
+  required string   uuid = 1;
+  required int32    pid = 2;
+  required int64    started_at = 3;
+  optional bool     singleton = 4;
+  optional bool     monitor = 5;
+  optional string   metadata = 6;
+}
+
+message AgentAcknowledgeStop {
+  required string   uuid = 1;
+}
+
+message AgentDead {
+  required string   uuid = 1;
 }

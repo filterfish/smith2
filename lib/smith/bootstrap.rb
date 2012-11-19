@@ -15,31 +15,42 @@ module Smith
 
     include Logger
 
-    def initialize(path, agent_name)
+    def initialize(name, uuid)
       # FIXME
       # This doesn't do what I think it should. If an exception is
       # thrown in setup_control_queue, for example, it just kills
       # the agent without it actually raising the exception.
       Thread.abort_on_exception = true
-      @agent_name = agent_name
-      @agent_filename = Pathname.new(path).join("#{agent_name.snake_case}.rb").expand_path
+      @agent_name = name
+      @agent_uuid = uuid
+      @agent_filename = agent_path(name)
     end
 
     def signal_handlers
       logger.debug { "Installing default signal handlers" }
       %w{TERM INT QUIT}.each do |sig|
         @agent.install_signal_handler(sig) do |sig|
-          logger.error { "Agent received: signal #{sig}: #{agent.name}" }
+          logger.error { "Agent received: signal #{sig}: #{agent.name} (#{agent.uuid})" }
           terminate!
         end
       end
     end
 
     def load_agent
+      @agent_filename = agent_path(@agent_name)
       logger.debug { "Loading #{@agent_name} from: #{@agent_filename.dirname}" }
       add_agent_load_path
       load @agent_filename
-      @agent = Kernel.const_get(@agent_name).new
+      @agent = Kernel.const_get(@agent_name).new(@agent_uuid)
+    end
+
+    def agent_path(name)
+      file_name = "#{name.snake_case}.rb"
+      Smith.agent_paths.each do |path|
+        p = Pathname.new(path).join(file_name)
+        return p if p.exist?
+      end
+      return nil
     end
 
     def start!
@@ -54,7 +65,7 @@ module Smith
     # See the note at the in main.
     def terminate!(exception=nil)
       logger.error { format_exception(exception) } if exception
-      logger.error { "Terminating: #{@agent_name}." }
+      logger.error { "Terminating: #{@agent_uuid}." }
 
       if Smith.running?
         send_dead_message
@@ -79,14 +90,14 @@ module Smith
     private
 
     def write_pid_file
-      @pid = Daemons::PidFile.new(Daemons::Pid.dir(:normal, Dir::tmpdir, nil), ".rubymas-#{@agent_name.snake_case}", true)
+      @pid = Daemons::PidFile.new(Daemons::Pid.dir(:normal, Dir::tmpdir, nil), ".rubymas-#{@agent_uuid.snake_case}", true)
       @pid.pid = Process.pid
     end
 
     def send_dead_message
-      logger.debug { "Sending dead message to agency: #{@agent_name}" }
+      logger.debug { "Sending dead message to agency: #{@agent_name} (#{@agent_uuid})" }
       Messaging::Sender.new('agent.lifecycle', :auto_delete => false, :durable => false) do |sender|
-        sender.publish(ACL::Factory.create(:agent_lifecycle, :state => 'dead', :name => @agent_name))
+        sender.publish(ACL::Factory.create(:agent_dead, :uuid => @agent_uuid))
       end
     end
 
@@ -125,18 +136,18 @@ module Smith
   end
 end
 
-path = ARGV[0]
-agent_name = ARGV[1]
+name = ARGV[0]
+uuid = ARGV[1]
 
-exit 1 if agent_name.nil? || path.nil?
+exit 1 if name.nil? || uuid.nil?
 
 # Set the running instance name to the name of the agent.
-$0 = "#{agent_name}"
+$0 = "#{name}"
 
 # load the acls
 Smith.load_acls
 
-bootstrapper = Smith::AgentBootstrap.new(path, agent_name)
+bootstrapper = Smith::AgentBootstrap.new(name, uuid)
 
 # I've tried putting the exception handling in the main reactor log
 # but it doesn't do anything. I know there's a reason for this but I

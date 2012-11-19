@@ -30,7 +30,7 @@ module Smith
             Smith.stop
           else
             logger.warn { "Agents are still running: #{running_agents.map(&:name).join(", ")}." }
-            logger.info { "Agency not shutting down. Use force_stop if you really want to shut it down." }
+            logger.info { "Agency not shutting down. Use --force if you really want to shut it down." }
             blk.call("Not shutting down, agents are still running: #{running_agents.map(&:name).join(", ")}.")
           end
         end
@@ -53,7 +53,7 @@ module Smith
         # any other specified agents.
         if options[:group]
           begin
-            agents_to_stop = agent_group(options[:group])
+            agents_to_stop = agents.find_by_name(agent_group(options[:group])).map(&:uuid)
             if agents_to_stop.empty?
               blk.call("There are no agents in group: #{options[:group]}")
             end
@@ -61,22 +61,39 @@ module Smith
             return blk.call(e.message)
           end
         else
-          agents_to_stop = target
+          if options[:name]
+            agents_to_stop = agents.find_by_name(options[:name]).map(&:uuid)
+          else
+            agents_to_stop = target
+          end
         end
 
-        ret = agents_to_stop.inject([]) do |acc,agent_name|
-          acc << stop_if_running(agents[agent_name])
-        end
-        blk.call((ret.compact.empty?) ? '' : "Agent(s) not running: #{ret.compact.join(", ")}")
+        errors = agents_to_stop.inject([]) { |acc,uuid| acc << stop_if_running(uuid) }
+        blk.call(format_error_message(errors))
       end
 
-      def stop_if_running(agent)
-        if agent.running?
-          agent.stop
-          nil
+      def stop_if_running(uuid)
+        agent = agents[uuid]
+        if agent
+          if agent.running?
+            agent.stop
+            nil
+          end
         else
-          logger.warn { "Agent not running: #{agent.name}" }
-          agent.name
+          logger.warn { "Agent does not exist: #{uuid}" }
+          uuid
+        end
+      end
+
+      def format_error_message(errors)
+        errors = errors.compact
+        case errors.size
+        when 0
+          ''
+        when 1
+          "Agent does not exist: #{errors.first}"
+        else
+          "Agents do not exist: #{errors.join(", ")}"
         end
       end
 
@@ -84,6 +101,7 @@ module Smith
         banner "Stop an agent/agents."
 
         opt    :group, "Stop everything in the specified group", :type => :string, :short => :g
+        opt    :name,  "Stop an agent(s) by name", :type => :string, :short => :n
         opt    :force, "If stopping the agency and there are agents running stop anyway"
       end
     end

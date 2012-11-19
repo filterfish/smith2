@@ -1,49 +1,65 @@
 # -*- encoding: utf-8 -*-
 require 'leveldb'
-require 'letters'
+require 'securerandom'
 
 module Smith
-  class AgentCache < Cache
+  class AgentCache
+
+    include Enumerable
 
     attr_accessor :path
 
     def initialize(opts={})
-      super()
       @db = LevelDB::DB.make(Smith.cache_path.join('agent_state').to_s, :error_if_exists => false, :create_if_missing => true)
-      @paths = opts[:paths]
-
-      operator ->(agent_name, options={}) { @db[agent_name] || AgentProcess.new(@db, :name => agent_name, :path => agent_path(agent_name)) }
-      populate
     end
 
-    def alive?(name)
-      (exist?(name)) ? entry(name).alive? : false
+    def create(name)
+      AgentProcess.new(@db, :name => name, :uuid => SecureRandom.uuid)
     end
+
+    def alive?(uuid)
+      (@db.exist?(uuid)) ? instantiate(@db[uuid]).alive? : false
+    end
+
+    def exist?(uuid)
+      @db.exists?(uuid)
+    end
+
+    def find_by_name(*names)
+      inject([]) do |a, agent|
+        a.tap do |acc|
+          names.flatten.each do |name|
+            acc << agent if name == agent.name
+          end
+        end
+      end
+    end
+
+      # select {|a| a.name == name.to_s }
+    # end
 
     def state(state)
       select {|a| a.state == state.to_s }
     end
 
-    def delete(agent_name)
-      @db.delete(agent_name)
-      super
+    def delete(uuid)
+      @db.delete(uuid)
     end
 
-    alias names :entries
+    def entry(uuid)
+      (uuid) ? instantiate(@db[uuid]) : nil
+    end
+
     alias :[] :entry
+
+    def each(&blk)
+      @db.each {|k,v| blk.call(instantiate(v)) }
+    end
 
     private
 
-    # When we start load any new data from the db.
-    def populate
-      @db.values.map do |s|
-        ap = AgentProcess.new(@db, s)
-        update(ap.name, ap)
-      end
-    end
-
-    def agent_path(agent_name)
-      @paths.detect { |path| Pathname.new(path).join("#{agent_name.snake_case}.rb").exist? }.to_s
+    def instantiate(state)
+      (state) ? AgentProcess.new(@db, state) : nil
     end
   end
 end
