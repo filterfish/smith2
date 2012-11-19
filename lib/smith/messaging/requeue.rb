@@ -33,7 +33,7 @@ module Smith
           logger.verbose { "Requeuing to: #{@queue.name}. [options]: #{opts}" }
           logger.verbose { "Requeuing to: #{@queue.name}. [message]: #{@message}" }
 
-          @exchange.publish(ACL::NewPayload.new(ACL::Factory.create(@metadata.type, @message)).encode, opts)
+          @exchange.publish(ACL::Payload.new(ACL::Factory.create(@metadata.type, @message)).encode, opts)
         end
       end
 

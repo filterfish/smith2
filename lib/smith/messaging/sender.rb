@@ -68,10 +68,10 @@ module Smith
             #the proc from the @reply_container.    ####
             #### !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ####
             @reply_container[message_id] = {:reply_proc => @reply_proc, :timeout => @timeout.clone.tap {|t| t.set_timeout(message_id) }}
-            _publish(ACL::NewPayload.new(payload), @options.publish(opts, {:reply_to => reply_queue.queue_name, :message_id => message_id}))
+            _publish(ACL::Payload.new(payload), @options.publish(opts, {:reply_to => reply_queue.queue_name, :message_id => message_id}))
           end
         else
-          _publish(ACL::NewPayload.new(payload), @options.publish(opts), &blk)
+          _publish(ACL::Payload.new(payload), @options.publish(opts), &blk)
         end
       end
 
