@@ -22,7 +22,7 @@ module Smith
       options_check
 
       @daemon = Daemon.new(AGENCY_NAME, opts[:daemon], opts[:pid_dir])
-      @agency = Agency.new(:paths => Smith.agent_paths)
+      @agency = Agency.new
 
       Smith.shutdown_hook do
         puts "Shutting down"

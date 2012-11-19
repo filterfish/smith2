@@ -9,7 +9,7 @@ module Smith
     attr_reader :agents, :agent_processes
 
     def initialize(opts={})
-      @agent_processes = AgentCache.new(:paths => opts.delete(:paths))
+      @agent_processes = AgentCache.new
     end
 
     def setup_queues
@@ -18,7 +18,6 @@ module Smith
 
           completion = EM::Completion.new.tap do |c|
             c.completion do |value|
-              pp value
               responder.reply(Smith::ACL::Factory.create(:agency_command_response, :response => value))
             end
           end
@@ -33,12 +32,12 @@ module Smith
 
       Messaging::Receiver.new('agent.lifecycle', :auto_delete => false, :durable => false) do |receiver|
         receiver.subscribe do |payload, r|
-          case payload.state
-          when 'dead'
+          case payload
+          when Smith::ACL::AgentDead
             dead(payload)
-          when 'acknowledge_start'
+          when Smith::ACL::AgentAcknowledgeStart
             acknowledge_start(payload)
-          when 'acknowledge_stop'
+          when Smith::ACL::AgentAcknowledgeStop
             acknowledge_stop(payload)
           else
             logger.warn { "Unknown command received on agent.lifecycle queue: #{payload.state}" }
@@ -71,57 +70,48 @@ module Smith
     private
 
     def acknowledge_start(agent_data)
-      @agent_processes[agent_data.name].tap do |agent_process|
-        if agent_data.pid == agent_process.pid
-          agent_process.monitor = agent_data.monitor
-          agent_process.singleton = agent_data.singleton
-          agent_process.metadata = agent_data.metadata
-          agent_process.acknowledge_start
-        else
-          logger.error { "Agent reports different pid during acknowledge_start: #{agent_data.name}" }
-        end
+      agent_exists?(agent_data.uuid) do |agent_process|
+        agent_process.pid = agent_data.pid
+        agent_process.started_at = agent_data.started_at
+        agent_process.singleton = agent_data.singleton
+        agent_process.monitor = agent_data.monitor
+        agent_process.metadata = agent_data.metadata
+        agent_process.acknowledge_start
       end
     end
 
     def acknowledge_stop(agent_data)
-      @agent_processes[agent_data.name].tap do |agent_process|
-        if agent_data.pid == agent_process.pid
-          agent_process.acknowledge_stop
-          @agent_processes.delete(agent_data.name)
-        else
-          if agent_process.pid
-            logger.error { "Agent reports different pid during acknowledge_stop: #{agent_data.name}" }
-          end
-        end
+      agent_exists?(agent_data.uuid) do |agent_process|
+        agent_process.acknowledge_stop
       end
     end
 
     def dead(agent_data)
-      @agent_processes[agent_data.name].no_process_running
-      logger.fatal { "Agent is dead: #{agent_data.name}" }
-    end
-
-    def keep_alive(agent_data)
-      @agent_processes[agent_data.name].tap do |agent_process|
-        if agent_data.pid == agent_process.pid
-          agent_process.last_keep_alive = agent_data.time
-          logger.verbose { "Agent keep alive: #{agent_data.name}: #{agent_data.time}" }
-
-          # We need to call save explicitly here as the keep alive is not part of
-          # the state_machine which is the thing that writes the state to disc.
-          agent_process.save
-        else
-          if agent_process.pid
-            logger.error { "Agent reports different pid during acknowledge_stop: #{agent_data.name}" }
-          end
+      agent_exists?(agent_data.uuid, ->{}) do |agent_process|
+        if agent_process.no_process_running
+          logger.fatal { "Agent is dead: #{agent_data.uuid}" }
         end
       end
     end
 
-    # FIXME this doesn't work.
-    def delete_agent_process(agent_pid)
-      @agent_processes.invalidate(agent_pid)
-      AgentProcess.first('pid' => agent_pid).destroy!
+    def keep_alive(agent_data)
+      agent_exists?(agent_data.uuid) do |agent_process|
+        agent_process.last_keep_alive = agent_data.time
+        logger.verbose { "Agent keep alive: #{agent_data.uuid}: #{agent_data.time}" }
+
+        # We need to call save explicitly here as the keep alive is not part of
+        # the state_machine which is the thing that writes the state to disc.
+        agent_process.save
+      end
+    end
+
+    def agent_exists?(uuid, error_proc=nil, &blk)
+      agent = @agent_processes[uuid]
+      if agent
+        blk.call(agent)
+      else
+        error_proc.call
+      end
     end
   end
 end

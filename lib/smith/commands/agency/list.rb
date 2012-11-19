@@ -4,9 +4,9 @@ module Smith
     class List < CommandBase
       def execute
         if target.size > 0
-          selected_agents = target.map { |a| agents[a] }
+          selected_agents = agents.find_by_name(target)
         else
-          selected_agents = (options[:all]) ? agents : agents.state(:running)
+          selected_agents = (options[:all]) ? agents.to_a : agents.state(:running)
         end
 
         responder.succeed((selected_agents.empty?) ? '' : format(selected_agents, options[:long]))
@@ -32,7 +32,7 @@ module Smith
       end
 
       def short_format(a, sep=' ')
-        a.map(&:name).sort.join(sep)
+        a.map { |a| [a.name, a.uuid] }.join(sep)
       end
 
       def format_time(t)

@@ -52,6 +52,10 @@ module Smith
       path_to_pathnames(config.agency.acl_path)
     end
 
+    def cache_path
+      Pathname.new(config.agency.cache_path).expand_path
+    end
+
     # Return the acl cache path. If it's not specified in the config
     # generate a temporary path.
     def acl_cache_path
