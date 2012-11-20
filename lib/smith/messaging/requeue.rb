@@ -15,8 +15,8 @@ module Smith
         @delay = opts[:delay] || 5
         @strategy = opts[:strategy] || :linear
 
-        @on_requeue = opts[:on_requeue] || ->(message, current_count, total_count) { logger.info { "Requeuing message on queue: #{@queue}" } }
-        @on_requeue_error = opts[:on_requeue_error] || ->(message, current_count, total_count) { logger.info { "Requeue limit reached: [#{@count}] for queue: #{@queue}" } }
+        @on_requeue = opts[:on_requeue] || ->(current_count, total_count) { logger.info { "Requeuing message on queue: #{@queue.name}" } }
+        @on_requeue_limit = opts[:on_requeue_limit] || ->(message, current_count, total_count) { logger.info { "Requeue limit reached: [#{total_count}], delay: #{cumulative_delay} for queue: #{@queue.name}" } }
       end
 
       def requeue
@@ -33,7 +33,7 @@ module Smith
           logger.verbose { "Requeuing to: #{@queue.name}. [options]: #{opts}" }
           logger.verbose { "Requeuing to: #{@queue.name}. [message]: #{@message}" }
 
-          @exchange.publish(ACL::NewPayload.new(ACL::Factory.create(@metadata.type, @message)).encode, opts)
+          @exchange.publish(ACL::Payload.new(ACL::Factory.create(@metadata.type, @message)).encode, opts)
         end
       end
 
@@ -62,7 +62,7 @@ module Smith
             raise RuntimeError, "Unknown requeue strategy. #{method}"
           end
         else
-          @on_requeue_error.call(cumulative_delay, current_requeue_number)
+          @on_requeue_limit.call(@message, @delay * current_requeue_number, current_requeue_number)
         end
       end
 
