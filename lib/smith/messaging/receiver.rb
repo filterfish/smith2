@@ -203,9 +203,9 @@ module Smith
         end
       end
 
-      def on_requeue_error(&blk)
+      def on_requeue_limit(&blk)
         @requeue_options_completion.completion do |requeue_options|
-          requeue_options.merge!(:on_requeue_error => blk)
+          requeue_options.merge!(:on_requeue_limit => blk)
         end
       end
     end

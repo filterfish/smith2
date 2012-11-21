@@ -15,8 +15,13 @@ module Smith
         @delay = opts[:delay] || 5
         @strategy = opts[:strategy] || :linear
 
-        @on_requeue = opts[:on_requeue] || ->(message, current_count, total_count) { logger.info { "Requeuing message on queue: #{@queue}" } }
-        @on_requeue_error = opts[:on_requeue_error] || ->(message, current_count, total_count) { logger.info { "Requeue limit reached: [#{@count}] for queue: #{@queue}" } }
+        @on_requeue = opts[:on_requeue] || ->(count, total_count, cumulative_delay) {
+          logger.info { "Requeuing (#{@strategy}) message on queue: #{@queue.name}, count: #{count} of #{total_count}." }
+        }
+
+        @on_requeue_limit = opts[:on_requeue_limit] || ->(message, count, total_count, cumulative_delay) {
+          logger.info { "Requeue limit reached: #{total_count} for queue: #{@queue.name}, cummulative delay: #{cumulative_delay}s." }
+        }
       end
 
       def requeue
@@ -54,7 +59,7 @@ module Smith
           method = "#{@strategy}_strategy".to_sym
           if respond_to?(method, true)
             cumulative_delay = send(method, @delay)
-            @on_requeue.call(cumulative_delay, current_requeue_number + 1)
+            @on_requeue.call(current_requeue_number + 1, @count, @delay * current_requeue_number)
             EM.add_timer(cumulative_delay) do
               block.call(cumulative_delay, current_requeue_number + 1)
             end
@@ -62,7 +67,7 @@ module Smith
             raise RuntimeError, "Unknown requeue strategy. #{method}"
           end
         else
-          @on_requeue_error.call(cumulative_delay, current_requeue_number)
+          @on_requeue_limit.call(@message, current_requeue_number + 1, @count, @delay * current_requeue_number)
         end
       end
 
@@ -76,6 +81,10 @@ module Smith
 
       def linear_strategy(delay)
         delay * (current_requeue_number + 1)
+      end
+
+      def denormalise(name)
+        name.gsub(/^#{Regexp.escape(Smith.config.smith.namespace)}./, '')
       end
     end
   end
