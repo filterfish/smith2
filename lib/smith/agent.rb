@@ -21,6 +21,8 @@ module Smith
 
       @start_time = Time.now
 
+      @state = :starting
+
       on_started do
         logger.info { "#{name}:[#{pid}] started." }
       end
@@ -67,6 +69,15 @@ module Smith
 
     def started
       @on_started.call
+    end
+
+    def state
+      @state
+    end
+
+    # Set convenience state methods.
+    [:starting, :stopping, :running].each do |method|
+      define_method("#{method}?", proc { state == method })
     end
 
     def receiver(queue_name, opts={}, &blk)
@@ -163,6 +174,7 @@ module Smith
         end
         ack_start_queue.publish(payload)
       end
+      @state = :running
     end
 
     def acknowledge_stop(&block)
@@ -170,6 +182,7 @@ module Smith
         message = {:state => 'acknowledge_stop', :pid => $$, :name => self.class.to_s}
         ack_stop_queue.publish(ACL::Factory.create(:agent_lifecycle, message), &block)
       end
+      @state = :stopping
     end
 
     def start_keep_alive
