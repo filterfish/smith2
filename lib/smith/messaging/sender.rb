@@ -186,7 +186,6 @@ module Smith
       def initialize(timeout, opts={}, &blk)
         @timeout_proc = blk || proc { |message_id| raise ACLTimeoutError, "Message not received within the timeout period#{(message_id) ? ": #{message_id}" : ""}" }
         @timeout_duration = timeout
-        @queue_name = opts[:queue_name]
       end
 
       def set_timeout(message_id)
@@ -194,7 +193,7 @@ module Smith
         cancel_timeout
         if @timeout_duration
           @timeout = EventMachine::Timer.new(@timeout_duration) do
-            @timeout_proc.call(message_id, @queue_name)
+            @timeout_proc.call(message_id)
           end
         else
           raise ArgumentError, "on_timeout not set."
