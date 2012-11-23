@@ -75,6 +75,10 @@ module Smith
         end
       end
 
+      def on_timeout(timeout, &blk)
+        @timeout = Timeout.new(timeout, &blk)
+      end
+
       # Set up a listener that will receive replies from the published
       # messages. You must publish with intent to reply -- tee he.
       #
@@ -84,7 +88,7 @@ module Smith
       # assigned.
       def on_reply(opts={}, &blk)
         @reply_proc = blk
-        @timeout = opts.delete(:timeout) || Timeout.new(Smith.config.agency.timeout, :queue_name => @queue_name)
+        @timeout ||= Timeout.new(Smith.config.agency.timeout, :queue_name => @queue_name)
         reply_queue_name = opts.delete(:reply_queue_name) || random
 
         options = {:auto_delete => false, :auto_ack => false}.merge(opts)
