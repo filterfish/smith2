@@ -15,9 +15,8 @@ include Smith::Logger
 module Smith
   class SmithControl
 
-
     def initialize(options={})
-      log_level((options[:log_level_given]) ? options[:log_level].to_sym : :info)
+      log_level((options[:log_level_given]) ? options[:log_level].to_sym : :warn)
       @timeout = (options[:timeout_given]) ? options[:timeout] : Smith.config.smith.timeout
     end
 
