@@ -52,7 +52,6 @@ module Smith
               agents[agent_name].start
               iter.return(agent_name)
             else
-              logger.error { m }
               iter.return("Unknown agent: #{agents[agent_name].name}")
             end
           end
