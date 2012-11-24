@@ -53,8 +53,8 @@ module Smith
     end
 
     def start_monitoring
-      @agent_monitor = AgentMonitoring.new(@agent_processes)
-      @agent_monitor.start_monitoring
+      # @agent_monitor = AgentMonitoring.new(@agent_processes)
+      # @agent_monitor.start_monitoring
     end
 
     # Stop the agency. This will wait for one second to ensure
