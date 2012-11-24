@@ -68,16 +68,9 @@ module Smith
       @on_running = blk
     end
 
-    # Override this method to implement your own agent. You can use task but this may
-    # go away in the future. This method must not block.
+    # Override this method to implement your own agent.
     def run
-      raise ArgumentError, "You need to call Agent.task(&block)" if @@task.nil?
-
-      logger.debug { "Setting up default queue: #{default_queue_name}" }
-
-      subscribe(default_queue_name, :auto_delete => false) do |r|
-        @@task.call(r.payload)
-      end
+      raise ArgumentError, "You must override this method"
     end
 
     def install_signal_handler(signal, position=:end, &blk)
@@ -108,10 +101,6 @@ module Smith
     end
 
     class << self
-      def task(opts={}, &blk)
-        @@task = blk
-      end
-
       # Options supported:
       # :monitor,   the agency will monitor the agent & if dies restart.
       # :singleton, only every have one agent. If this is set to false
