@@ -114,7 +114,7 @@ module Smith
         connection.on_connection do
           broker = connection.broker.properties
           endpoint = connection.broker_endpoint
-          logger.debug { "Connected to: AMQP Broker: #{endpoint}, (#{broker['product']}/v#{broker['version']})" } unless opts[:quiet]
+          logger.info { "Connected to: AMQP Broker: #{endpoint}, (#{broker['product']}/v#{broker['version']})" } unless opts[:quiet]
         end
 
         connection.on_tcp_connection_loss do |connection, settings|
