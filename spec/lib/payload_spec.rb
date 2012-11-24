@@ -8,28 +8,33 @@ describe Smith::ACL::Payload do
   include Smith::ACL
 
   before(:all) do
-    @message = "This is a message using the default encoder"
+    Smith.load_acls
+    @message = {:message => "This is a message using the default encoder"}
+    @acl = Smith::ACL::Factory.create(:default, @message)
+  end
+
+  context "New Payload" do
+    it "should encode a message" do
+      Smith::ACL::Payload.new(@acl).encode.should == "\x04\b{\x06:\fmessageI\"0This is a message using the default encoder\x06:\x06ET"
+    end
+
+    it "should decod a message" do
+      Smith::ACL::Payload.decode("\x04\b{\x06:\fmessageI\"0This is a message using the default encoder\x06:\x06ET", :default).should == @message
+    end
   end
 
   context "Default Encoder" do
     it 'should encode a message' do
-      Marshal.load(Smith::ACL::Payload.new(:default).content(@message).encode).should == @message
+      Marshal.load(Smith::ACL::Payload.new(@acl).encode).should == @message
     end
 
-    it 'should encode a message using the block form' do
-      payload = Smith::ACL::Payload.new(:default).content do |p|
-        p.blah = 'blah'
-      end
-
-      Marshal.load(payload.encode).should == {:blah => 'blah'}
+    it "should convert payload to a hash" do
+      Smith::ACL::Payload.new(@acl).to_hash.should == @message
+      Smith::ACL::Payload.decode(Marshal.dump(@acl)).to_hash.should == @message
     end
 
     it "should decode a message" do
       Smith::ACL::Payload.decode(Marshal.dump(@message)).should == @message
-    end
-
-    it "should encode a nil message" do
-      Marshal.load(Smith::ACL::Payload.new(:default).content(nil).encode).should == nil
     end
 
     it "should decode a nil message" do
@@ -37,43 +42,30 @@ describe Smith::ACL::Payload do
     end
   end
 
-  # context "Agency Command Encoder" do
-  #   let(:message1) { {:command => "list"} }
-  #   let(:message2) { {:command => "list", :args => ["--all", "--l"]} }
-  #   let(:message3) { {:command => :list} }
-  #   let(:message4) { {:incorrect_command => 'list'} }
+  context "Agency Command Encoder" do
+    let(:message1) { {:command => "list"} }
+    let(:message2) { {:command => "list", :args => ["--all", "--l"]} }
+    let(:message3) { {:command => :list} }
+    let(:message4) { {:incorrect_command => 'list'} }
 
-  #   it "should encode and decode a correct message when the message type is specified as a symbol" do
-  #     Smith::ACL::Payload.decode(Smith::ACL::Payload.new(:agency_command).content(message1).encode, :agency_command).should == message1
-  #     Smith::ACL::Payload.decode(Smith::ACL::Payload.new(:agency_command).content(message2).encode, :agency_command).should == message2
-  #   end
+    it "should encode and decode a correct message when the message type is specified as a symbol" do
+      acl1 = Smith::ACL::Factory.create(:agency_command, message1)
+      acl2 = Smith::ACL::Factory.create(:agency_command, message2)
 
-  #   it "should encode and decode a correct message when the message type is specified as a class" do
+      Smith::ACL::Payload.decode(Smith::ACL::Payload.new(acl1).encode, :agency_command).to_hash.should == message1
+      Smith::ACL::Payload.decode(Smith::ACL::Payload.new(acl2).encode, :agency_command).to_hash.should == message2
+    end
 
-  #     Smith::ACL::Payload.decode(Smith::ACL::Payload.new(Encoder::AgencyCommand).content(message1).encode, Encoder::AgencyCommand).should == message1
-  #     Smith::ACL::Payload.decode(Smith::ACL::Payload.new(Encoder::AgencyCommand).content(message2).encode, Encoder::AgencyCommand).should == message2
-  #   end
+    it "should encode and decode a correct message when the message type is specified as a class"
+    # do
+    #   acl = Smith::ACL::Factory.create(Smith::ACL::AgencyCommand, message1)
+    #   acl.class.should = Smith::ACL::::AgencyCommand
+    # end
 
-  #   it "should access the decoded message fields using accessor methods." do
-  #     decoded_message = Smith::ACL::Payload.decode(Smith::ACL::Payload.new(:agency_command).content(message2).encode, :agency_command)
-  #     decoded_message.command.should == 'list'
-  #     decoded_message.args.should == ["--all", "--l"]
-  #   end
-
-  #   it "should throw an TypeException when an message of incorrect type is used" do
-  #     expect { Smith::ACL::Payload.decode(Smith::ACL::Payload.new(:agency_command).content(message3).encode, :agency_command) }.to raise_error(TypeError)
-  #   end
-
-  #   it "should throw an RequiredFieldNotSetError when a message with an incorrect field is used" do
-  #     expect { Smith::ACL::Payload.decode(Smith::ACL::Payload.new(:agency_command).content(message4).encode, :agency_command) }.to raise_error(Beefcake::Message::RequiredFieldNotSetError)
-  #   end
-  # end
-
-  # context "Agent Lifecycle Encoder" do
-  #   let(:message1) { {:state => "running", :name => 'NullAgent', :pid => 3465, :monitor => 'false', :singleton => 'true', :started_at => Time.now.utc.to_i} }
-
-  #   it "should encode and decode a correct message when the message type is specified as a symbol" do
-  #     Smith::ACL::Payload.decode(Smith::ACL::Payload.new(:agent_lifecycle).content(message1).encode, :agent_lifecycle).should == message1
-  #   end
-  # end
+    it "should access the decoded message fields using accessor methods." do
+      acl = Smith::ACL::Factory.create(:agency_command, message2)
+      decoded_message = Smith::ACL::Payload.decode(Smith::ACL::Payload.new(acl).encode, :agency_command)
+      decoded_message.args.should == ["--all", "--l"]
+    end
+  end
 end
