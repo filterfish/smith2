@@ -18,47 +18,25 @@ module Smith
           blk.call("No queue specified. Please specify a queue.")
         else
           begin
-            messages = case
-                   when options[:message_given]
-                     options[:message]
-                   when options[:file_given]
-                     responder.value("--number option cannot be used with the --file option.") if options[:number_given]
-
-                     file = Pathname.new(options[:file])
-                     if file.exist?
-                       file.read
-                     else
-                       responder.value("File does not exist: #{file.display}")
-                     end
-                   else
-                     responder.value("--number option cannot be used when reading messages from standard in.") if options[:number_given]
-                     STDIN.read
-                   end
-
-            if messages.nil? || messages && messages.empty?
-              responder.value("Message must be empty.")
-            end
-
-            # This is starting to get a bit messy. The iterator is being used
-            # for two purposes: the first is to send multiple messages, the
-            # second is send the same message multiple times.
-            # TODO Clean this up.
-
-            Messaging::Sender.new(target.first, :auto_delete => options[:dynamic], :persistent => true, :nowait => false, :strict => true).ready do |sender|
-              work = proc do |message,iter|
-                m = (options[:number_given]) ? messages : message
-
-                sender.publish(json_to_payload(m, options[:type])) do
-                  iter.next
+            Messaging::Sender.new(target.first, :auto_delete => options[:dynamic], :persistent => true, :nowait => false, :strict => true) do |sender|
+              if options[:reply]
+                timeout = Smith::Messaging::Timeout.new(options[:timeout]) do |message_id|
+                  blk.call("Timed out after: #{options[:timeout]} seconds for message: #{options[:message]}: message_id: #{message_id}")
                 end
 
-              done = proc do
-                responder.value
+                sender.on_reply(:timeout => timeout) { |payload| blk.call(payload.to_hash) }
+                sender.publish(json_to_payload(options[:message], options[:type]))
+              else
+                on_work = ->(message, iter) do
+                  sender.publish(json_to_payload(message, options[:type])) do
+                    iter.next
+                  end
+                end
+
+                on_done = -> { blk.call("") }
+
+                iterator.each(on_work, on_done)
               end
-
-              data = (options[:number_given]) ? 0..options[:number] - 1 : messages.split("\n")
-
-              EM::Iterator.new(data).each(work, done)
             end
           rescue MultiJson::DecodeError => e
             blk.call(e)
@@ -91,9 +69,11 @@ module Smith
         banner "Send a message to a queue. The ACL can also be specified."
 
         opt :type,    "message type", :type => :string, :default => 'default', :short => :t
-        opt :message, "the message, as json", :type => :string, :conflicts => :file, :short => :m
-        opt :file,    "read the data from the named file. One message per line", :type => :string, :conflicts => :message, :short => :f
-        opt :number,  "the number of times to send the message", :type => :integer, :default => 1, :short => :n, :conflicts => :file
+        opt :message, "the message, as json", :type => :string, :short => :m
+        opt :file,    "read messages from the named file", :type => :string, :short => :f
+        opt :number,  "the number of times to send the message", :type => :integer, :default => 1, :short => :n
+        opt :reply,   "set a reply listener.", :short => :r
+        opt :timeout, "timeout when waiting for a reply", :type => :integer, :depends => :reply, :default => Smith.config.agency.timeout
         opt :dynamic, "send message to a dynamic queue", :type => :boolean, :default => false, :short => :d
 
         conflicts :reply, :number, :file

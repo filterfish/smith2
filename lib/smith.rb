@@ -201,6 +201,7 @@ module Smith
   end
 end
 
+require_relative 'smith/amqp_errors'
 require_relative 'smith/object_count'
 require_relative 'smith/cache'
 require_relative 'smith/agent_cache'

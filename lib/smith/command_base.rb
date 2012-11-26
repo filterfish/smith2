@@ -47,6 +47,10 @@ module Smith
       @parser.conflicts(*syms)
     end
 
+    def depends(*syms)
+      @parser.depends(*syms)
+    end
+
     def options_spec
       banner "You should really set a proper banner notice for this command."
     end

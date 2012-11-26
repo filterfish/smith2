@@ -165,8 +165,6 @@ Normal
   * specify the agency log level
   * add acl reload function to the agency.
 
-  In fact look at smith1 agency to see what options it had.
-
 * Add smitch options/commands
   * dump the config -- this should be in smithctl
   * sort the long output of the list command.

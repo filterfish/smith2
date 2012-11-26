@@ -8,6 +8,8 @@ module Smith
 
       def _agents
         # FIXME make sure that if the path doesn't exist don't blow up.
+        separator = (options[:one_column]) ? "\n" : " "
+
         Smith.agent_paths.inject([]) do |path_acc,path|
           path_acc.tap do |a|
             if path.exist?
@@ -19,10 +21,8 @@ module Smith
             else
               return "Agent path doesn't exist: #{path}"
             end
-          end.flatten
-          separator = (options[:one_column]) ? "\n" : " "
-          (agent_paths.empty?) ? "" : agent_paths.sort.join(separator)
-        end
+          end
+        end.flatten.sort.join(separator)
       end
 
       private
