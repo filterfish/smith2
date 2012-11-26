@@ -17,24 +17,54 @@ module Smith
       @signal_handlers = Hash.new { |h,k| h[k] = Array.new }
 
       setup_control_queue
-      setup_stats_queue
 
       @start_time = Time.now
 
       @state = :starting
 
-      on_started do
-        logger.info { "#{name}:[#{pid}] started." }
+      @on_stopping = proc {|completion| completion.succeed }
+      @on_starting = proc {|completion| completion.succeed }
+      @on_running = proc {|completion| completion.succeed }
+
+      @on_starting_completion = EM::Completion.new.tap do |c|
+        c.completion do |completion|
+          acknowledge_start do
+            @on_running.call(@on_running_completion)
+            logger.info { "Agent started: #{name}:[#{pid}]." }
+          end
+        end
       end
 
-      on_stopped do
-        logger.info { "#{name}:[#{pid}] stopped." }
+      @on_running_completion = EM::Completion.new.tap do |c|
+        c.completion do |completion|
+          start_keep_alive
+          setup_stats_queue
+          @state = :running
+        end
+      end
+
+      @on_stopping_completion = EM::Completion.new.tap do |c|
+        c.completion do |completion|
+          acknowledge_stop do
+            @state = :stopping
+            Smith.stop do
+              logger.info { "Agent stopped: #{name}:[#{pid}]." }
+            end
+          end
+        end
       end
 
       EM.threadpool_size = 1
 
-      acknowledge_start
-      start_keep_alive
+      @on_starting.call(@on_starting_completion)
+    end
+
+    def on_stopping(&blk)
+      @on_stopping = blk
+    end
+
+    def on_running(&blk)
+      @on_running = blk
     end
 
     # Override this method to implement your own agent. You can use task but this may
@@ -49,14 +79,6 @@ module Smith
       end
     end
 
-    def on_started(&blk)
-      @on_started = blk
-    end
-
-    def on_stopped(&blk)
-      Smith.shutdown_hook(&blk)
-    end
-
     def install_signal_handler(signal, position=:end, &blk)
       raise ArgumentError, "Unknown position: #{position}" if ![:beginning, :end].include?(position)
 
@@ -65,10 +87,6 @@ module Smith
       @signal_handlers.each do |sig, handlers|
         trap(sig, proc { |sig| run_signal_handlers(sig, handlers) })
       end
-    end
-
-    def started
-      @on_started.call
     end
 
     def state
@@ -120,7 +138,7 @@ module Smith
           when 'object_count'
             object_count(payload.options.first.to_i).each{|o| logger.info{o}}
           when 'stop'
-            acknowledge_stop { Smith.stop }
+            @on_stopping.call(@on_stopping_completion)
           when 'log_level'
             begin
               level = payload.options.first
@@ -161,7 +179,7 @@ module Smith
       end
     end
 
-    def acknowledge_start
+    def acknowledge_start(&blk)
       Messaging::Sender.new('agent.lifecycle', :auto_delete => false, :durable => false) do |ack_start_queue|
         payload = ACL::Factory.create(:agent_lifecycle) do |p|
           p.state = 'acknowledge_start'
@@ -172,17 +190,15 @@ module Smith
           p.singleton = Smith.config.agent.singleton
           p.started_at = Time.now.to_i
         end
-        ack_start_queue.publish(payload)
+        ack_start_queue.publish(payload, &blk)
       end
-      @state = :running
     end
 
-    def acknowledge_stop(&block)
+    def acknowledge_stop(&blk)
       Messaging::Sender.new('agent.lifecycle', :auto_delete => false, :durable => false) do |ack_stop_queue|
         message = {:state => 'acknowledge_stop', :pid => $$, :name => self.class.to_s}
-        ack_stop_queue.publish(ACL::Factory.create(:agent_lifecycle, message), &block)
+        ack_stop_queue.publish(ACL::Factory.create(:agent_lifecycle, message), &blk)
       end
-      @state = :stopping
     end
 
     def start_keep_alive
