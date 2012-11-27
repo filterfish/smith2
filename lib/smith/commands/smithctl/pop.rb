@@ -69,7 +69,7 @@ module Smith
 
       def print_message(message)
         if options[:json]
-          message.as_json
+          message.to_json
         else
           message.inspect
         end

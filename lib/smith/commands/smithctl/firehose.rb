@@ -10,7 +10,7 @@ module Smith
             channel.queue('smith.firehose', :durable => true) do |queue|
               queue.bind(exchange, :routing_key => "publish.#{Smith.config.smith.namespace}.#{queue_name}").subscribe do |m,p|
                 message = ACL::Payload.decode(p, m.headers['properties']['type'])
-                puts (options[:json_given]) ? message.as_json : message.inspect
+                puts (options[:json_given]) ? message.to_json : message.inspect
               end
             end
           end
