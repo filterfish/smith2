@@ -72,8 +72,6 @@ module Smith
         opt    :source,   "show the contents of the generated acl file", :depends => :show
         opt    :clean,    "remove all compiled acls", :short => :none
         opt    :compile,  "compile all acls", :short => :none
-
-        depends :source, :show
       end
     end
   end
