@@ -116,7 +116,7 @@ module Smith
       # :singleton, only every have one agent. If this is set to false
       #             multiple agents are allowed.
       def options(opts)
-        Smith.config.agent._merge!(opts)
+        Smith.config.agent.to_hash.merge!(opts)
       end
     end
 

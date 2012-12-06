@@ -22,7 +22,7 @@ module Smith
       @@__date_pattern = Smith::Config.get.logging.default_date_pattern
       @@__level = Smith::Config.get.logging.level
       @@__trace = Smith::Config.get.logging.trace
-      @@__appender = Smith::Config.get.logging.appender._data.clone
+      @@__appender = Smith::Config.get.logging.appender.to_hash.clone
       @@__appender[:type] = Logging::Appenders.const_get(Extlib::Inflection.camelize(Smith::Config.get.logging.appender.type))
 
       def log_level(level=nil)

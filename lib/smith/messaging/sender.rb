@@ -88,7 +88,7 @@ module Smith
       # assigned.
       def on_reply(opts={}, &blk)
         @reply_proc = blk
-        @timeout ||= Timeout.new(Smith.config.agency.timeout, :queue_name => @queue_name)
+        @timeout ||= Timeout.new(Smith.config.smith.timeout, :queue_name => @queue_name)
         reply_queue_name = opts.delete(:reply_queue_name) || random
 
         options = {:auto_delete => false, :auto_ack => false}.merge(opts)

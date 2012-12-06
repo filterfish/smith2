@@ -124,7 +124,9 @@ module Smith
 
         bootstrapper = File.expand_path(File.join(File.dirname(__FILE__), 'bootstrap.rb'))
 
-        exec('ruby', bootstrapper, agent_process.path, agent_process.name, Smith.acl_cache_path.to_s)
+        binary = Smith.config.ruby[agent_process.name]
+        logger.debug { "Launching #{agent_process.name} with: #{binary}" }
+        exec(binary, bootstrapper, agent_process.path, agent_process.name, Smith.acl_cache_path.to_s)
       end
 
       # We don't want any zombies.

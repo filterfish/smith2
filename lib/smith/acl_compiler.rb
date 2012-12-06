@@ -59,7 +59,7 @@ module Smith
         path.unlink
       end
 
-      unless Smith.config.agency._has_key?(:acl_cache_path)
+      unless Smith.config.agency.has_key?(:acl_cache_path)
         @cache_path.rmdir
       end
     end

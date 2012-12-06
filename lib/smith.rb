@@ -55,7 +55,7 @@ module Smith
     # Return the acl cache path. If it's not specified in the config
     # generate a temporary path.
     def acl_cache_path
-      @acl_cache_path ||= if Smith.config.agency._has_key?(:acl_cache_path)
+      @acl_cache_path ||= if Smith.config.agency.has_key?(:acl_cache_path)
         Pathname.new(Smith.config.agency.acl_cache_path).tap { |path| check_path(path) }
       else
         cache_dir = Pathname.new(ENV['HOME']).join('.smith').join('acl')
@@ -88,11 +88,19 @@ module Smith
     end
 
     def start(opts={}, &block)
-      EM.epoll if EM.epoll?
-      EM.kqueue if EM.kqueue?
-      EM.set_descriptor_table_size(opts[:fdsize] || 1024)
+      if EM.epoll? && Smith.config.eventmachine.epoll
+        logger.debug { "Using epoll for I/O event notification." }
+        EM.epoll
+      end
 
-      connection_settings = config.amqp.broker._merge(
+      if EM.kqueue? && Smith.config.eventmachine.kqueue
+        logger.debug { "Using kqueue for I/O event notification." }
+        EM.kqueue
+      end
+
+      EM.set_descriptor_table_size(Smith.config.eventmachine.file_descriptors)
+
+      connection_settings = config.amqp.broker.merge(
         :on_tcp_connection_failure => method(:tcp_connection_failure_handler),
         :on_possible_authentication_failure => method(:authentication_failure_handler))
 

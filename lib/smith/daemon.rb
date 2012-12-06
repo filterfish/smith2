@@ -57,7 +57,7 @@ module Smith
       if dir
         dir
       else
-        if Smith.config.agency._has_key?(:pid_dir)
+        if Smith.config.agency.to_hash.has_key?(:pid_dir)
           Smith.config.agency.pid_dir
         else
           Dir.tmpdir

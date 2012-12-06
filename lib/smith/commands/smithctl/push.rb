@@ -73,7 +73,7 @@ module Smith
         opt :file,    "read messages from the named file", :type => :string, :short => :f
         opt :number,  "the number of times to send the message", :type => :integer, :default => 1, :short => :n
         opt :reply,   "set a reply listener.", :short => :r
-        opt :timeout, "timeout when waiting for a reply", :type => :integer, :depends => :reply, :default => Smith.config.agency.timeout
+        opt :timeout, "timeout when waiting for a reply", :type => :integer, :depends => :reply, :default => Smith.config.smith.timeout
         opt :dynamic, "send message to a dynamic queue", :type => :boolean, :default => false, :short => :d
 
         conflicts :reply, :number, :file
