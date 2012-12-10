@@ -8,7 +8,7 @@ module Smith
       end
 
       def to_json
-        Yajl.dump(self.to_hash)
+        MultiJson.dump(self.to_hash)
       end
     end
 

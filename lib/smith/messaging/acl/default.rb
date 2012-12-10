@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 
-require 'yajl'
+require 'multi_json'
 
 module Smith
   module ACL
@@ -41,7 +41,7 @@ module Smith
       end
 
       def to_json
-        Yajl.dump(@message)
+        MultiJson.dump(@message)
       end
 
       def method_missing(method, args)
