@@ -189,11 +189,11 @@ module Smith
         STDIN.reopen("/dev/null")
         STDERR.reopen(STDOUT)
 
-        bootstrapper = File.expand_path(File.join(File.dirname(__FILE__), 'bootstrap.rb'))
+        bootstrapper = Pathname.new(__FILE__).dirname.join('bootstrap.rb').expand_path
 
         binary = Smith.config.ruby[agent_process.name]
         logger.debug { "Launching #{agent_process.name} with: #{binary}" }
-        exec(binary, bootstrapper, agent_process.path, agent_process.name)
+        exec(binary, bootstrapper, agent_process.name, agent_process.uuid)
       end
 
       # We don't want any zombies.
