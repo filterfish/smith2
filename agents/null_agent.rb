@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 class NullAgent < Smith::Agent
 
+  options :singleton => false
   options :monitor => false
   options :metadata => "Some sage words about the NullAgent."
 
