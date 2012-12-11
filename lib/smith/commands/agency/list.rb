@@ -32,7 +32,7 @@ module Smith
       end
 
       def short_format(a, sep=' ')
-        a.map { |a| [a.name, a.uuid] }.join(sep)
+        a.map { |a| [a.uuid] }.join(sep)
       end
 
       def format_time(t)
