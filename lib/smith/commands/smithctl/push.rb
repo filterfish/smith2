@@ -17,29 +17,33 @@ module Smith
         if target.size == 0
           blk.call("No queue specified. Please specify a queue.")
         else
-          begin
-            Messaging::Sender.new(target.first, :auto_delete => options[:dynamic], :persistent => true, :nowait => false, :strict => true) do |sender|
-              if options[:reply]
+          Messaging::Sender.new(target.first, :auto_delete => options[:dynamic], :persistent => true, :nowait => false, :strict => true) do |sender|
+            if options[:reply]
+              begin
                 timeout = Smith::Messaging::Timeout.new(options[:timeout]) do |message_id|
                   blk.call("Timed out after: #{options[:timeout]} seconds for message: #{options[:message]}: message_id: #{message_id}")
                 end
 
                 sender.on_reply(:timeout => timeout) { |payload| blk.call(payload.to_hash) }
                 sender.publish(json_to_payload(options[:message], options[:type]))
-              else
-                on_work = ->(message, iter) do
+              rescue Messaging::InvalidPayload, MultiJson::DecodeError => e
+                blk.call(e.message)
+              end
+            else
+              on_work = ->(message, iter) do
+                begin
                   sender.publish(json_to_payload(message, options[:type])) do
                     iter.next
                   end
+                rescue Messaging::InvalidPayload, MultiJson::DecodeError => e
+                  blk.call(e.message)
                 end
-
-                on_done = -> { blk.call("") }
-
-                iterator.each(on_work, on_done)
               end
+
+              on_done = -> { blk.call("") }
+
+              iterator.each(on_work, on_done)
             end
-          rescue MultiJson::DecodeError => e
-            blk.call(e)
           end
         end
       end
@@ -62,7 +66,16 @@ module Smith
       end
 
       def json_to_payload(data, type)
-        ACL::Factory.create(type, MultiJson.load(data, :symbolize_keys => true))
+        begin
+          ACL::Factory.create(type, MultiJson.load(data, :symbolize_keys => true))
+        rescue NoMethodError => e
+          m = /undefined method `(.*?)=' for.*/.match(e.message)
+          if m
+            raise Messaging::InvalidPayload, "Error, invalid field name: #{m[1]}"
+          else
+            raise Messaging::InvalidPayload
+          end
+        end
       end
 
       def options_spec

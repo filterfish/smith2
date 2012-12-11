@@ -9,6 +9,7 @@ module Smith
   module Messaging
     class ACLTimeoutError < RuntimeError; end
 
+    class InvalidPayload < RuntimeError; end
     class IncompletePayload < RuntimeError; end
     class IncorrectPayloadType < RuntimeError; end
   end
