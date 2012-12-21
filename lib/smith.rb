@@ -81,9 +81,13 @@ module Smith
     # being it's how it's going to be. This will really start
     # to be a problem when there are a lot of acls.
     def load_acls
-      Pathname.glob(Smith.acl_cache_path.join("*.pb.rb"))do |acl_file|
-        logger.verbose { "Loading acl file: #{acl_file}" }
-        require acl_file
+      Pathname.glob(Smith.acl_cache_path.join("*.pb.rb")).inject([]) do |a, acl_file|
+        a.tap do |acc|
+          logger.verbose { "Loading acl file: #{acl_file}" }
+          if require acl_file
+            acc << "#{acl_file}"
+          end
+        end
       end
     end
 
