@@ -36,7 +36,7 @@ module Smith
     end
 
     def agency_command(command, args, &blk)
-      Messaging::Sender.new('agency.control', :auto_delete => false, :durable => false, :persistent => true,  :strict => true) do |sender|
+      Messaging::Sender.new(QueueDefinitions::Agency_control) do |sender|
 
         timeout = Messaging::Timeout.new(5) { |message_id| blk.call("Timeout. Is the agency still running?") }
 

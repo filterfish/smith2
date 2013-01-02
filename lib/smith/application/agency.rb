@@ -15,7 +15,7 @@ module Smith
     end
 
     def setup_queues
-      Messaging::Receiver.new('agency.control', :auto_delete => false, :durable => false, :persistent => false, :strict => true) do |receiver|
+      Messaging::Receiver.new(QueueDefinitions::Agency_control) do |receiver|
         receiver.subscribe do |payload, responder|
 
           completion = EM::Completion.new.tap do |c|
@@ -33,7 +33,7 @@ module Smith
         end
       end
 
-      Messaging::Receiver.new('agent.lifecycle', :auto_delete => false, :durable => false) do |receiver|
+      Messaging::Receiver.new(QueueDefinitions::Agent_lifecycle) do |receiver|
         receiver.subscribe do |payload, r|
           case payload.state
           when 'dead'
@@ -43,12 +43,12 @@ module Smith
           when 'acknowledge_stop'
             acknowledge_stop(payload)
           else
-            logger.warn { "Unknown command received on agent.lifecycle queue: #{payload.state}" }
+            logger.warn { "Unknown command received on #{QueueDefinitions::Agent_lifecycle.name} queue: #{payload.state}" }
           end
         end
       end
 
-      Messaging::Receiver.new('agent.keepalive', :auto_delete => false, :durable => false) do |receiver|
+      Messaging::Receiver.new(QueueDefinitions::Agent_keepalive) do |receiver|
         receiver.subscribe do |payload, r|
           keep_alive(payload)
         end

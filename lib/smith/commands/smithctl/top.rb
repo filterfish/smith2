@@ -9,7 +9,7 @@ module Smith
         Curses.init_screen()
         win = Curses::Window.new(Curses.lines, Curses.cols, 0, 0)
 
-        Messaging::Receiver.new('agent.stats', :durable => false, :auto_delete => false) do |receiver|
+        Messaging::Receiver.new(QueueDefinitions::Agent_stats) do |receiver|
           receiver.subscribe do |r|
             payload = r.payload
             win.setpos(0,0)
