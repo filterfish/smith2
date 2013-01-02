@@ -236,6 +236,7 @@ require_relative 'smith/exceptions'
 require_relative 'smith/object_count'
 require_relative 'smith/version'
 
+require_relative 'smith/messaging/queue_definition'
 require_relative 'smith/messaging/amqp_options'
 require_relative 'smith/messaging/queue_factory'
 require_relative 'smith/messaging/acl/default'
@@ -244,3 +245,5 @@ require_relative 'smith/messaging/util'
 require_relative 'smith/messaging/responder'
 require_relative 'smith/messaging/receiver'
 require_relative 'smith/messaging/sender'
+
+require_relative 'smith/queue_definitions'

@@ -9,12 +9,13 @@ module Smith
 
       attr_accessor :queue_name
 
-      def initialize(queue_name, opts={}, &blk)
+      def initialize(queue_definition, opts={}, &blk)
+
+        @queue_name, opts = get_queue_name_and_options(queue_definition, opts)
 
         @reply_container = {}
 
-        @queue_name = queue_name
-        normalised_queue_name = normalise(queue_name)
+        normalised_queue_name = normalise(@queue_name)
 
         prefetch = option_or_default(opts, :prefetch, Smith.config.agent.prefetch)
 

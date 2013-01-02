@@ -49,6 +49,12 @@ module Smith
         "#{prefix}#{SecureRandom.hex(8)}#{suffix}"
       end
 
+      # Return the queue name and options based on whether the
+      # queue_definition is of type QueueDefinition.
+      def get_queue_name_and_options(queue_definition, opts)
+        (queue_definition.is_a?(QueueDefinition)) ? queue_definition.to_a : [queue_definition, opts]
+      end
+
       def option_or_default(options, key, default, &blk)
         if options.is_a?(Hash)
           if options.key?(key)

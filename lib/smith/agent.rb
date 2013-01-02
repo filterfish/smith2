@@ -149,7 +149,7 @@ module Smith
     def setup_stats_queue
       # instantiate this queue without using the factory so it doesn't show
       # up in the stats.
-      Messaging::Sender.new('agent.stats', :dont_cache => true, :durable => false, :auto_delete => false) do |stats_queue|
+      Messaging::Sender.new(QueueDefinitions::Agent_stats) do |stats_queue|
         EventMachine.add_periodic_timer(2) do
           stats_queue.number_of_consumers do |consumers|
             if consumers > 0
@@ -172,7 +172,7 @@ module Smith
     end
 
     def acknowledge_start(&blk)
-      Messaging::Sender.new('agent.lifecycle', :auto_delete => false, :durable => false) do |queue|
+      Messaging::Sender.new(QueueDefinitions::Agent_lifecycle) do |queue|
         payload = ACL::Factory.create(:agent_acknowledge_start) do |p|
           p.uuid = uuid
           p.pid = $$
@@ -186,7 +186,7 @@ module Smith
     end
 
     def acknowledge_stop(&blk)
-      Messaging::Sender.new('agent.lifecycle', :auto_delete => false, :durable => false) do |queue|
+      Messaging::Sender.new(QueueDefinitions::Agent_lifecycle) do |queue|
         message = {:state => 'acknowledge_stop', :pid => $$, :name => self.class.to_s}
         queue.publish(ACL::Factory.create(:agent_acknowledge_stop, :uuid => uuid), &blk)
       end
@@ -195,7 +195,7 @@ module Smith
     def start_keep_alive
       if Smith.config.agent.monitor
         EventMachine::add_periodic_timer(1) do
-          Messaging::Sender.new('agent.keepalive', :auto_delete => false, :durable => false) do |queue|
+          Messaging::Sender.new(QueueDefinitions::Agent_keepalive) do |queue|
             message = {:name => self.class.to_s, :uuid => uuid, :time => Time.now.to_i}
             queue.consumers do |consumers|
               if consumers > 0

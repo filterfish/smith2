@@ -12,9 +12,11 @@ module Smith
 
       attr_accessor :queue_name
 
-      def initialize(queue_name, opts={}, &blk)
-        @queue_name = queue_name
-        @normalised_queue_name = normalise(queue_name)
+      def initialize(queue_definition, opts={}, &blk)
+
+        @queue_name, opts = get_queue_name_and_options(queue_definition, opts)
+
+        @normalised_queue_name = normalise(@queue_name)
 
         @foo_options = {
           :auto_ack => option_or_default(opts, :auto_ack, true),
@@ -27,7 +29,7 @@ module Smith
         @options = AmqpOptions.new(opts)
         @options.routing_key = @normalised_queue_name
 
-        @message_counter = MessageCounter.new(queue_name)
+        @message_counter = MessageCounter.new(@queue_name)
 
         @channel_completion = EM::Completion.new
         @queue_completion = EM::Completion.new
