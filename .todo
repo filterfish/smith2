@@ -16,6 +16,12 @@ Good Ideas
 * At the moment there is a global SMITH_HOME. This causes problems when you have
   multiple agent paths. Make SMITH_HOME the same as each agent path.
 
+* Add a hook that gets run when agents are started and stopped. This could be a
+  shell script. Might be handly for monitoring.
+
+* Allow multiple agencies to run. This could be easily done through the use of
+  rabbitmq vhosts.
+
 Normal
 ~~~~~~
 
@@ -178,8 +184,12 @@ Normal
   * add --name to kill command
   * add queue length command.
 
+  * pop should not die if there is an unkown message type on the queue being pop'ed
   * push should read from stdin. It should read as many lines as there are. [done]
-  * add --one-column (-1) option to all the commands that need it (eg list, agents) [done]
+  * add --one-column (-1) option to all the commands that need it (eg list,
+    agents) [done]
+  * add -0 option to smithctl push
+  * stat should use the management plugin. It's seriously powerful!
 
   In fact look at smith1 agency to see what options it had.
 
