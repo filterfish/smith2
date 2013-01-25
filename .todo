@@ -190,6 +190,7 @@ Normal
     agents) [done]
   * add -0 option to smithctl push
   * stat should use the management plugin. It's seriously powerful!
+  * add --one-column (-1) option to all the commands that need it (eg list, agents) [done]
 
   In fact look at smith1 agency to see what options it had.
 
