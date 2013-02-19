@@ -4,6 +4,7 @@ require 'tmpdir'
 require "socket"
 require 'logging'
 require 'pathname'
+require 'protobuf'
 require 'fileutils'
 require 'optimism'
 require 'dm-core'
@@ -65,6 +66,10 @@ module Smith
         cache_dir = Pathname.new(ENV['HOME']).join('.smith').join('acl')
         if cache_dir.exist?
           cache_dir
+
+
+          # TODO Clean this up. Check for FileUtils.mkdir_p(cache_dir) failing.
+          # and don't print error in check_path(path) (above).
         else
           FileUtils.mkdir_p(cache_dir)
           cache_dir
@@ -81,10 +86,11 @@ module Smith
     # being it's how it's going to be. This will really start
     # to be a problem when there are a lot of acls.
     def load_acls
+      $LOAD_PATH << Smith.acl_cache_path
       Pathname.glob(Smith.acl_cache_path.join("*.pb.rb")).inject([]) do |a, acl_file|
         a.tap do |acc|
           logger.verbose { "Loading acl file: #{acl_file}" }
-          if require acl_file
+          if require acl_file.basename
             acc << "#{acl_file}"
           end
         end

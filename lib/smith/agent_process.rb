@@ -2,8 +2,7 @@
 require 'state_machine'
 require 'forwardable'
 
-require 'protobuf/message/enum'
-require 'protobuf/message/message'
+require 'protobuf/message'
 
 module Smith
 
@@ -13,15 +12,15 @@ module Smith
     extend Forwardable
 
     class AgentState < ::Protobuf::Message
-      required :string,   :_state, 0
-      required :string,   :name, 2
-      required :string,   :uuid, 3
-      optional :int32,    :pid, 4
-      optional :int32,    :started_at, 5
-      optional :int32,    :last_keep_alive, 6
-      optional :bool,     :singleton, 7
-      optional :string,   :metadata, 8
-      optional :bool,     :monitor, 9
+      required ::Protobuf::Field::StringField,   :_state, 0
+      required ::Protobuf::Field::StringField,   :name, 2
+      required ::Protobuf::Field::StringField,   :uuid, 3
+      optional ::Protobuf::Field::Int32Field,    :pid, 4
+      optional ::Protobuf::Field::Int32Field,    :started_at, 5
+      optional ::Protobuf::Field::Int32Field,    :last_keep_alive, 6
+      optional ::Protobuf::Field::BoolField,     :singleton, 7
+      optional ::Protobuf::Field::StringField,   :metadata, 8
+      optional ::Protobuf::Field::BoolField,     :monitor, 9
     end
 
     def_delegators :@agent_state, :name, :uuid, :pid, :last_keep_alive, :metadata, :monitor, :singleton
@@ -193,7 +192,7 @@ module Smith
 
         binary = Smith.config.ruby[agent_process.name]
         logger.debug { "Launching #{agent_process.name} with: #{binary}" }
-        exec(binary, bootstrapper, agent_process.name, agent_process.uuid)
+        exec(binary, bootstrapper.to_s, agent_process.name, agent_process.uuid)
       end
 
       # We don't want any zombies.

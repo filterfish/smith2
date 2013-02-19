@@ -20,7 +20,7 @@ spec = Gem::Specification.new do |s|
   s.add_dependency "eventmachine", ">= 1.0.0"
   s.add_dependency "extlib", ">= 0.9.15"
   s.add_dependency "logging", ">= 1.6.1"
-  s.add_dependency "ruby_protobuf", "0.4.11"
+  s.add_dependency "protobuf", ">= 2.5.5"
   s.add_dependency "state_machine", "1.1.2"
   s.add_dependency "trollop", ">= 1.16.2"
   s.add_dependency "multi_json", ">= 1.3.2"

@@ -1,88 +1,102 @@
 # -*- encoding: utf-8 -*-
-require 'pp'
-require 'protobuf/compiler/compiler'
-
-# There doesn't seem to be a way to turn of printing. The code is generally run
-# like this: log_writing unless silent but there is no way of setting silent!
-# So monkey patch it.
-class Protobuf::Visitor::Base
-  def log_writing(filename, message="writing..."); end
-end
+require 'ffi'
+require "tempfile"
 
 module Smith
   class ACLCompiler
 
     include Logger
+    extend FFI::Library
 
-    def initialize(force=false)
-      # TODO Add the force code.
-      @cache_path = Smith.acl_cache_path
+    def self.find_so
+      $:.map{|p| Pathname.new(p).join("ruby_generator.so")}.detect{|so| so.exist? }
     end
 
-    # Compile any protocol buffer files. This checks the timestamp to see if
-    # the file needs compiling. This is done in a subprocess to stop the agency
-    # from dying. I think it's a problem with the class being loaded twice but
-    # I don't actually know that so this could be considered a bit brute force.
+    begin
+      ffi_lib(find_so)
+    rescue LoadError => e
+      logger.fatal { "Cannot load protobuf shared library." }
+      exit(1)
+    end
+
+    attach_function(:_rprotoc_extern, [:int, :pointer], :int32)
+
     def compile
-      Process.fork do
-        logger.debug { "Protocol buffer cache path: #{@cache_path}" }
-        Smith.acl_path.each do |path|
-          results = {}
-          path_glob(path) do |p|
-            if should_compile?(p)
-              begin
-                logger.info { "Compiling: #{p}" }
-                Protobuf::Compiler.compile(p.basename, p.dirname, @cache_path)
-              rescue Racc::ParseError => e
-                logger.error { "Cannot parse: #{p}" }
-              end
-            end
-          end
+      Smith.acl_path.each do |path|
+        acls = path_glob(path)
+        out_of_date_acls = path_glob(path).select { |p| should_compile?(p) }
+        if out_of_date_acls.size > 0
+          compile_on_path(path, acls, out_of_date_acls)
         end
-      end
-      Process.wait
-      @cache_path
-    end
-
-    def cache_path
-      @cache_path.to_s
-    end
-
-    # Clears the Protocol Buffer cache. If acl_cache_path is
-    # specified in the config then the directory itself won't be removed
-    # but if it's not specified and a temporary directory was created then
-    # the directory is removed as well.
-    def clear_cache
-      logger.info { "Clearing the Protocol Buffer cache: #{Smith.acl_cache_path}" }
-
-      Pathname.glob(@cache_path.join("*")).each do |path|
-        path.unlink
-      end
-
-      unless Smith.config.agency.has_key?(:acl_cache_path)
-        @cache_path.rmdir
       end
     end
 
     private
 
+    def compile_on_path(path, acls, out_of_date_acls)
+      out_of_date_acls.each { |acl| logger.error("Compiling acl: #{path.join(acl)}") }
+
+      unless acls.empty?
+        Dir.chdir(path) do
+          Process.fork do
+            begin
+              GC.disable
+
+              args = ["rprotoc", "--ruby_out", Smith.acl_cache_path, "--proto_path", path].map {|a| ::FFI::MemoryPointer.from_string(a.to_s.dup) }
+
+              ffi_acls = acls.map do |acl|
+                FFI::MemoryPointer.from_string(acl.to_s.dup)
+              end
+              ffi_acls << nil
+
+              args += ffi_acls
+              argv = FFI::MemoryPointer.new(:pointer, args.size)
+
+              args.each_with_index { |p, index| argv[index].put_pointer(0, p) }
+
+              errors = capture_stderr do
+                self._rprotoc_extern(args.compact.size, argv)
+              end.split("\n")
+
+              errors.each do |error|
+                logger.error("#{path}/#{error}");
+              end
+            ensure
+              GC.enable
+            end
+          end
+        end
+      end
+    end
+
     # Returns true if the .proto file is newer that the .pb.rb file
     def should_compile?(file)
-      cached_file = @cache_path.join(file.basename).sub_ext(".pb.rb")
+      cached_file = Smith.acl_cache_path.join(file.basename).sub_ext(".pb.rb")
       if cached_file.exist?
-        if file.mtime > cached_file.mtime
-          true
-        else
-          false
-        end
+        file.mtime > cached_file.mtime
       else
         true
       end
     end
 
     def path_glob(path)
-      Pathname.glob("#{path.join("*.proto")}").map do |acl|
-        yield acl.realpath
+      Pathname.glob("#{path.join("*.proto")}").map { |acl| acl.realpath }
+    end
+
+    # This is not idea but I really don't know how else to do it. I cannot use
+    # $stderr = StringIO.new as this only seems to capture STDERR if you
+    # explicitly write to STDERR. In my case it's an ffi library call that's
+    # writing to STDERR.
+    def capture_stderr
+      org_stderr = STDERR.dup
+      begin
+        tmp = Tempfile.new('')
+        tmp.sync = true
+        STDERR.reopen(tmp)
+        yield
+        File.read(tmp.path)
+      ensure
+        STDERR.reopen(org_stderr)
       end
     end
   end
