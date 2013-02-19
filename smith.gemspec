@@ -13,9 +13,6 @@ spec = Gem::Specification.new do |s|
 
   s.authors = ["Richard Heycock"]
   s.add_dependency "amqp", ">= 0.9.8"
-  s.add_dependency "dm-core", "1.0.1"
-  s.add_dependency "dm-observer", "1.0.1"
-  s.add_dependency "dm-yaml-adapter", "1.0.1"
   s.add_dependency "daemons", ">= 1.1.4"
   s.add_dependency "eventmachine", ">= 1.0.0"
   s.add_dependency "extlib", ">= 0.9.15"
