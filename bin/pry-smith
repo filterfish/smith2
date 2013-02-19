@@ -1,8 +1,10 @@
 #!/usr/bin/env ruby
 # -*- encoding: utf-8 -*-
 
+$:.unshift(File.dirname(__FILE__) + '/../lib')
+
 require 'pry'
-require './lib/smith'
+require 'smith'
 
 Smith.load_acls
 Pry::CLI.parse_options
