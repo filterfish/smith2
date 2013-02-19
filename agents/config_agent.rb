@@ -12,7 +12,7 @@ class ConfigAgent < Smith::Agent
     Smith::Messaging::Receiver.new('agent.config.request', :type => :agent_config_request) do |r|
       r.subscribe do |payload, r|
         logger.info("Reading config for: #{payload.agent}")
-        c = config.for(payload.agent) || Yajl::Encoder.encode({})
+        c = config.for(payload.agent) || MultiJson.dump({})
         r.reply(Smith::ACL::Factory.create(:agent_config_response, :config => c))
       end
     end
