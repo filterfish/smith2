@@ -4,7 +4,12 @@
 require 'pathname'
 
 module Smith
+
+  class ConfigNotFoundError < IOError; end
+
   class Config
+
+    CONFIG_FILENAME = '.smithrc'
 
     attr_accessor :agent, :agency, :amqp, :logging, :smith, :eventmachine, :smith, :ruby
 
@@ -47,6 +52,10 @@ module Smith
       {:agent => @agent, :agency => @agency, :amqp => @amqp, :eventmachine => @eventmachine, :logging => @logging, :smith => @smith, :ruby => @ruby}
     end
 
+    def path
+      @config_file
+    end
+
     def self.get
       @config ||= Config.new
     end
@@ -87,7 +96,7 @@ module Smith
     end
 
     def load_config
-      config = read_config_file
+      config = read_config_file(find_config_file)
 
       amqp_opts = Struct::AmqpOpts.new(true, false)
       cache_path = Pathname.new(config[:agency_cache_path])
@@ -106,24 +115,44 @@ module Smith
       # Set the default ruby runtime. This will use the ruby that is in the path.
       @ruby = Hash.new(config[:default_vm] || 'ruby')
 
-      config[:agent_vm].split(/\s+/).each do |vm_spec|
+      config[:agent_vm] && config[:agent_vm].split(/\s+/).each do |vm_spec|
         agent, vm = vm_spec.split(/:/)
         @ruby[agent] = vm
       end
+
+      find_config_file
     end
 
-    def read_config_file
-      config = Pathname.new(ENV['HOME']).join(".smithrc")
-      if config.exist?
-        config.readlines.inject({}) do |a, line|
-          a.tap do |acc|
-            parameters = line.gsub(/#.*$/, '').strip
-            unless parameters.empty?
-              key, value = parameters.split(/\s+/, 2)
-              a[key.to_sym] = value
-            end
+    # Read the config file
+    def read_config_file(config_file)
+      @config_file = config_file
+      config_file.readlines.inject({}) do |a, line|
+        a.tap do |acc|
+          parameters = line.gsub(/#.*$/, '').strip
+          unless parameters.empty?
+            key, value = parameters.split(/\s+/, 2)
+            a[key.to_sym] = value
           end
         end
+      end
+    end
+
+    # Find the config file. If it isn't in the CWD recurse up the file path
+    # until it reaches the user home directory. If it gets to the home
+    # directory without finding a config file rais a ConfigNotFoundError
+    # exception.
+    #
+    # path:       the pathname to find the config file. Defaults to CWD.
+    # recursive:  rucures up the path. Defaults to true.
+    def find_config_file(path=Pathname.new(".").expand_path, recursive=true)
+      conf = path.join(CONFIG_FILENAME)
+      if conf.exist?
+        return conf
+      else
+        if path == Pathname.new(ENV['HOME'])
+          raise ConfigNotFoundError, "Cannot find a usable config file."
+        end
+        find_config_file(path.dirname)
       end
     end
   end
