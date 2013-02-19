@@ -38,6 +38,7 @@ module Smith
       if @daemon.running?
         logger.fatal { "The agency is alredy running" }
       else
+        logger.info { "Using config file: #{Smith.config_path}" }
         @daemon.daemonise
 
         Smith.compile_acls

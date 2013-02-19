@@ -36,6 +36,10 @@ module Smith
       Config.get
     end
 
+    def config_path
+      Smith.config.path
+    end
+
     def root_path
       Pathname.new(File.dirname(__FILE__) + '/..').expand_path
     end
