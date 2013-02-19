@@ -36,10 +36,8 @@ module Smith
 
     def agency_command(command, args, &blk)
       Messaging::Sender.new('agency.control', :auto_delete => false, :durable => false, :persistent => true,  :strict => true) do |sender|
-
-        timeout = Messaging::Timeout.new(5) { |message_id| blk.call("Timeout. Is the agency still running?") }
-
-        sender.on_reply(:timeout => timeout) do |reply_payload, r|
+        sender.on_timeout(5) { |message_id| blk.call("Timeout. Is the agency still running?") }
+        sender.on_reply do |reply_payload, r|
           r.ack
           blk.call(reply_payload[:response])
         end
@@ -83,8 +81,8 @@ Usage:
     end
   end
 
-  command = ARGV.shift
-  args = ARGV
+  command = ARGV.shift.dup
+  args = ARGV.map {|a| a.dup}
 
   %w{TERM INT QUIT}.each do |sig|
     trap sig, proc { (Smith.running?) ? Smith.stop(true) : exit}
