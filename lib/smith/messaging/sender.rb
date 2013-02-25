@@ -170,14 +170,10 @@ module Smith
       def _publish(message, opts, &blk)
         logger.verbose { "Publishing to: [queue]: #{@queue_name}. [options]: #{opts}" }
         logger.verbose { "Payload content: [queue]: #{@queue_name}, [metadata type]: #{message._type}, [message]: #{message.inspect}" }
-        if message.initialized?
-          increment_counter
-          type = (message.respond_to?(:_type)) ? message._type : message.type
-          @exchange_completion.completion do |exchange|
-            exchange.publish(message.encode, opts.merge(:type => type), &blk)
-          end
-        else
-          raise IncompletePayload, "Message is incomplete: #{message.to_s}"
+        increment_counter
+        type = (message.respond_to?(:_type)) ? message._type : message.type
+        @exchange_completion.completion do |exchange|
+          exchange.publish(message.encode, opts.merge(:type => type), &blk)
         end
       end
 

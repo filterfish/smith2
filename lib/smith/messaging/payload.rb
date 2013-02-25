@@ -80,12 +80,6 @@ module Smith
         @acl.serialize_to_string
       end
 
-      # Returns true if the payload has all its required fields set.
-      def initialized?
-        raise RuntimeError, "You probably forgot to call #content or give the :from option when instantiating the object." if @acl.nil?
-        @acl.initialized?
-      end
-
       # Convert the payload to a pretty string.
       def to_s
         @acl.inspect

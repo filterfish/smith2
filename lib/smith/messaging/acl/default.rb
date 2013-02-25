@@ -15,11 +15,6 @@ module Smith
         @message = message
       end
 
-      # Always return true. There is no validation.
-      def initialized?
-        true
-      end
-
       def serialize_to_string
         Marshal.dump(@message)
       end
