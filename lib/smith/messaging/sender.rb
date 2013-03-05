@@ -7,20 +7,17 @@ module Smith
       include Logger
       include Util
 
-      attr_accessor :queue_name
+      def initialize(queue_def, opts={}, &blk)
 
-      def initialize(queue_definition, opts={}, &blk)
-
-        @queue_name, opts = get_queue_name_and_options(queue_definition, opts)
+        # This is for backward compatibility.
+        @queue_def = queue_def.is_a?(QueueDefinition) ? queue_def : QueueDefinition.new(queue_def, opts)
 
         @reply_container = {}
 
-        normalised_queue_name = normalise(@queue_name)
+        prefetch = option_or_default(@queue_def.options, :prefetch, Smith.config.agent.prefetch)
 
-        prefetch = option_or_default(opts, :prefetch, Smith.config.agent.prefetch)
-
-        @options = AmqpOptions.new(opts)
-        @options.routing_key = normalised_queue_name
+        @options = AmqpOptions.new(@queue_def.options)
+        @options.routing_key = @queue_def.normalise
 
         @message_counts = Hash.new(0)
 
@@ -30,15 +27,15 @@ module Smith
 
         open_channel(:prefetch => prefetch) do |channel|
           @channel_completion.succeed(channel)
-          channel.direct(normalised_queue_name, @options.exchange) do |exchange|
+          channel.direct(@queue_def.normalise, @options.exchange) do |exchange|
 
             exchange.on_return do |basic_return,metadata,payload|
               logger.error { "#{ACL::Payload.decode(payload.clone, metadata.type)} returned! Exchange: #{reply_code.exchange}, reply_code = #{basic_return.reply_code}, reply_text = #{basic_return.reply_text}" }
               logger.error { "Properties: #{metadata.properties}" }
             end
 
-            channel.queue(normalised_queue_name, @options.queue) do |queue|
-              queue.bind(exchange, :routing_key => normalised_queue_name)
+            channel.queue(@queue_def.normalise, @options.queue) do |queue|
+              queue.bind(exchange, :routing_key => @queue_def.normalise)
 
               @queue_completion.succeed(queue)
               @exchange_completion.succeed(exchange)
@@ -89,15 +86,13 @@ module Smith
       # assigned.
       def on_reply(opts={}, &blk)
         @reply_proc = blk
-        @timeout ||= Timeout.new(Smith.config.smith.timeout, :queue_name => @queue_name)
-        reply_queue_name = opts.delete(:reply_queue_name) || random
+        @timeout ||= Timeout.new(Smith.config.smith.timeout, :queue_name => @queue_def.denormalise)
 
-        options = {:auto_delete => false, :auto_ack => false}.merge(opts)
-
-        logger.debug { "reply queue: #{reply_queue_name}" }
+        queue_def = QueueDefinition.new(opts.delete(:reply_queue_name) || random, {:auto_delete => false, :auto_ack => false}.merge(opts))
+        logger.debug { "reply queue: #{queue_def.denormalise}" }
 
         @reply_queue_completion ||= EM::Completion.new.tap do |completion|
-          Receiver.new(reply_queue_name, options) do |queue|
+          Receiver.new(queue_def) do |queue|
             queue.subscribe do |payload, receiver|
               @reply_container.delete(receiver.correlation_id).tap do |reply|
                 if reply
@@ -156,7 +151,7 @@ module Smith
       end
 
       def counter
-        @message_counts[@queue_name]
+        @message_counts[@queue_def.denormalise]
       end
 
       # Define a channel error handler.
@@ -166,20 +161,26 @@ module Smith
         end
       end
 
+      def queue_name
+        @queue_def.denormalise
+      end
+
       private
 
       def _publish(message, opts, &blk)
-        logger.verbose { "Publishing to: [queue]: #{@queue_name}. [options]: #{opts}" }
-        logger.verbose { "Payload content: [queue]: #{@queue_name}, [metadata type]: #{message._type}, [message]: #{message.inspect}" }
+        logger.verbose { "Publishing to: [queue]: #{@queue_def.denormalise}. [options]: #{opts}" }
+        logger.verbose { "Payload content: [queue]: #{@queue_def.denormalise}, [metadata type]: #{message._type}, [message]: #{message.inspect}" }
+
         increment_counter
         type = (message.respond_to?(:_type)) ? message._type : message.type
+
         @exchange_completion.completion do |exchange|
           exchange.publish(message.encode, opts.merge(:type => type), &blk)
         end
       end
 
       def increment_counter(value=1)
-        @message_counts[@queue_name] += value
+        @message_counts[@queue_def.denormalise] += value
       end
     end
 

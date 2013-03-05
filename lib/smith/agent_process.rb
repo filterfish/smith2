@@ -113,8 +113,8 @@ module Smith
     end
 
     # Return the agent control queue.
-    def control_queue_name
-      "agent.control.#{uuid}"
+    def control_queue_def
+      QueueDefinitions::Agent_control.call(uuid)
     end
 
     def initialize(db, attributes={})
@@ -204,7 +204,7 @@ module Smith
     end
 
     def self.stop(agent_process)
-      Messaging::Sender.new(agent_process.control_queue_name, :durable => false, :auto_delete => true) do |sender|
+      Messaging::Sender.new(agent_process.control_queue_def) do |sender|
         sender.consumer_count do |count|
           if count > 0
             sender.publish(ACL::Factory.create(:agent_command, :command => 'stop'))

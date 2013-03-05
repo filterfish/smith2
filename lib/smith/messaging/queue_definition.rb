@@ -3,16 +3,29 @@
 module Smith
   class QueueDefinition
 
-    attr_reader :name, :options
+    attr_reader :options
 
     def initialize(name, options)
-      @name = name
+      @normalised_queue = "#{Smith.config.smith.namespace}.#{name}"
+      @denormalised_queue = "#{name}"
       @options = options
+    end
+
+    def denormalise
+      @denormalised_queue
+    end
+
+    def name
+      @normalised_queue
+    end
+
+    def normalise
+      @normalised_queue
     end
 
     # to_a is defined to make the splat operator work.
     def to_a()
-      return @name, @options
+      return @normalised_queue, @options
     end
   end
 end

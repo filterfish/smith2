@@ -82,10 +82,6 @@ module Smith
       def linear_strategy(delay)
         delay * (current_requeue_number + 1)
       end
-
-      def denormalise(name)
-        name.gsub(/^#{Regexp.escape(Smith.config.smith.namespace)}./, '')
-      end
     end
   end
 end

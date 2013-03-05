@@ -38,7 +38,7 @@ module Smith
       private
 
       def send_agent_control_message(agent, message)
-        Messaging::Sender.new(agent.control_queue_name, :durable => false, :auto_delete => true, :persistent => true,  :strict => true) do |sender|
+        Messaging::Sender.new(agent.control_queue_def) do |sender|
           sender.publish(ACL::Factory.create(:agent_command, message))
         end
       end

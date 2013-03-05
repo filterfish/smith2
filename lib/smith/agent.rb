@@ -120,9 +120,9 @@ module Smith
     end
 
     def setup_control_queue
-      logger.debug { "Setting up control queue: #{control_queue_name}" }
+      logger.debug { "Setting up control queue: #{control_queue_def.denormalise}" }
 
-      Messaging::Receiver.new(control_queue_name, :durable => false, :auto_delete => true) do |receiver|
+      Messaging::Receiver.new(control_queue_def) do |receiver|
         receiver.subscribe do |payload|
           logger.debug { "Command received on agent control queue: #{payload.command} #{payload.options}" }
 
@@ -160,7 +160,7 @@ module Smith
                 p.rss = (File.read("/proc/#{pid}/statm").split[1].to_i * 4) / 1024 # This assumes the page size is 4K & is MB
                 p.up_time = (Time.now - @start_time).to_i
                 queues.each_queue do |q|
-                  p.queues << ACL::Factory.create('agent_stats::queue_stats', :name => q.denormalised_queue_name, :type => q.class.to_s, :length => q.counter)
+                  p.queues << ACL::Factory.create('agent_stats::queue_stats', :name => q.name, :type => q.class.to_s, :length => q.counter)
                 end
               end
 
@@ -213,8 +213,8 @@ module Smith
       @factory
     end
 
-    def control_queue_name
-      "agent.control.#{uuid}"
+    def control_queue_def
+      @control_queue_def ||= QueueDefinitions::Agent_control.call(uuid)
     end
   end
 end

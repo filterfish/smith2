@@ -1,5 +1,9 @@
 # -*- encoding: utf-8 -*-
 
+# FIXME. This needs to be either fixed up or removed. It dumps the output into
+# the log at the moment which isn't the place for it. It should also be a
+# smithctl command rather than an agency command.
+
 module Smith
   module Commands
     class ObjectCount < CommandBase
@@ -7,18 +11,25 @@ module Smith
         if target.size > 1
           responder.succeed("You can only specify one agent at at time.")
         else
-          object_count(target.first) do |objects|
-            responder.succeed(objects)
+          agent = agents[target.first]
+          if agent.running?
+
+            # object_count(agent) do |objects|
+            #   responder.succeed(objects)
+            # end
+
+            object_count(agent)
+            responder.succeed('') #(objects)
+          else
+            responder.succeed("Agent not running: #{target.first}")
           end
         end
       end
 
-      def object_count(agent, &blk)
-        if agents[agent].running?
-          Messaging::Sender.new(agent.control_queue_name, :durable => false, :auto_delete => true, :persistent => true,  :strict => true) do |sender|
-            sender.on_reply(blk)
-            sender.publish(ACL::Payload.new(:agent_command, :command => 'object_count', :options => [options[:threshold].to_s]))
-          end
+      def object_count(agent) #, &blk)
+        Messaging::Sender.new(agent.control_queue_def) do |sender|
+          # sender.on_reply(blk)
+          sender.publish(ACL::Factory.create(:agent_command, :command => 'object_count', :options => [options[:threshold].to_s]))
         end
       end
 

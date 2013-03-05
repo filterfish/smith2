@@ -7,5 +7,8 @@ module Smith
     Agent_lifecycle = QueueDefinition.new("#{Smith.hostname}.agent.lifecycle", :auto_delete => false, :durable => false)
 
     Agent_stats = QueueDefinition.new('agent.stats', :durable => false, :auto_delete => false)
+
+    # Something tells me that I've crossed line with this.
+    Agent_control = ->(uuid) { QueueDefinition.new("agent.control.#{uuid}", :durable => false, :auto_delete => true) }
   end
 end

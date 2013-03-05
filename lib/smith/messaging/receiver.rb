@@ -10,26 +10,23 @@ module Smith
       include Logger
       include Util
 
-      attr_accessor :queue_name
+      def initialize(queue_def, opts={}, &blk)
 
-      def initialize(queue_definition, opts={}, &blk)
-
-        @queue_name, opts = get_queue_name_and_options(queue_definition, opts)
-
-        @normalised_queue_name = normalise(@queue_name)
+        # This is for backward compatibility.
+        @queue_def = queue_def.is_a?(QueueDefinition) ? queue_def : QueueDefinition.new(queue_def, opts)
 
         @foo_options = {
-          :auto_ack => option_or_default(opts, :auto_ack, true),
-          :threading => option_or_default(opts, :threading, false)}
+          :auto_ack => option_or_default(@queue_def.options, :auto_ack, true),
+          :threading => option_or_default(@queue_def.options, :threading, false)}
 
-        @payload_type = option_or_default(opts, :type, []) {|v| [v].flatten }
+        @payload_type = option_or_default(@queue_def.options, :type, []) {|v| [v].flatten }
 
-        prefetch = option_or_default(opts, :prefetch, Smith.config.agent.prefetch)
+        prefetch = option_or_default(@queue_def.options, :prefetch, Smith.config.agent.prefetch)
 
-        @options = AmqpOptions.new(opts)
-        @options.routing_key = @normalised_queue_name
+        @options = AmqpOptions.new(@queue_def.options)
+        @options.routing_key = @queue_def.normalise
 
-        @message_counter = MessageCounter.new(@queue_name)
+        @message_counter = MessageCounter.new(@queue_def.denormalise)
 
         @channel_completion = EM::Completion.new
         @queue_completion = EM::Completion.new
@@ -40,15 +37,15 @@ module Smith
 
         open_channel(:prefetch => prefetch) do |channel|
           @channel_completion.succeed(channel)
-          channel.direct(@normalised_queue_name, @options.exchange) do |exchange|
+          channel.direct(@queue_def.normalise, @options.exchange) do |exchange|
             @exchange_completion.succeed(exchange)
           end
         end
 
         open_channel(:prefetch => prefetch) do |channel|
-          channel.queue(@normalised_queue_name, @options.queue) do |queue|
+          channel.queue(@queue_def.normalise, @options.queue) do |queue|
             @exchange_completion.completion do |exchange|
-              queue.bind(exchange, :routing_key => @queue_name)
+              queue.bind(exchange, :routing_key => @queue_def.normalise)
               @queue_completion.succeed(queue)
               @requeue_options_completion.succeed(:exchange => exchange, :queue => queue)
             end
@@ -88,7 +85,10 @@ module Smith
         else
           @exchange_completion.completion do |exchange|
             logger.debug { "Attaching to reply queue: #{reply_queue_name}" }
-            Smith::Messaging::Sender.new(reply_queue_name, :auto_delete => false, :immediate => true, :mandatory => true) do |sender|
+
+            queue_def = QueueDefinition.new(reply_queue_name, :auto_delete => false, :immediate => true, :mandatory => true)
+
+            Smith::Messaging::Sender.new(queue_def) do |sender|
               @reply_queues[reply_queue_name] = sender
               blk.call(sender)
             end
@@ -104,16 +104,16 @@ module Smith
           @requeue_options_completion.completion do |requeue_options|
             if !queue.subscribed?
               opts = @options.subscribe
-              logger.debug { "Subscribing to: [queue]:#{@queue_name} [options]:#{opts}" }
+              logger.debug { "Subscribing to: [queue]:#{@queue_def.denormalise} [options]:#{opts}" }
               queue.subscribe(opts) do |metadata,payload|
                 if payload
                   on_message(metadata, payload, requeue_options, &blk)
                 else
-                  logger.verbose { "Received null message on: #{@queue_name} [options]:#{opts}" }
+                  logger.verbose { "Received null message on: #{@queue_def.denormalise} [options]:#{opts}" }
                 end
               end
             else
-              logger.error { "Queue is already subscribed too. Not listening on: #{@queue_name}" }
+              logger.error { "Queue is already subscribed too. Not listening on: #{@queue_def.denormalise}" }
             end
           end
         end
@@ -158,6 +158,10 @@ module Smith
         else
           raise IncorrectPayloadType, "This queue can only accept the following payload types: #{@payload_type.to_a.to_s}"
         end
+      end
+
+      def queue_name
+        @queue_def.denormalise
       end
 
       private :on_message
