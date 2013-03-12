@@ -30,6 +30,7 @@ Good Ideas
 Normal
 ~~~~~~
 
+* Forking an agent should change directory to /
 
 * If an agent hasn't started after 20 seconds (ie there are no keepalives)
   set the state to dead.
