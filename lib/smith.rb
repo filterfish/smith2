@@ -61,20 +61,8 @@ module Smith
     # Return the acl cache path. If it's not specified in the config
     # generate a temporary path.
     def acl_cache_path
-      @acl_cache_path ||= if Smith.config.agency.has_key?(:acl_cache_path)
-        Pathname.new(Smith.config.agency.acl_cache_path).tap { |path| check_path(path) }
-      else
-        cache_dir = Pathname.new(ENV['HOME']).join('.smith').join('acl')
-        if cache_dir.exist?
-          cache_dir
-
-
-          # TODO Clean this up. Check for FileUtils.mkdir_p(cache_dir) failing.
-          # and don't print error in check_path(path) (above).
-        else
-          FileUtils.mkdir_p(cache_dir)
-          cache_dir
-        end
+      @acl_cache_path = Pathname.new(Smith.config.agency.acl_cache_path).tap do |path|
+        check_path(path, true)
       end
     end
 
@@ -218,8 +206,16 @@ module Smith
       end
     end
 
-    def check_path(path)
-      logger.error("Path does not exist: #{path}") unless path.exist?
+    def check_path(path, create=false)
+      unless path.exist?
+        error_message = "Path does not exist: #{path}"
+        if create
+          logger.info { "Path does not exist: #{path}. Creating" }
+          path.mkpath
+        else
+          logger.warn { "Path does not exist: #{path}" }
+        end
+      end
     end
   end
 end
