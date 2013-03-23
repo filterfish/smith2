@@ -179,7 +179,7 @@ module Smith
         # Close all file descriptors apart from stdin, stdout, stderr
         ObjectSpace.each_object(IO) do |io|
           unless [STDIN, STDOUT, STDERR].include?(io)
-            io.close rescue nil
+            io.close unless io.closed?
           end
         end
 
