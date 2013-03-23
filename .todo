@@ -10,10 +10,10 @@ Priority
 
 * Ensure the garbage collector deletes the corresponding exchange. [done]
 
-* Ensure the acl compiler creates the cache/acl directory.
+* Ensure the acl compiler creates the cache/acl directory. [done.]
 
 * The acl compiler compiles to a directory it doesn't have permission to without
-  generating an error.
+  generating an error. [done]
 
 Good Ideas
 ~~~~~~~~~~
