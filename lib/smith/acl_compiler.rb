@@ -34,36 +34,35 @@ module Smith
     private
 
     def compile_on_path(path, acls, out_of_date_acls)
-      out_of_date_acls.each { |acl| logger.error("Compiling acl: #{path.join(acl)}") }
+      out_of_date_acls.each { |acl| logger.debug("Compiling acl: #{path.join(acl)}") }
 
       unless acls.empty?
         Dir.chdir(path) do
-          Process.fork do
-            begin
-              GC.disable
+          begin
+            GC.disable
 
-              args = ["rprotoc", "--ruby_out", Smith.acl_cache_path, "--proto_path", path].map {|a| ::FFI::MemoryPointer.from_string(a.to_s.dup) }
+            args = ["rprotoc", "--ruby_out", Smith.acl_cache_path, "--proto_path", path].map {|a| ::FFI::MemoryPointer.from_string(a.to_s.dup) }
 
-              ffi_acls = acls.map do |acl|
-                FFI::MemoryPointer.from_string(acl.to_s.dup)
-              end
-              ffi_acls << nil
-
-              args += ffi_acls
-              argv = FFI::MemoryPointer.new(:pointer, args.size)
-
-              args.each_with_index { |p, index| argv[index].put_pointer(0, p) }
-
-              errors = capture_stderr do
-                self._rprotoc_extern(args.compact.size, argv)
-              end.split("\n")
-
-              errors.each do |error|
-                logger.error("#{path}/#{error}");
-              end
-            ensure
-              GC.enable
+            ffi_acls = acls.map do |acl|
+              FFI::MemoryPointer.from_string(acl.to_s.dup)
             end
+            ffi_acls << nil
+
+            args += ffi_acls
+            argv = FFI::MemoryPointer.new(:pointer, args.size)
+
+            args.each_with_index { |p, index| argv[index].put_pointer(0, p) }
+
+            errors = capture_stderr do
+              self._rprotoc_extern(args.compact.size, argv)
+            end.split("\n")
+
+            errors.each do |error|
+              logger.fatal { "Cannot compile ACLs: #{error}" }
+              raise RuntimeError, error
+            end
+          ensure
+            GC.enable
           end
         end
       end
