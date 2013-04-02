@@ -119,6 +119,8 @@ Normal
 
 * Have message counters for every agent. [partially done]
 
+* Keep stats on each sender. Messages per second, etc.
+
 * Set default config for all options that make sense (which is most of them).
 
 * Add checking to the config. For example the logging class can only accept File
