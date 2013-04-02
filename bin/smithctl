@@ -43,15 +43,13 @@ module Smith
           blk.call(reply_payload[:response])
         end
 
-        # callback = proc do |sender|
-          sender.publish(Smith::ACL::Factory.create(:agency_command, :command => command, :args => args))
-        # end
-
-        # errback = proc do
-        #   blk.call("Agency not running.")
-        # end
-
-        # sender.consumers?(callback, errback)
+        sender.consumer_count do |count|
+          if count > 0
+            sender.publish(Smith::ACL::Factory.create(Smith::ACL::AgencyCommand, :command => command, :args => args))
+          else
+            blk.call("Agency not running.")
+          end
+        end
       end
     end
   end
