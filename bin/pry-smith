@@ -6,5 +6,5 @@ $:.unshift(File.dirname(__FILE__) + '/../lib')
 require 'pry'
 require 'smith'
 
-Smith.load_acls
+Smith.compile_acls
 Pry::CLI.parse_options

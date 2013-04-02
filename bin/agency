@@ -41,8 +41,9 @@ module Smith
         logger.info { "Using config file: #{Smith.config_path}" }
         @daemon.daemonise
 
+        require 'smith/messaging/acl_type_cache'
+
         Smith.compile_acls
-        Smith.load_acls
 
         Smith.start do
           # This block is here so the that the shutdown hook added in

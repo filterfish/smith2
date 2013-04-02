@@ -87,7 +87,7 @@ Usage:
     trap sig, proc { (Smith.running?) ? Smith.stop(true) : exit}
   end
 
-  Smith.load_acls
+  Smith.compile_acls
 
   control = SmithControl.new(opts)
 

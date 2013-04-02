@@ -71,21 +71,6 @@ module Smith
       @compiler.compile
     end
 
-    # Load all acls. This fucking horrible but for the time
-    # being it's how it's going to be. This will really start
-    # to be a problem when there are a lot of acls.
-    def load_acls
-      $LOAD_PATH << Smith.acl_cache_path
-      Pathname.glob(Smith.acl_cache_path.join("*.pb.rb")).inject([]) do |a, acl_file|
-        a.tap do |acc|
-          logger.verbose { "Loading acl file: #{acl_file}" }
-          if require acl_file.basename
-            acc << "#{acl_file}"
-          end
-        end
-      end
-    end
-
     def running?
       EM.reactor_running?
     end
@@ -231,12 +216,14 @@ require_relative 'smith/command_base'
 require_relative 'smith/exceptions'
 require_relative 'smith/object_count'
 require_relative 'smith/version'
+require_relative 'smith/acl_parser'
 
+require_relative 'smith/messaging/acl_type_cache'
 require_relative 'smith/messaging/queue_definition'
 require_relative 'smith/messaging/amqp_options'
 require_relative 'smith/messaging/queue_factory'
+require_relative 'smith/messaging/factory'
 require_relative 'smith/messaging/acl/default'
-require_relative 'smith/messaging/payload'
 require_relative 'smith/messaging/util'
 require_relative 'smith/messaging/responder'
 require_relative 'smith/messaging/receiver'

@@ -1,6 +1,8 @@
 # -*- encoding: utf-8 -*-
 require 'ffi'
 require "tempfile"
+require 'ruby_parser'
+require 'smith/messaging/acl_type_cache'
 
 module Smith
   class ACLCompiler
@@ -15,18 +17,28 @@ module Smith
     begin
       ffi_lib(find_so)
     rescue LoadError => e
-      logger.fatal { "Cannot load protobuf shared library." }
+      logger.fatal { "Cannot load protobuf shared library: #{e}" }
       exit(1)
     end
 
     attach_function(:_rprotoc_extern, [:int, :pointer], :int32)
 
+    def initialize
+      @acl_type_cache = AclTypeCache.instance
+      @acl_parser = ACLParser.new
+    end
+
     def compile
       Smith.acl_path.each do |path|
-        acls = path_glob(path)
+        acls_files = path_glob(path)
         out_of_date_acls = path_glob(path).select { |p| should_compile?(p) }
         if out_of_date_acls.size > 0
-          compile_on_path(path, acls, out_of_date_acls)
+          compile_on_path(path, acls_files, out_of_date_acls)
+        end
+        acls_files.each do |acl_file|
+          acl_class_path = acl_compiled_path(acl_file)
+          load_acl(acl_class_path)
+          add_to_type_cache(acl_class_path)
         end
       end
     end
@@ -97,6 +109,26 @@ module Smith
       ensure
         STDERR.reopen(org_stderr)
       end
+    end
+
+    def load_acl(path)
+      load path
+    end
+
+    def add_to_type_cache(path)
+      acl_class = File.read(path)
+      @acl_parser.go(acl_class)
+      @acl_parser.fully_qualified_classes.each do |clazz|
+        @acl_type_cache.add(to_class(clazz))
+      end
+    end
+
+    def to_class(type_as_array)
+      type_as_array.inject(Kernel) { |acc, t| acc.const_get(t) }
+    end
+
+    def acl_compiled_path(path)
+      "#{Smith.acl_cache_path.join(path.basename('.proto'))}.pb.rb"
     end
   end
 end

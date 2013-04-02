@@ -143,8 +143,8 @@ exit 1 if name.nil? || uuid.nil?
 # Set the running instance name to the name of the agent.
 $0 = "#{name}"
 
-# load the acls
-Smith.load_acls
+# Compile acls
+Smith.compile_acls
 
 bootstrapper = Smith::AgentBootstrap.new(name, uuid)
 
