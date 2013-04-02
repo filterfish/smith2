@@ -230,11 +230,16 @@ module Smith
     # FIXME
     def self.kill(agent_process)
       if agent_process.pid
-        logger.info { "Sending kill signal: #{agent_process.pid}: #{agent_process.uuid}" }
-        begin
-          Process.kill('TERM', agent_process.pid)
-        rescue
-          logger.error { "Process does not exist. PID is stale: #{agent_process.pid}: #{agent_process.uuid}" }
+        if agent_process.pid == 0
+          logger.info { "Agent's pid is 0. The agent probably didn't start correctly. Cleaning up." }
+          agent_process.delete
+        else
+          logger.info { "Sending kill signal: #{agent_process.pid}: #{agent_process.uuid}" }
+          begin
+            Process.kill('TERM', agent_process.pid)
+          rescue
+            logger.error { "Process does not exist. PID is stale: #{agent_process.pid}: #{agent_process.uuid}" }
+          end
         end
       else
         logger.error { "Not sending kill signal, agent pid is not set: #{agent_process.uuid}" }
