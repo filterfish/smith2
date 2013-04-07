@@ -35,6 +35,7 @@ module Smith
         if out_of_date_acls.size > 0
           compile_on_path(path, acls_files, out_of_date_acls)
         end
+
         acls_files.each do |acl_file|
           acl_class_path = acl_compiled_path(acl_file)
           load_acl(acl_class_path)
@@ -112,7 +113,7 @@ module Smith
     end
 
     def load_acl(path)
-      load path
+      require path
     end
 
     def add_to_type_cache(path)
