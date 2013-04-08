@@ -45,7 +45,7 @@ module Smith
 
         sender.consumer_count do |count|
           if count > 0
-            sender.publish(Smith::ACL::Factory.create(Smith::ACL::AgencyCommand, :command => command, :args => args))
+            sender.publish(Smith::ACL::AgencyCommand.new(:command => command, :args => args))
           else
             blk.call("Agency not running.")
           end

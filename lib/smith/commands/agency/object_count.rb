@@ -29,7 +29,7 @@ module Smith
       def object_count(agent) #, &blk)
         Messaging::Sender.new(agent.control_queue_def) do |sender|
           # sender.on_reply(blk)
-          sender.publish(ACL::Factory.create(:agent_command, :command => 'object_count', :options => [options[:threshold].to_s]))
+          sender.publish(ACL::AgentCommand.new(:command => 'object_count', :options => [options[:threshold].to_s]))
         end
       end
 

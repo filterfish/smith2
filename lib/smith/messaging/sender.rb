@@ -12,6 +12,8 @@ module Smith
         # This is for backward compatibility.
         @queue_def = queue_def.is_a?(QueueDefinition) ? queue_def : QueueDefinition.new(queue_def, opts)
 
+        @acl_type_cache = AclTypeCache.instance
+
         @reply_container = {}
 
         prefetch = option_or_default(@queue_def.options, :prefetch, Smith.config.agent.prefetch)
@@ -30,7 +32,7 @@ module Smith
           channel.direct(@queue_def.normalise, @options.exchange) do |exchange|
 
             exchange.on_return do |basic_return,metadata,payload|
-              logger.error { "#{ACL::Payload.decode(payload.clone, metadata.type)} returned! Exchange: #{reply_code.exchange}, reply_code = #{basic_return.reply_code}, reply_text = #{basic_return.reply_text}" }
+              logger.error { "#{@acl_type_cache[metadata.type].new.parse_from_string} returned! Exchange: #{reply_code.exchange}, reply_code = #{basic_return.reply_code}, reply_text = #{basic_return.reply_text}" }
               logger.error { "Properties: #{metadata.properties}" }
             end
 
@@ -66,10 +68,10 @@ module Smith
             #the proc from the @reply_container.    ####
             #### !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ####
             @reply_container[message_id] = {:reply_proc => @reply_proc, :timeout => @timeout.clone.tap {|t| t.set_timeout(message_id) }}
-            _publish(ACL::Payload.new(payload), @options.publish(opts, {:reply_to => reply_queue.queue_name, :message_id => message_id}))
+            _publish(payload, @options.publish(opts, {:reply_to => reply_queue.queue_name, :message_id => message_id}))
           end
         else
-          _publish(ACL::Payload.new(payload), @options.publish(opts), &blk)
+          _publish(payload, @options.publish(opts), &blk)
         end
       end
 
@@ -169,13 +171,14 @@ module Smith
 
       def _publish(message, opts, &blk)
         logger.verbose { "Publishing to: [queue]: #{@queue_def.denormalise}. [options]: #{opts}" }
-        logger.verbose { "Payload content: [queue]: #{@queue_def.denormalise}, [metadata type]: #{message._type}, [message]: #{message.inspect}" }
+        logger.verbose { "ACL content: [queue]: #{@queue_def.denormalise}, [metadata type]: #{message._type}, [message]: #{message.inspect}" }
 
         increment_counter
-        type = (message.respond_to?(:_type)) ? message._type : message.type
+
+        type = @acl_type_cache.get_by_type(message.class)
 
         @exchange_completion.completion do |exchange|
-          exchange.publish(message.encode, opts.merge(:type => type), &blk)
+          exchange.publish(message.to_s, opts.merge(:type => type), &blk)
         end
       end
 
@@ -186,7 +189,7 @@ module Smith
 
     class Timeout
       def initialize(timeout, opts={}, &blk)
-        @timeout_proc = blk || proc { |message_id| raise ACLTimeoutError, "Message not received within the timeout period#{(message_id) ? ": #{message_id}" : ""}" }
+        @timeout_proc = blk || proc { |message_id| raise MessageTimeoutError, "Message not received within the timeout period#{(message_id) ? ": #{message_id}" : ""}" }
         @timeout_duration = timeout
       end
 

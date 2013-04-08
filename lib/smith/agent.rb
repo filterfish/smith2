@@ -147,20 +147,18 @@ module Smith
     end
 
     def setup_stats_queue
-      # instantiate this queue without using the factory so it doesn't show
-      # up in the stats.
       Messaging::Sender.new(QueueDefinitions::Agent_stats) do |stats_queue|
         EventMachine.add_periodic_timer(2) do
           stats_queue.number_of_consumers do |consumers|
             if consumers > 0
-              payload = ACL::Factory.create(:agent_stats) do |p|
+              payload = ACL::AgentStats.new.tap do |p|
                 p.uuid = uuid
                 p.agent_name = self.name
                 p.pid = self.pid
                 p.rss = (File.read("/proc/#{pid}/statm").split[1].to_i * 4) / 1024 # This assumes the page size is 4K & is MB
                 p.up_time = (Time.now - @start_time).to_i
                 queues.each_queue do |q|
-                  p.queues << ACL::Factory.create('agent_stats::queue_stats', :name => q.name, :type => q.class.to_s, :length => q.counter)
+                  p.queues << ACL::AgentStats::QueueStats.new(:name => q.name, :type => q.class.to_s, :length => q.counter)
                 end
               end
 
@@ -173,7 +171,7 @@ module Smith
 
     def acknowledge_start(&blk)
       Messaging::Sender.new(QueueDefinitions::Agent_lifecycle) do |queue|
-        payload = ACL::Factory.create(:agent_acknowledge_start) do |p|
+        payload = ACL::AgentAcknowledgeStart.new.tap do |p|
           p.uuid = uuid
           p.pid = $$
           p.singleton = Smith.config.agent.singleton
@@ -188,7 +186,7 @@ module Smith
     def acknowledge_stop(&blk)
       Messaging::Sender.new(QueueDefinitions::Agent_lifecycle) do |queue|
         message = {:state => 'acknowledge_stop', :pid => $$, :name => self.class.to_s}
-        queue.publish(ACL::Factory.create(:agent_acknowledge_stop, :uuid => uuid), &blk)
+        queue.publish(ACL::AgentAcknowledgeStop.new(:uuid => uuid), &blk)
       end
     end
 
@@ -199,7 +197,7 @@ module Smith
             message = {:name => self.class.to_s, :uuid => uuid, :time => Time.now.to_i}
             queue.consumers do |consumers|
               if consumers > 0
-                queue.publish(ACL::Factory.create(:agent_keepalive, message))
+                queue.publish(ACL::AgentKeepalive, message)
               end
             end
           end

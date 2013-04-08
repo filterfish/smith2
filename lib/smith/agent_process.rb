@@ -207,7 +207,7 @@ module Smith
       Messaging::Sender.new(agent_process.control_queue_def) do |sender|
         sender.consumer_count do |count|
           if count > 0
-            sender.publish(ACL::Factory.create(:agent_command, :command => 'stop'))
+            sender.publish(ACL::AgentCommand.new(:command => 'stop'))
           else
             logger.warn { "Agent is not listening. Setting state to dead." }
             agent_process.no_process_running

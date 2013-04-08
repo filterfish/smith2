@@ -17,17 +17,17 @@ describe Smith::ACL::Factory do
 
   context "Default ACL" do
     it 'should create a new Default ACL class' do
-      default = Smith::ACL::Factory.create(:default)
+      default = Smith::ACL::Factory.create(Default)
       default.should be_an_instance_of(Smith::ACL::Default)
     end
 
     it 'should set content content hash' do
-      default = Smith::ACL::Factory.create(:default, {:bar => 'humbug'})
+      default = Smith::ACL::Factory.create(Default, :bar => 'humbug')
       default.to_hash.should == {:bar => 'humbug'}
     end
 
     it 'should set content' do
-      default = Smith::ACL::Factory.create(:default)
+      default = Smith::ACL::Factory.create(Default)
       default.command = 'hey!'
       default.args = 'boooooooo'
 
@@ -35,7 +35,7 @@ describe Smith::ACL::Factory do
     end
 
     it 'should set content using a block' do
-      default = Smith::ACL::Factory.create(:default) do |acl|
+      default = Smith::ACL::Factory.create(Default) do |acl|
         acl.bob = 'hey!'
         acl.sid ='boooooooo'
       end
@@ -45,14 +45,14 @@ describe Smith::ACL::Factory do
 
     it 'should raise an error if block & content hash are given.' do
       expect do
-        default = Smith::ACL::Factory.create(:default, :sid => 'bang') do |acl|
+        default = Smith::ACL::Factory.create(Default, :sid => 'bang') do |acl|
           acl.bob = 'wrong'
         end
       end.to raise_error(ArgumentError, 'You cannot give a content hash and a block.')
     end
 
     it 'should return valid json.' do
-      default = Smith::ACL::Factory.create(:default) do |acl|
+      default = Smith::ACL::Factory.create(Default) do |acl|
         acl.bob = 'hey!'
         acl.sid ='boooooooo'
       end
@@ -63,12 +63,12 @@ describe Smith::ACL::Factory do
 
   context "Non-default ACL" do
     it 'should create a new AgencyCommand ACL class' do
-      default = Smith::ACL::Factory.create(:default)
+      default = Smith::ACL::Factory.create(Default)
       default.should be_an_instance_of(Smith::ACL::Default)
     end
 
     it 'should set the type' do
-      command = Smith::ACL::Factory.create(:agency_command) do |acl|
+      command = Smith::ACL::Factory.create(AgencyCommand) do |acl|
         acl.command = 'hey!'
         acl.args = ['ar1', 'arg2']
       end
@@ -77,7 +77,7 @@ describe Smith::ACL::Factory do
     end
 
     it 'should allow content to be set using a block' do
-      command = Smith::ACL::Factory.create(:agency_command) do |acl|
+      command = Smith::ACL::Factory.create(AgencyCommand) do |acl|
         acl.command = 'hey!'
         acl.args = ['ar1', 'arg2']
       end
@@ -88,17 +88,17 @@ describe Smith::ACL::Factory do
 
   context "Nested ACL" do
     it 'should instantiate a nested ACL' do
-      acl = Smith::ACL::Factory.create('agent_stats::queue_stats')
+      acl = Smith::ACL::Factory.create(AgentStats::QueueStats)
       acl.should be_an_instance_of(Smith::ACL::AgentStats::QueueStats)
     end
 
     it 'should set the type' do
-      acl = Smith::ACL::Factory.create('agent_stats::queue_stats')
-      acl._type.should == 'agent_stats::queue_stats'
+      acl = Smith::ACL::Factory.create(AgentStats::QueueStats)
+      acl._type.should == AgentStats::QueueStats
     end
 
     it 'should set content' do
-      acl = Smith::ACL::Factory.create('agent_stats::queue_stats') do |a|
+      acl = Smith::ACL::Factory.create(AgentStats::QueueStats) do |a|
         a.name = 'name'
         a.type = 'type'
         a.length = 6

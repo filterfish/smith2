@@ -96,7 +96,7 @@ module Smith
     def send_dead_message
       logger.debug { "Sending dead message to agency: #{@agent_name} (#{@agent_uuid})" }
       Messaging::Sender.new(QueueDefinitions::Agent_lifecycle) do |sender|
-        sender.publish(ACL::Factory.create(:agent_dead, :uuid => @agent_uuid))
+        sender.publish(ACL::AgentDead.new(:uuid => @agent_uuid))
       end
     end
 

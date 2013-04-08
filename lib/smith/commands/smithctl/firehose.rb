@@ -9,7 +9,8 @@ module Smith
           channel.topic('amq.rabbitmq.trace', :durable => true) do |exchange|
             channel.queue('smith.firehose', :durable => true) do |queue|
               queue.bind(exchange, :routing_key => "publish.#{Smith.config.smith.namespace}.#{queue_name}").subscribe do |m,p|
-                message = ACL::Payload.decode(p, m.headers['properties']['type'])
+                clazz = @acl_type_cache.get_by_hash(m.headers['properties']['type'])
+                message = clazz.new.parse_from_string(data)
                 puts (options[:json_given]) ? message.to_json : message.inspect
               end
             end

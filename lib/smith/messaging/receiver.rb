@@ -15,11 +15,15 @@ module Smith
         # This is for backward compatibility.
         @queue_def = queue_def.is_a?(QueueDefinition) ? queue_def : QueueDefinition.new(queue_def, opts)
 
+        @acl_type_cache = AclTypeCache.instance
+
         @foo_options = {
           :auto_ack => option_or_default(@queue_def.options, :auto_ack, true),
           :threading => option_or_default(@queue_def.options, :threading, false)}
 
-        @payload_type = option_or_default(@queue_def.options, :type, []) {|v| [v].flatten }
+        @payload_type = option_or_default(@queue_def.options, :type, []) do |v|
+          Array(v).map { |t| @acl_type_cache.get_by_type(t) }
+        end
 
         prefetch = option_or_default(@queue_def.options, :prefetch, Smith.config.agent.prefetch)
 
@@ -146,7 +150,7 @@ module Smith
       end
 
       def on_message(metadata, payload, requeue_options, &blk)
-        if @payload_type.empty? || @payload_type.include?(metadata.type.to_sym)
+        if @payload_type.empty? || @payload_type.include?(metadata.type)
           @message_counter.increment_counter
           if metadata.reply_to
             setup_reply_queue(metadata.reply_to) do |queue|
@@ -156,7 +160,9 @@ module Smith
             Foo.new(metadata, payload, @foo_options, requeue_options, &blk)
           end
         else
-          raise IncorrectPayloadType, "This queue can only accept the following payload types: #{@payload_type.to_a.to_s}"
+          allowable_acls = @payload_type.map { |t| @acl_type_cache.get_by_hash(t) }.join(", ")
+          received_acl = @acl_type_cache.get_by_hash(metadata.type)
+          raise ACL::IncorrectType, "Received ACL: #{received_acl} on queue: #{@queue_def.denormalise}. This queue can only accept the following ACLs: #{allowable_acls}"
         end
       end
 
@@ -227,8 +233,15 @@ module Smith
         @reply_queue = opts[:reply_queue]
         @requeue_opts = requeue_opts
 
+        @acl_type_cache = AclTypeCache.instance
+
         @time = Time.now
-        @message = ACL::Payload.decode(data, metadata.type)
+
+        # TODO add some better error checking/diagnostics.
+        clazz = @acl_type_cache.get_by_hash(metadata.type)
+        raise ACL::UnknownError, "Unknown ACL: #{metadata.type}" if clazz.nil?
+
+        @message = clazz.new.parse_from_string(data)
 
         if opts[:threading]
           EM.defer do

@@ -38,7 +38,7 @@ module Smith
               logger.info { "Restarting dead agent: #{agent_process.name}" }
               Messaging::Sender.new(QueueDefinitions::Agency_control) do |sender|
                 sender.on_reply { |p, r| logger.debug { "Agent restart message acknowledged: #{agent_process.name}" } }
-                sender.publish(ACL::Factory.create(:agency_command).content(:command => 'start', :args => [agent_process.name]))
+                sender.publish(ACL::AgencyCommand.new(:command => 'start', :args => [agent_process.name]))
               end
             when 'unknown'
               logger.info { "Agent is in an unknown state: #{agent_process.name}" }

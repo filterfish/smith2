@@ -10,6 +10,7 @@ module Smith
       end
 
       def _acl
+        acl_type_cache = AclTypeCache.instance
         if options[:show]
           if target.empty?
             "You must supply an ACL file name."
@@ -43,9 +44,11 @@ module Smith
           ""
         else
           join_string = (options[:long]) ? "\n" : " "
-          Pathname.glob(Smith.acl_path.map {|p| "#{p}#{File::SEPARATOR}*"}).map do |p|
-            p.basename(".proto")
-          end.sort.join(join_string)
+          acl_type_cache.dump_types.keys.map(&:to_s).sort.join(join_string)
+
+          # Pathname.glob(Smith.acl_path.map {|p| "#{p}#{File::SEPARATOR}*"}).map do |p|
+          #   p.basename(".proto")
+          # end.sort.join(join_string)
         end
       end
 

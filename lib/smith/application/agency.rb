@@ -16,7 +16,7 @@ module Smith
 
           completion = EM::Completion.new.tap do |c|
             c.completion do |value|
-              responder.reply(Smith::ACL::Factory.create(:agency_command_response, :response => value))
+              responder.reply(Smith::ACL::AgencyCommandResponse.new(:response => value))
             end
           end
 

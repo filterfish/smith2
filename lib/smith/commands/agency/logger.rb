@@ -39,7 +39,7 @@ module Smith
 
       def send_agent_control_message(agent, message)
         Messaging::Sender.new(agent.control_queue_def) do |sender|
-          sender.publish(ACL::Factory.create(:agent_command, message))
+          sender.publish(ACL::AgentCommand.new(message))
         end
       end
 

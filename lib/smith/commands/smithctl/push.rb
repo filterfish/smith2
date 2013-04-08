@@ -26,7 +26,7 @@ module Smith
 
                 sender.on_reply(:timeout => timeout) { |payload| blk.call(payload.to_hash) }
                 sender.publish(json_to_payload(options[:message], options[:type]))
-              rescue Messaging::InvalidPayload, MultiJson::DecodeError => e
+              rescue ACL::Error, MultiJson::DecodeError => e
                 blk.call(e.message)
               end
             else
@@ -35,7 +35,9 @@ module Smith
                   sender.publish(json_to_payload(message, options[:type])) do
                     iter.next
                   end
-                rescue Messaging::InvalidPayload, MultiJson::DecodeError => e
+                rescue MultiJson::DecodeError => e
+                  blk.call("Json error: #{e.message}")
+                rescue ACL::Error => e
                   blk.call(e.message)
                 end
               end
@@ -71,9 +73,9 @@ module Smith
         rescue NoMethodError => e
           m = /undefined method `(.*?)=' for.*/.match(e.message)
           if m
-            raise Messaging::InvalidPayload, "Error, invalid field name: #{m[1]}"
+            raise ACL::Error, "Error, invalid field name: #{m[1]}"
           else
-            raise Messaging::InvalidPayload
+            raise ACL::Error
           end
         end
       end
