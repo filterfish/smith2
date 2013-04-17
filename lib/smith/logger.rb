@@ -17,13 +17,10 @@ module Smith
     module Methods
       protected
 
-      @@__name = 'smith'
-      @@__pattern = Smith::Config.get.logging.default_pattern
-      @@__date_pattern = Smith::Config.get.logging.default_date_pattern
       @@__level = Smith::Config.get.logging.level
       @@__trace = Smith::Config.get.logging.trace
-      @@__appender = Smith::Config.get.logging.appender.to_hash.clone
-      @@__appender[:type] = Logging::Appenders.const_get(Extlib::Inflection.camelize(Smith::Config.get.logging.appender.type))
+
+      @@appender = nil
 
       def log_level(level=nil)
         if level
@@ -37,27 +34,19 @@ module Smith
         Logging.logger.root.level = @@__level
       end
 
-      def log_appender(opts={})
-        if @appender.nil? || !opts.empty?
-          @@__name = opts[:name] if opts[:name]
-          @appender = @@__appender[:type].send(:new, @@__name, @@__appender.merge(:layout => log_pattern))
-          @reload = true
-        end
-        Logging.logger.root.appenders = @appender
-      end
+      def log_appender
+        unless @@appender
+          appender_type = Extlib::Inflection.camelize(Config.get.logging.appender.type)
+          pattern_opts = {
+            :pattern => Config.get.logging.default_pattern,
+            :date_pattern => Config.get.logging.default_date_pattern}
 
-      def log_pattern(*pattern)
-        case pattern.size
-        when 1
-          @@__pattern = pattern.shift
-          @reload = true
-        when 2
-          @@__pattern = pattern.shift
-          @@__date_pattern = pattern.shift
-          @reload = true
+          appender_opts = Config.get.logging.appender.clone.merge(:layout => Logging.layouts.pattern(pattern_opts))
+
+          @@appender = Logging::Appenders.const_get(appender_type).new('smith', appender_opts)
         end
 
-        Logging.layouts.pattern({:pattern => @@__pattern, :date_pattern => @@__date_pattern})
+        Logging.logger.root.appenders = @@appender
       end
 
       def log_trace(trace)
@@ -74,7 +63,6 @@ module Smith
       private
 
       def __setup
-        self.log_pattern
         self.log_appender
         self.log_level
         @reload = true

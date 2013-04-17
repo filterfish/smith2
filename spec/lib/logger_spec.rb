@@ -10,13 +10,12 @@
 
 require 'spec_helper'
 
+# This is extremely bodgy. But the default_pattern in .smithrc must be:
 $pattern = "%7l - %c:%L - %m\n"
 
 module Smith
   class ClassUnderTest
     include Smith::Logger
-
-    log_pattern $pattern
 
     def self.capture_stdout(print_to_stdout=false)
       saved_stdout = STDOUT.dup
