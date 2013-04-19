@@ -30,7 +30,8 @@ Good Ideas
 Normal
 ~~~~~~
 
-* Forking an agent should change directory to /
+* Forking an agent should change directory to /. If I do this the agent throws a
+  stack overflow error. I really don't know why.
 
 * If an agent hasn't started after 20 seconds (ie there are no keepalives)
   set the state to dead.
@@ -148,7 +149,7 @@ Normal
 * It looks as if the agent lifecycles are keyed on name (see
   Agency#acknowledge_start & Agency#acknowledge_stop). This should be the pid
   or maybe both but just using name I can't have more than one agent which
-  stops things like cloning.
+  stops things like cloning. [done]
 
 * Add code to verify the protocol buffer payload type. It should go in
   Sender#_publish. [done - needs checking]
