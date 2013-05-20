@@ -11,11 +11,12 @@ module Smith
     end
 
     def setup_queues
-      Messaging::Receiver.new(QueueDefinitions::Agency_control) do |receiver|
+      Messaging::Receiver.new(QueueDefinitions::Agency_control, :auto_ack => false) do |receiver|
         receiver.subscribe do |payload, responder|
 
           completion = EM::Completion.new.tap do |c|
             c.completion do |value|
+              responder.ack
               responder.reply(Smith::ACL::AgencyCommandResponse.new(:response => value))
             end
           end
