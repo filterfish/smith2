@@ -56,32 +56,12 @@ module Smith
           end
         end
 
-        start_garbage_collection
-
         blk.call(self) if blk
-      end
-
-      def start_garbage_collection
-        logger.debug { "Starting the garbage collector." }
-        EM.add_periodic_timer(5) do
-          @reply_queues.each do |queue_name,queue|
-            queue.status do |number_of_messages, number_of_consumers|
-              if number_of_messages == 0 && number_of_consumers == 0
-                queue.delete do |delete_ok|
-                  @reply_queues.delete(queue_name)
-                  logger.debug { "Unused reply queue deleted: #{queue_name}" }
-                end
-              end
-            end
-          end
-        end
       end
 
       def ack(multiple=false)
         @channel_completion.completion {|channel| channel.ack(multiple) }
       end
-
-      private :start_garbage_collection
 
       def setup_reply_queue(reply_queue_name, &blk)
         if @reply_queues[reply_queue_name]
@@ -90,7 +70,7 @@ module Smith
           @exchange_completion.completion do |exchange|
             logger.debug { "Attaching to reply queue: #{reply_queue_name}" }
 
-            queue_def = QueueDefinition.new(reply_queue_name, :auto_delete => false, :immediate => true, :mandatory => true)
+            queue_def = QueueDefinition.new(reply_queue_name, :auto_delete => true, :immediate => true, :mandatory => true, :durable => false)
 
             Smith::Messaging::Sender.new(queue_def) do |sender|
               @reply_queues[reply_queue_name] = sender
@@ -166,32 +146,25 @@ module Smith
         end
       end
 
+      private :on_message
+
       def queue_name
         @queue_def.denormalise
       end
 
-      private :on_message
-
-      # def delete(&blk)
-      #   @queue_completion.completion do |queue|
-      #     queue.delete do
-      #       @exchange_completion.completion do |exchange|
-      #         exchange.delete do
-      #           @channel_completion.completion do |channel|
-      #             channel.close(&blk)
-      #           end
-      #         end
-      #       end
-      #     end
-      #   end
-      # end
-
-
-      # I've a feeling this should be replaced by the above code.
-      # TODO Check this is correct.
       def delete(&blk)
-        @queue_completion.completion do |queue|
-          queue.delete(&blk)
+        @exchange_completion.completion do |exchange|
+          @queue_completion.completion do |queue|
+            @channel_completion.completion do |channel|
+              queue.unbind(exchange) do
+                queue.delete do
+                  exchange.delete do
+                    channel.close(&blk)
+                  end
+                end
+              end
+            end
+          end
         end
       end
 
@@ -221,7 +194,6 @@ module Smith
         end
       end
     end
-
 
     class Foo
       include Smith::Logger

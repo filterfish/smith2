@@ -63,10 +63,10 @@ module Smith
             message_id = random
             logger.verbose { "message_id: #{message_id}" }
 
-            #### !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ####
-            #### TODO if there is a timeout delete  ####
-            #the proc from the @reply_container.    ####
-            #### !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ####
+            #### !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ####
+            #### TODO if there is a timeout delete   ####
+            #### the proc from the @reply_container. ####
+            #### !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ####
             @reply_container[message_id] = {:reply_proc => @reply_proc, :timeout => @timeout.clone.tap {|t| t.set_timeout(message_id) }}
             _publish(payload, @options.publish(opts, {:reply_to => reply_queue.queue_name, :message_id => message_id}))
           end
@@ -83,14 +83,14 @@ module Smith
       # messages. You must publish with intent to reply -- tee he.
       #
       # If you pass in a queue_name the same queue name will get used for every
-      # reply. This means that there are no create and teardown costs for every
-      # for every message. If no queue_name is given a random one will be
-      # assigned.
+      # reply. This means that there are no create and teardown costs for each
+      # message. If no queue_name is given a random one will be assigned.
       def on_reply(opts={}, &blk)
         @reply_proc = blk
+
         @timeout ||= Timeout.new(Smith.config.smith.timeout, :queue_name => @queue_def.denormalise)
 
-        queue_def = QueueDefinition.new(opts.delete(:reply_queue_name) || random, {:auto_delete => false, :auto_ack => false}.merge(opts))
+        queue_def = QueueDefinition.new(opts.delete(:reply_queue_name) || "#{@queue_def.denormalise}.reply", opts.merge(:auto_delete => true, :durable => false))
         logger.debug { "reply queue: #{queue_def.denormalise}" }
 
         @reply_queue_completion ||= EM::Completion.new.tap do |completion|
@@ -101,7 +101,8 @@ module Smith
                   reply[:timeout].cancel_timeout
                   reply[:reply_proc].call(payload, receiver)
                 else
-                  logger.error { "Reply message has no correlation_id: #{reply.inspect}" }
+                  receiver.ack if opts[:auto_ack]
+                  logger.error { "No reply block for correlation_id: #{receiver.correlation_id}. This is probably a timed out message. Message: #{payload.to_json}" }
                 end
               end
             end
