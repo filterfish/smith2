@@ -6,6 +6,7 @@ $:.unshift(File.dirname(__FILE__) + '/../lib')
 require 'pp'
 require 'smith'
 require 'smith/daemon'
+require 'smith/agent_cache'
 require 'smith/acl_compiler'
 require 'smith/application/agency'
 
