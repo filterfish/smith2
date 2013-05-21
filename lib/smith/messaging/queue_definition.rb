@@ -24,8 +24,12 @@ module Smith
     end
 
     # to_a is defined to make the splat operator work.
-    def to_a()
+    def to_a
       return @normalised_queue, @options
+    end
+
+    def to_s
+      "<#{self.class}: #{@denormalised_queue}, #{@options.inspect}>"
     end
   end
 end

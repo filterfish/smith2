@@ -213,6 +213,10 @@ module Smith
       def cancel_timeout
         @timeout.cancel if @timeout
       end
+
+      def to_s
+        "<Smith::Timeout: #{@timeout_duration}>"
+      end
     end
   end
 end
