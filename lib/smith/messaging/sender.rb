@@ -32,7 +32,7 @@ module Smith
           channel.direct(@queue_def.normalise, @options.exchange) do |exchange|
 
             exchange.on_return do |basic_return,metadata,payload|
-              logger.error { "#{@acl_type_cache[metadata.type].new.parse_from_string} returned! Exchange: #{reply_code.exchange}, reply_code = #{basic_return.reply_code}, reply_text = #{basic_return.reply_text}" }
+              logger.error { "#{@acl_type_cache[metadata.type].new.parse_from_string} returned! Exchange: #{reply_code.exchange}, reply_code: #{basic_return.reply_code}, reply_text: #{basic_return.reply_text}" }
               logger.error { "Properties: #{metadata.properties}" }
             end
 
@@ -75,8 +75,8 @@ module Smith
         end
       end
 
-      def on_timeout(timeout, &blk)
-        @timeout = Timeout.new(timeout, &blk)
+      def on_timeout(timeout=nil, &blk)
+        @timeout = Timeout.new(timeout || Smith.config.smith.timeout, &blk)
       end
 
       # Set up a listener that will receive replies from the published
@@ -199,7 +199,7 @@ module Smith
         cancel_timeout
         if @timeout_duration
           @timeout = EventMachine::Timer.new(@timeout_duration) do
-            @timeout_proc.call(message_id)
+            @timeout_proc.call(message_id, @timeout_duration)
           end
         else
           raise ArgumentError, "on_timeout not set."
