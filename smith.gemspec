@@ -22,7 +22,7 @@ spec = Gem::Specification.new do |s|
   s.add_dependency "trollop", ">= 1.16.2"
   s.add_dependency "multi_json", ">= 1.3.2"
 
-  binaries = %w{agency smithctl}
+  binaries = %w{agency smithctl pry-smith}
   libraries = Dir.glob("lib/**/*")
 
   s.executables = binaries
