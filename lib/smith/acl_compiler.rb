@@ -14,13 +14,7 @@ module Smith
       $:.map{|p| Pathname.new(p).join("ruby_generator.so")}.detect{|so| so.exist? }
     end
 
-    begin
-      ffi_lib(find_so)
-    rescue LoadError => e
-      logger.fatal { "Cannot load protobuf shared library: #{e}" }
-      exit(1)
-    end
-
+    ffi_lib(find_so)
     attach_function(:_rprotoc_extern, [:int, :pointer], :int32)
 
     def initialize
@@ -30,6 +24,8 @@ module Smith
 
     def compile
       Smith.acl_path.each do |path|
+        $LOAD_PATH << path
+
         acls_files = path_glob(path)
         out_of_date_acls = path_glob(path).select { |p| should_compile?(p) }
         if out_of_date_acls.size > 0
