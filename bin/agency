@@ -7,6 +7,7 @@ $:.unshift(Pathname.new(__FILE__).dirname.parent.join('lib').expand_path)
 
 require 'smith'
 require 'smith/daemon'
+require 'smith/agent_cache'
 require 'smith/acl_compiler'
 require 'smith/application/agency'
 

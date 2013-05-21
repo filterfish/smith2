@@ -1,4 +1,11 @@
 # -*- encoding: utf-8 -*-
+
+require 'daemons/pidfile'
+
+require 'smith/agent_process'
+require 'smith/agent_monitoring'
+require 'smith/command'
+
 module Smith
   class Agency
 

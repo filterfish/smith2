@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 
 require 'trollop'
+require 'smith/command_base'
 
 module Smith
   class Command

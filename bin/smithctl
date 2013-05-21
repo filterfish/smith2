@@ -9,6 +9,9 @@ require 'pathname'
 $:.unshift(Pathname.new(__FILE__).dirname.parent.join('lib').expand_path)
 
 require 'smith'
+require 'smith/command'
+
+require 'trollop'
 
 include Smith::Logger
 
