@@ -262,9 +262,14 @@ module Smith
     end
   end
 
+  module LoggeMethods
+    include Logger
+  end
+
   AgentProcess.state_machine do |state_machine|
     # Make sure the state machine gets a logger.
-    state_machine.class_eval { include Smith::Logger }
+    # This doesn't work with JRuby.
+    state_machine.extend LoggeMethods
 
     after_transition :on => :start, :do => AgentProcessObserver.method(:start)
     after_transition :on => :check, :do => AgentProcessObserver.method(:start_process)
