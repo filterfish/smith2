@@ -151,7 +151,7 @@ module Smith
     def save
       @agent_state._state = state
       # TODO This *must* change to uuid when I've worked out how to manage them.
-      @db.put(uuid, @agent_state.to_s)
+      @db[uuid] = @agent_state.to_s
     end
   end
 

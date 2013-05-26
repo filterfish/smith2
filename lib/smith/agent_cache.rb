@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-require 'leveldb'
+require 'tdb'
 require 'securerandom'
 
 module Smith
@@ -10,7 +10,8 @@ module Smith
     attr_accessor :path
 
     def initialize(opts={})
-      @db = LevelDB::DB.make(Smith.cache_path.join('agent_state').to_s, :error_if_exists => false, :create_if_missing => true)
+      # @db = LevelDB::DB.make(Smith.cache_path.join('agent_state').to_s, :error_if_exists => false, :create_if_missing => true)
+      @db = TDB.new(Smith.cache_path.join('agent_state.tdb').to_s)
     end
 
     def create(name)
@@ -18,11 +19,11 @@ module Smith
     end
 
     def alive?(uuid)
-      (@db.exist?(uuid)) ? instantiate(@db[uuid]).alive? : false
+      (@db.include?(uuid)) ? instantiate(@db[uuid]).alive? : false
     end
 
     def exist?(uuid)
-      @db.exists?(uuid)
+      @db.include?(uuid)
     end
 
     def find_by_name(*names)
