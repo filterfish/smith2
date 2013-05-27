@@ -8,13 +8,6 @@ Priority
   Smith.queue_length("queue name") do |length|
   end
 
-* Ensure the garbage collector deletes the corresponding exchange. [done]
-
-* Ensure the acl compiler creates the cache/acl directory. [done.]
-
-* The acl compiler compiles to a directory it doesn't have permission to without
-  generating an error. [done]
-
 Good Ideas
 ~~~~~~~~~~
 
@@ -66,14 +59,10 @@ Normal
   See "Agents should be namespace-able"
 
 * The list command should check to see if the agent is actually alive and
-  add that information to the output. [done - check]
-
-* Have a flag for pop-queue that doesn't ack. [done]
+  add that information to the output.
 
 * Don't send messages to queues that don't exist [send, smithctl messages,
   pop-queue.
-
-* list command should display the state of the agent. [partially done]
 
 * Think about the idea of a run list. Or is this already implemented in
   the state machine.
@@ -83,34 +72,22 @@ Normal
 
 * Have an errback if publish_and_receive times out. [done - check]
 
-* Add a message retry mechanism. [done]
-
 * Name reply queues based on the agent name. This would only work with the
   default queue.
-
-* Delete queue should be part of smithctl. [done]
 
 * smithctl message should have some sort of printf formatting string
   that can be used to construct the protocol buffer message.
 
 * Change all log messages to use the block form instead of the argument passing.
 
-* Have an option to not ack the pop-queue command. See Receiver#pop for a more
-  detailed description. [done]
-
 * Have a SMITH_LOAD_PATH environment variable that overrides the path set up in
   the config
-
-* Have a path where encoder files can be loaded from. [done]
 
 * Have something monitor the agents' state machine for signs of problems.
   For example if an agent is in the starting state for longer than a minutes or
   so
 
 * Be able to change log level for individual loggers (ie per class).
-
-* Add to_s to the Encoders, so when I call inspect on the message it
-  gives a proper represntation. [done - could maybe be improved though]
 
 * Setup a dead letter queue in case of error. Have a look at the dead letter
   stuff in rabbitmq.
@@ -135,9 +112,6 @@ Normal
 * I've added a method called add_agent_load_path to the bootstrapper. When
   thinking about the above make sure you check whether that method fits.
 
-* Think about how to make ./bin/send a general tool. Maybe write some rake
-  tasks. [done - send no longer exists but it's now in smithctl & more general]
-
 * Make an equivalent of ripl-rails: ripl-smith
 
 * Add command to smithctl to return the queue names an agent is using. This
@@ -145,14 +119,6 @@ Normal
 
 * Add the ability to clone an agent. See next point (It looks as if the agent
   lifecycles ...).
-
-* It looks as if the agent lifecycles are keyed on name (see
-  Agency#acknowledge_start & Agency#acknowledge_stop). This should be the pid
-  or maybe both but just using name I can't have more than one agent which
-  stops things like cloning. [done]
-
-* Add code to verify the protocol buffer payload type. It should go in
-  Sender#_publish. [done - needs checking]
 
 * Message headers:
   * sent time,
@@ -171,8 +137,7 @@ Normal
   is noisy.
 
 * Add command line options to the agency:
-  * daemonise the agency (and create the pid file.) [done]
-  * specify the pid file. [done]
+  * fix --daemonise
   * specify the environment.
   * specify a different config file.
   * start the agency with a clean db.
@@ -195,14 +160,15 @@ Normal
   * add --number to the start command.
 
   * pop should not die if there is an unkown message type on the queue being pop'ed
-  * push should read from stdin. It should read as many lines as there are. [done]
-  * add --one-column (-1) option to all the commands that need it (eg list,
-    agents) [done]
   * add -0 option to smithctl push
   * stat should use the management plugin. It's seriously powerful!
   * logger command should list the current log level.
 
   In fact look at smith1 agency to see what options it had.
+
+* New commands:
+
+  * ping command -- ping an agent.
 
 * Allow ACL types to be specified using their camel case representation.
 
@@ -246,8 +212,6 @@ Normal
 
   it probably means that you've already acked the message.
 
-* Sort the output of the agents command into alphabetical order. [done]
-
 * Clean up some of the logging messages, for example:
 
   Messaging::Sender prints:
@@ -258,28 +222,11 @@ Normal
     
   this is inconsistent.
 
-* Remove the commas in the agents command. [done]
-
 * If nothing is listening on the reply queue to agency command then don't send
   the message back and delete the queue. I think this is going to be quite hard
   to do. I could provide an option to Reply#reply but that smells.
 
-* Check all the commands for consistency. [mostly done]
-
-* Split the functionality of smithctl. At the moment this simply sends any
-  commands to the agency but some commands are better served by executing the
-  command directly. For example removing a queue.
-
-  Removing a queue is quite problematic as I cannot get the queue attributes
-  from the broker (not via amqp anyway -- at least I cannot see a way of doing
-  it) but I can declare the queue with the :passive option which will use any
-  existing queues but will cause a channel exception if the queue doesn't exist
-  which makes life really awkward for the agency. If I do this in smithctl then
-  a channel exception can be handled properly without impacting the agency.
-
-  So in short have local and remote commands!
-
-  [done]
+* Check all the commands for consistency.
 
 * Add next_ticks around things like requeue and general recovery.
 
@@ -314,10 +261,6 @@ Normal
 * Check to see if the acl directory actually exists. This logs a message it
   isn't. Is that good enough.
 
-* change encoders to be acl. [done]
-
-* Add version command to smith, obviously with support from the agency. [done]
-
 * Add command to list what agents are in each group. Add a --groups option to
   the agents command 
 
@@ -350,23 +293,12 @@ Normal
 * If the list command is passed an agent just give details about that agent -
   maybe get rid of the state command.
 
-* Have a list acl command. [done]
-
 * Add a stopping? method to the Smith class. Agents can then check this & do the
   right thing when shutting down.
-
-* Add a command called commands. [done]
 
 * Add a command that says if the agency is alive: ping?
 
 * Add check for ACLs of the same name.
-
-* Fix banner helps. See commands/acl. [done]
-
-* Add smithctl options to ~/.smithrc. Add timeout and log_level. [done]
-
-* Use PidFile.find_files to determine if and agent is alive or dead irrespective
-  of the current state. [done]
 
 * Add column(1) like formatting to the output of smithctl.
 
@@ -420,19 +352,11 @@ Normal
         from /usr/local/ruby-1.9.3-p194/bin/agency:23:in `load'
         from /usr/local/ruby-1.9.3-p194/bin/agency:23:in `<main>'
 
-* Fix bug where there are too many logging file descriptors open. This manifests
-  when you pop > ~300 messages off a queue. [done]
-
-* Add the internal (to smith) pb directory to the pb load path. [done]
-
 * Smith::ACL::Payload.new(<payload type>, :from => payload) doesn't work for
   :default messages.
 
 * Have a callback per message type. In effect implement pattern matching instead
   of using a case statement.
-
-* Fix bug where I get an exception if the pb class has already been loaded:
-  In practice this only happens when a pb is compiled. [done]
 
 * Fix force in protocol_buffer_compiler. There's no way to currently force the
   recompilation the pb files.
