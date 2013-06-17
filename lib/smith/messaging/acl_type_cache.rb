@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 
 require 'set'
+require 'extlib'
 require 'singleton'
 require 'murmurhash3'
 
@@ -20,12 +21,17 @@ module Smith
         h = to_murmur32(type)
         @types[type] = h
         @hashes[h] = type
+        @legacy_types_by_hash[type.to_s.split(/::/)[-1].snake_case] = type
         true
       end
     end
 
     def get_by_hash(type)
-      @hashes[type]
+      if @hashes[type]
+        @hashes[type]
+      elsif @legacy_types_by_hash[type.to_s]
+        @legacy_types_by_hash[type.to_s]
+      end
     end
 
     def get_by_type(type)
@@ -48,6 +54,7 @@ module Smith
     def clear!
       @types = {}
       @hashes = {}
+      @legacy_types_by_hash = {}
     end
 
     # Dump the type hash
