@@ -21,9 +21,7 @@ module Smith
           :auto_ack => option_or_default(@queue_def.options, :auto_ack, true),
           :threading => option_or_default(@queue_def.options, :threading, false)}
 
-        @payload_type = option_or_default(@queue_def.options, :type, []) do |v|
-          Array(v).map { |t| @acl_type_cache.get_by_type(t) }
-        end
+        @payload_type = Array(option_or_default(@queue_def.options, :type, []))
 
         prefetch = option_or_default(@queue_def.options, :prefetch, Smith.config.agent.prefetch)
 
@@ -130,7 +128,7 @@ module Smith
       end
 
       def on_message(metadata, payload, requeue_options, &blk)
-        if @payload_type.empty? || @payload_type.include?(metadata.type)
+        if @payload_type.empty? || @payload_type.include?(@acl_type_cache.get_by_hash(metadata.type))
           @message_counter.increment_counter
           if metadata.reply_to
             setup_reply_queue(metadata.reply_to) do |queue|
@@ -140,7 +138,7 @@ module Smith
             Foo.new(metadata, payload, @foo_options, requeue_options, &blk)
           end
         else
-          allowable_acls = @payload_type.map { |t| @acl_type_cache.get_by_hash(t) }.join(", ")
+          allowable_acls = @payload_type.join(", ")
           received_acl = @acl_type_cache.get_by_hash(metadata.type)
           raise ACL::IncorrectType, "Received ACL: #{received_acl} on queue: #{@queue_def.denormalise}. This queue can only accept the following ACLs: #{allowable_acls}"
         end

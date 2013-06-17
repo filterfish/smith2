@@ -42,4 +42,15 @@ describe Smith::AclTypeCache do
     type_cache.get_by_hash('1rdse78').should == String
     type_cache.get_by_hash('1kvf4in').should == "Random string"
   end
+
+  it "should work with legacy types." do
+    module ACL; module Smith; class LegacyACLType; end; end; end
+
+    type_cache.add(ACL::Smith::LegacyACLType)
+    type_cache.get_by_hash('legacy_acl_type').should == ACL::Smith::LegacyACLType
+    type_cache.get_by_hash(:legacy_acl_type).should == ACL::Smith::LegacyACLType
+
+    type_cache.add(String)
+    type_cache.get_by_hash('string').should == String
+  end
 end
