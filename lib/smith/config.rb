@@ -102,7 +102,7 @@ module Smith
       cache_path = Pathname.new(config[:agency_cache_path])
       local_acl_path = Pathname.new(__FILE__).dirname.join('messaging').join('acl')
       acl_path = "#{local_acl_path}#{File::PATH_SEPARATOR}#{config[:acl_path]}"
-      broker = Struct::Broker.new(config[:broker_host], set_as_integer(config, :broker_port), config[:broker_user], config[:broker_password], config[:broker_vhost])
+      broker = Struct::Broker.new(config[:broker_host], set_as_integer(config, :broker_port), config[:broker_user], config[:broker_password], config[:broker_vhost] || '/')
       appender = Struct::Appender.new(config[:logging_appender_type], config[:logging_appender_filename])
 
       @agent = Struct::Agent.new(set_as_boolean(config, :agent_monitor), set_as_boolean(config, :agent_singleton), '', set_as_integer(config, :agent_prefetch))

@@ -21,7 +21,9 @@ module Smith
       @options = opts
       options_check
 
-      @daemon = Daemon.new(AGENCY_NAME, opts[:daemon], opts[:pid_dir])
+      pid_suffix = Pathname.new(Smith.config.amqp.broker.vhost).basename.to_s
+
+      @daemon = Daemon.new(".#{AGENCY_NAME}.#{pid_suffix}", opts[:daemon], opts[:pid_dir])
       @agency = Agency.new
 
       Smith.shutdown_hook do
