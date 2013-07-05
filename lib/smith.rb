@@ -58,8 +58,7 @@ module Smith
       Pathname.new(config.agency.cache_path).expand_path
     end
 
-    # Return the acl cache path. If it's not specified in the config
-    # generate a temporary path.
+    # Return the acl cache path.
     def acl_cache_path
       @acl_cache_path = Pathname.new(Smith.config.agency.acl_cache_path).tap do |path|
         check_path(path, true)
@@ -202,8 +201,11 @@ module Smith
         end
       end
     end
+
   end
 end
+
+$LOAD_PATH.unshift(Smith.acl_cache_path)
 
 require_relative 'smith/amqp_errors'
 require_relative 'smith/object_count'
