@@ -16,6 +16,8 @@ module Smith
     include Logger
 
     def initialize(name, uuid)
+      Dir.chdir('/')
+
       # FIXME
       # This doesn't do what I think it should. If an exception is
       # thrown in setup_control_queue, for example, it just kills
