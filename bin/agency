@@ -21,9 +21,7 @@ module Smith
       @options = opts
       options_check
 
-      pid_suffix = Pathname.new(Smith.config.amqp.broker.vhost).basename.to_s
-
-      @daemon = Daemon.new(".#{AGENCY_NAME}.#{pid_suffix}", opts[:daemon], opts[:pid_dir])
+      @daemon = Daemon.new(add_vhost(AGENCY_NAME), opts[:daemon], opts[:pid_dir])
       @agency = Agency.new
 
       Smith.shutdown_hook do
@@ -69,6 +67,11 @@ module Smith
       if @options[:daemon] && Regexp.new(/stdout|stderr/i).match(Smith.config.logging.appender[:type])
         puts "Logger set to stdout and daemonise is true. Log messages will be sent to /dev/null."
       end
+    end
+
+    def add_vhost(name)
+      suffix = Pathname.new(Smith.config.amqp.broker.vhost).basename
+      "%s.%s" % [name, (suffix.root?) ? 'root' : suffix.to_s]
     end
   end
 end
