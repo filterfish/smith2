@@ -38,10 +38,10 @@ module Smith
       if @daemon.running?
         logger.fatal { "The agency is alredy running" }
       else
+        require 'smith/messaging/acl_type_cache'
+
         logger.info { "Using config file: #{Smith.config_path}" }
         @daemon.daemonise
-
-        require 'smith/messaging/acl_type_cache'
 
         Smith.compile_acls
 
