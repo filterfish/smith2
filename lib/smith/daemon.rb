@@ -19,10 +19,23 @@ module Smith
       unlink_pid_file
 
       if @daemonise
-        Daemonize::daemonize('/dev/null', @name)
-      else
+        fork && exit
+
+        unless Process.setsid
+          raise RuntimeException, 'cannot detach from controlling terminal'
+        end
+
         $0 = @name
+
+        # Be nice to unmount.
+        Dir.chdir "/"
+
+        STDIN.reopen("/dev/null")
+        STDOUT.reopen("/dev/null")
+        STDERR.reopen(STDOUT)
       end
+
+      $0 = @name
 
       @pid.pid = Process.pid
       logger.debug { "Pid file: #{@pid.filename}" }
