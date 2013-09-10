@@ -140,7 +140,7 @@ module Smith
         else
           allowable_acls = @payload_type.join(", ")
           received_acl = @acl_type_cache.get_by_hash(metadata.type)
-          raise ACL::IncorrectType, "Received ACL: #{received_acl} on queue: #{@queue_def.denormalise}. This queue can only accept the following ACLs: #{allowable_acls}"
+          raise ACL::IncorrectTypeError, "Received ACL: #{received_acl} on queue: #{@queue_def.denormalise}. This queue can only accept the following ACLs: #{allowable_acls}"
         end
       end
 
