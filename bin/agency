@@ -26,12 +26,15 @@ module Smith
       @agency = Agency.new
 
       Smith.shutdown_hook do
-        puts "Shutting down"
+        logger.info { "Shutting down" }
       end
 
       # Setup signal handlers to clean up.
       %w{TERM INT QUIT}.each do |sig|
-        trap sig, proc { @agency.stop }
+        trap sig, proc {
+          logger.info { "Shutting down" }
+          @agency.stop
+        }
       end
     end
 
@@ -39,9 +42,9 @@ module Smith
       if @daemon.running?
         logger.fatal { "The agency is alredy running" }
       else
+        logger.info { "Using config file: #{Smith.config_path}" }
         require 'smith/messaging/acl_type_cache'
 
-        logger.info { "Using config file: #{Smith.config_path}" }
         @daemon.daemonise
 
         Smith.compile_acls
