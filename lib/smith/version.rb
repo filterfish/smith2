@@ -1,3 +1,3 @@
 module Smith
-  VERSION = "0.6.pre.2"
+  VERSION = "0.6"
 end
