@@ -99,8 +99,8 @@ module Smith
       config = read_config_file(find_config_file)
 
       amqp_opts = Struct::AmqpOpts.new(true, false)
-      cache_path = Pathname.new(config[:agency_cache_path])
-      local_acl_path = Pathname.new(__FILE__).dirname.join('messaging').join('acl')
+      cache_path = Pathname.new(config[:agency_cache_path]).expand_path
+      local_acl_path = Pathname.new(__FILE__).dirname.join('messaging').join('acl').expand_path
       acl_path = "#{local_acl_path}#{File::PATH_SEPARATOR}#{config[:acl_path]}"
       broker = Struct::Broker.new(config[:broker_host], set_as_integer(config, :broker_port), config[:broker_user], config[:broker_password], config[:broker_vhost] || '/')
       appender = Struct::Appender.new(config[:logging_appender_type], config[:logging_appender_filename])

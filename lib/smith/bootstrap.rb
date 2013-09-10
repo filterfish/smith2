@@ -3,7 +3,8 @@
 # This should never be run directly it should only ever be run by
 # the agency.
 
-$: << File.dirname(__FILE__) + '/..'
+require 'pathname'
+$:.unshift(Pathname.new(__FILE__).dirname.parent.expand_path)
 
 require 'smith'
 require 'smith/agent'

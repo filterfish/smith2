@@ -19,7 +19,7 @@ module Smith
 
     def self.capture_stdout(print_to_stdout=false)
       saved_stdout = STDOUT.dup
-      tmp_file = Pathname.new(File.join(Dir.tmpdir, "rspec-logger#{$$}"))
+      tmp_file = Pathname.new(Dir.tmpdir).join("rspec-logger#{$$}")
       STDOUT.reopen(tmp_file)
       yield
       STDOUT.reopen(saved_stdout)

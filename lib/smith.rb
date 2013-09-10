@@ -38,7 +38,7 @@ module Smith
     end
 
     def root_path
-      Pathname.new(File.dirname(__FILE__) + '/..').expand_path
+      Pathname.new(__FILE__).dirname.parent.expand_path
     end
 
     def agent_paths

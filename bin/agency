@@ -1,9 +1,10 @@
 #!/usr/bin/env ruby
 # -*- encoding: utf-8 -*-
 
-$:.unshift(File.dirname(__FILE__) + '/../lib')
+require 'pathname'
 
-require 'pp'
+$:.unshift(Pathname.new(__FILE__).dirname.parent.join('lib').expand_path)
+
 require 'smith'
 require 'smith/daemon'
 require 'smith/acl_compiler'

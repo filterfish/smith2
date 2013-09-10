@@ -6,7 +6,7 @@ module Smith
         agents = Smith.agent_paths.map do |path|
           group_dir = path.join(group)
           if group_dir.exist? && group_dir.directory?
-            agents = Pathname.glob("#{path.join(group)}/*_agent.rb")
+            agents = Pathname.glob(group_dir.join("*_agent.rb"))
             agents.map {|a| Extlib::Inflection.camelize(a.basename(".rb").to_s)}
           else
             nil

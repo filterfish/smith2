@@ -5,8 +5,8 @@
   trap sig, proc { exit }
 end
 
-
-$:.unshift(File.dirname(__FILE__) + '/../lib')
+require 'pathname'
+$:.unshift(Pathname.new(__FILE__).dirname.parent.join('lib').expand_path)
 
 require 'smith'
 

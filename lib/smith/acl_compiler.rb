@@ -92,7 +92,7 @@ module Smith
     end
 
     def path_glob(path)
-      Pathname.glob("#{path.join("*.proto")}").map { |acl| acl.realpath }
+      Pathname.glob(path.join("*.proto")).map { |acl| acl.realpath }
     end
 
     # This is not idea but I really don't know how else to do it. I cannot use
