@@ -172,7 +172,7 @@ module Smith
 
       def _publish(message, opts, &blk)
         logger.verbose { "Publishing to: [queue]: #{@queue_def.denormalise}. [options]: #{opts}" }
-        logger.verbose { "ACL content: [queue]: #{@queue_def.denormalise}, [metadata type]: #{message._type}, [message]: #{message.inspect}" }
+        logger.verbose { "ACL content: [queue]: #{@queue_def.denormalise}, [metadata type]: #{message.class}, [message]: #{message.inspect}" }
 
         increment_counter
 
