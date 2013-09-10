@@ -28,7 +28,7 @@ module Smith
     end
 
     Struct.new("Agent", :monitor, :singleton, :metadata, :prefetch, &to_hash)
-    Struct.new("Agency", :cache_path, :agent_path, :acl_path, :acl_cache_path, :pid, &to_hash)
+    Struct.new("Agency", :cache_path, :agent_path, :acl_path, :acl_cache_path, :pid_dir, &to_hash)
     Struct.new("AmqpOpts", :durable, :auto_delete, &to_hash)
     Struct.new("Broker", :host, :port, :user, :password, :vhost, &to_hash)
     Struct.new("Subscribe", :ack, &to_hash)
@@ -106,7 +106,7 @@ module Smith
       appender = Struct::Appender.new(config[:logging_appender_type], config[:logging_appender_filename])
 
       @agent = Struct::Agent.new(set_as_boolean(config, :agent_monitor), set_as_boolean(config, :agent_singleton), '', set_as_integer(config, :agent_prefetch))
-      @agency = Struct::Agency.new(cache_path, config[:agent_path], acl_path, cache_path.join('acl'), config[:agency_pid])
+      @agency = Struct::Agency.new(cache_path, config[:agent_path], acl_path, cache_path.join('acl'), config[:agency_pid_dir])
       @amqp = Struct::Amqp.new(broker, amqp_opts, amqp_opts, Struct::Publish.new({}), Struct::Subscribe.new(true), Struct::Pop.new(true))
       @eventmachine = Struct::Eventmachine.new(set_as_integer(config, :file_descriptors, 1024), set_as_boolean(config, :epoll, true), set_as_boolean(config, :kqueue, true))
       @logging = Struct::Logging.new(config[:logging_trace], config[:logging_level], config[:logging_pattern], config[:logging_date_pattern], appender)
