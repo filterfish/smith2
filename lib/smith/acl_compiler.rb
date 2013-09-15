@@ -23,6 +23,8 @@ module Smith
     end
 
     def compile
+      $LOAD_PATH << Smith.acl_cache_path
+
       Smith.acl_path.each do |path|
         $LOAD_PATH << path
 
