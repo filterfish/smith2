@@ -101,6 +101,12 @@ module Smith
         end
       end
 
+      def unsubscribe(&blk)
+        @queue_completion.completion do |queue|
+          queue.unsubscribe(&blk)
+        end
+      end
+
       # pops a message off the queue and passes the headers and payload
       # into the block. +pop+ will automatically acknowledge the message
       # unless the options sets :ack to false.
