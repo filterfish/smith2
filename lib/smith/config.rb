@@ -149,7 +149,7 @@ module Smith
       if conf.exist?
         return conf
       else
-        if path == Pathname.new(ENV['HOME'])
+        if path == Pathname.new(ENV['HOME']) || path.root?
           raise ConfigNotFoundError, "Cannot find a usable config file."
         end
         find_config_file(path.dirname)
