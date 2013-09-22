@@ -53,7 +53,7 @@ Normal
   See "Agents should be namespace-able"
 
 * The list command should check to see if the agent is actually alive and
-  add that information to the output.
+  add that information to the output. (done)
 
 * Don't send messages to queues that don't exist [send, smithctl messages,
   pop-queue.
@@ -68,9 +68,6 @@ Normal
 
 * Name reply queues based on the agent name. This would only work with the
   default queue.
-
-* smithctl message should have some sort of printf formatting string
-  that can be used to construct the protocol buffer message.
 
 * Change all log messages to use the block form instead of the argument passing.
 
