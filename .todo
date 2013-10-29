@@ -95,6 +95,8 @@ Normal
 * Add checking to the config. For example the logging class can only accept File
   or Stdout appenders but this is not checked for.
 
+* Check for the existance of the config and throw an error if it can't be found.
+
 * Think about a generator to write the directory structure and what that
   directory structure might look like. Change Smith.root to the root of directory
   structure. You will need to think about what to do with the agent_path (ie the
