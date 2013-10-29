@@ -1,50 +1,47 @@
-agent:
-  monitor    = true
-  singleton  = true
-  metadata   = ''
+smith_timeout     30
+smith_namespace   smith
 
-# Options relating to agents only. Don't put agency stuff here.
-agency:
-  cache_path = "/var/cache/smith"
-  # If this is a relative path then it's relative to Smith.root_path
-  agent_path = '/home/you/dev/ruby/smith2/agents:/home/you/somewhere/else/agents'
+agent_monitor     false
+agent_singleton   true
+agent_prefetch    1
 
-  # The path to the raw protocol buffer files.
-  acl_path = "/home/you/somewhere/else/agents/lib/acl"
+# Specify the VM that an agent should use.
+agent_default_vm  ruby
 
-# These directly translate to amqp options so
-# only put options that amqp understands.
-amqp:
-  # Don't change these options unless you *really* know what you are doing.
-  exchange:
-    durable     = true
-    auto_delete = false
+agency_cache_path /var/cache/smith/new
 
-  # Don't change these options unless you *really* know what you are doing.
-  queue:
-    durable     = true
-    auto_delete = false
+# The the agency pid path. This can be overriden on the command line.
+agency_pid_dir    /run/smith
 
-  broker:
-    host        = 'localhost'
-    port        = 5672
-    user        = 'guest'
-    password    = 'guest'
-    vhost       = '/'
+# If this is a relative path then it's relative to Smith.root_path
+agent_path        <path>/agents
 
-# Only put options that eventmachine understands here.
-eventmachine:
-  file_descriptors = 1024
+# The path to the raw protocol buffer files.
+acl_path          <path>/acl
 
-logging:
-  trace                 = true
-  level                 = :debug
-  default_pattern       = '%d [%5p] %7l - %34c:%-3L - %m\\n'
-  default_date_pattern  = '%Y/%m/%d %H:%M:%S.%N'
+# Change according to your local broker.
+broker_host       localhost
+broker_port       5672
+broker_user       guest
+broker_password   guest
+broker_vhost      /
 
-  appender:
-    type     = 'File'
-    filename = '/var/log/smith.log'
+# Number of file descriptors a process can open. Needs OS config
+file_descriptors  131072
 
-smith:
-  namespace  = 'smith'
+# Set the polling method. Defaults to whatever is supported # by the platform.
+epoll         true
+kqueue        false
+
+# Logging config
+logging_trace    true
+logging_level    debug
+
+# Log pattern. Note you need to escape backslashes.
+logging_pattern       %d [%5p] %7l - %34c:%-3L - %m\n
+logging_date_pattern  %Y/%m/%d %H:%M:%S.%3N
+
+# This can be either: stderr, stdout, file, or rollingfile
+logging_appender_type         stderr
+# logging_appender_type         file
+# logging_appender_filename     /var/log/smith/smith.log
