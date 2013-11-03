@@ -39,7 +39,7 @@ module Smith
 
     def agency_command(command, args, &blk)
       Messaging::Sender.new(QueueDefinitions::Agency_control) do |sender|
-        sender.on_timeout(5) { |message_id| blk.call("Timeout. Is the agency still running?") }
+        sender.on_timeout(@timeout) { |message_id| blk.call("Timeout. Is the agency still running?") }
 
         sender.on_reply(:auto_ack => true) do |reply_payload, r|
           blk.call(reply_payload[:response])
