@@ -1,6 +1,6 @@
 Kernel.load './lib/smith/version.rb'
 
-spec = Gem::Specification.new do |s|
+Gem::Specification.new do |s|
   s.name = 'smith'
   s.version = Smith::VERSION
   s.date = Time.now.strftime("%Y-%m-%d")
@@ -12,6 +12,7 @@ spec = Gem::Specification.new do |s|
   s.rubyforge_project = "smith"
 
   s.authors = ["Richard Heycock"]
+  s.licenses = ['GPL-3']
   s.add_dependency "amqp", ">= 1.0.2"
   s.add_dependency "daemons", ">= 1.1.4"
   s.add_dependency "eventmachine", ">= 1.0.0"
