@@ -75,6 +75,7 @@ module Smith
     end
 
     def start(opts={}, &block)
+
       if EM.epoll? && Smith.config.eventmachine.epoll
         logger.debug { "Using epoll for I/O event notification." }
         EM.epoll
@@ -95,33 +96,27 @@ module Smith
         @connection = connection
 
         connection.on_connection do
-          broker = connection.broker.properties
-          endpoint = connection.broker_endpoint
-          logger.info { "Connected to: AMQP Broker: #{endpoint}, (#{broker['product']}/v#{broker['version']})" } unless opts[:quiet]
+          logger.info { "Connected to: AMQP Broker: #{broker_identifier(connection)}" } unless opts[:quiet]
         end
+
+        # FIXME This should go in the config.
+        reconnection_delay = 5
 
         connection.on_tcp_connection_loss do |connection, settings|
-          EM.next_tick do
-            logger.error { "TCP connection error. Attempting restart" }
-            connection.reconnect
-          end
+          logger.info { "Reconnecting to AMQP Broker: #{broker_identifier(connection)} in #{reconnection_delay}s" }
+          connection.reconnect(false, reconnection_delay)
         end
 
-        connection.after_recovery do
-          logger.info { "Connection to AMQP server restored" }
+        connection.after_recovery do |connection|
+          logger.info { "Connection with AMQP Broker restored: #{broker_identifier(connection)}" } unless opts[:quiet]
         end
 
         connection.on_error do |connection, connection_close|
-          case connection_close.reply_code
-          when 320
-            logger.warn { "AMQP server shutdown. Waiting." }
+          # If the broker is gracefully shutdown we get a 320. Log a nice message.
+          if connection_close.reply_code == 320
+            logger.warn { "AMQP Broker shutdown: #{broker_identifier(connection)}" }
           else
-            if @handler
-              @handler.call(connection, reason)
-            else
-              logger.error { "AMQP Server error: #{connection_close.reply_code}: #{connection_close.reply_text}" }
-              EM.stop_event_loop
-            end
+            logger.warn {  connection_close.reply_text }
           end
         end
 
@@ -188,6 +183,11 @@ module Smith
         p = Pathname.new(path)
         ((p.absolute?) ? p : root_path.join(p)).tap { |path| check_path(path) }
       end
+    end
+
+    def broker_identifier(connection)
+      broker = connection.broker.properties
+      "#{connection.broker_endpoint}, (#{broker['product']}/v#{broker['version']})"
     end
 
     def check_path(path, create=false)
