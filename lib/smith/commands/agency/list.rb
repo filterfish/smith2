@@ -26,7 +26,7 @@ module Smith
       end
 
       def long_format(a)
-        a.map do |a|
+        a.sort { |a, b| a.name <=> b.name }.map do |a|
           [a.state, a.uuid, a.pid, (a.started_at) ? format_time(a.started_at) : '', (!(a.stopped? || a.null?) && !a.alive?) ? '(agent dead)' : "", a.name]
         end
       end
