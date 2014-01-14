@@ -4,7 +4,7 @@ module Smith
   module Commands
     class Firehose < CommandBase
       def execute
-        queue_name = target.first
+        queue_name = target.first || '#'
         AMQP::Channel.new(Smith.connection) do |channel,ok|
           channel.topic('amq.rabbitmq.trace', :durable => true) do |exchange|
             channel.queue('smith.firehose', :durable => true) do |queue|
