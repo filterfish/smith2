@@ -139,8 +139,9 @@ module Smith
 
     # Find the config file. If it isn't in the CWD recurse up the file path
     # until it reaches the user home directory. If it gets to the home
-    # directory without finding a config file rais a ConfigNotFoundError
-    # exception.
+    # directory without finding a config file it will read /etc/smithrc and
+    # then /etc/smith/config. If that fails give up and raise a
+    # ConfigNotFoundError exception.
     #
     # path:       the pathname to find the config file. Defaults to CWD.
     # recursive:  rucures up the path. Defaults to true.
@@ -149,8 +150,18 @@ module Smith
       if conf.exist?
         return conf
       else
-        if path == Pathname.new(ENV['HOME']) || path.root?
-          raise ConfigNotFoundError, "Cannot find a usable config file."
+        if path == Pathname.new(ENV['HOME'])
+          p = Pathname.new("/etc/smithrc")
+          if p.exist?
+            return p
+          else
+            p = Pathname.new("/etc/smith/config")
+            if p.exist?
+              return p
+            else
+              raise ConfigNotFoundError, "Cannot find a usable config file."
+            end
+          end
         end
         find_config_file(path.dirname)
       end
