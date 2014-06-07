@@ -195,10 +195,10 @@ module Smith
       unless path.exist?
         error_message = "Path does not exist: #{path}"
         if create
-          logger.info { "Path does not exist: #{path}. Creating" }
+          logger.info { "#{error_message}. Creating" }
           path.mkpath
         else
-          logger.warn { "Path does not exist: #{path}" }
+          logger.warn { error_message }
         end
       end
     end
