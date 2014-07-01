@@ -17,7 +17,8 @@ module Smith
 
     CONFIG_FILENAME = '.smithrc'
 
-    def initialize
+    def initialize(filename=CONFIG_FILENAME)
+      @filename = filename
       load_config
     end
 
@@ -29,8 +30,8 @@ module Smith
       @config_file
     end
 
-    def self.get
-      @config ||= Config.new
+    def self.get(filename=CONFIG_FILENAME)
+      @config ||= Config.new(filename)
     end
 
     def method_missing(method, *args)

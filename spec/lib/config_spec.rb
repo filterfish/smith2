@@ -41,6 +41,14 @@ describe Smith::Config do
     expect(config.amqp.pop).to eq({:ack => true})
   end
 
+  it 'broker' do
+    expect(config.amqp.broker.host).to eq("localhost")
+    expect(config.amqp.broker.port).to eq(5672)
+    expect(config.amqp.broker.user).to eq("guest")
+    expect(config.amqp.broker.password).to eq("guest")
+    expect(config.amqp.broker.vhost).to eq("/")
+  end
+
   it 'vm' do
     expect(config.vm.agent_default).to eq('/usr/local/ruby-2.1.0/bin/ruby')
     expect(config.vm.NullAgent).to eq('/usr/local/ruby-2.1.1/bin/ruby')
@@ -59,9 +67,9 @@ describe Smith::Config do
   end
 
   it 'appender' do
-    expect(config.appender.filename).to eq("/var/log/smith/smith.log")
-    expect(config.appender.type).to eq("RollingFile")
-    expect(config.appender.age).to eq("daily")
-    expect(config.appender.keep).to eq(100)
+    expect(config.logging.appender.filename).to eq("/var/log/smith/smith.log")
+    expect(config.logging.appender.type).to eq("RollingFile")
+    expect(config.logging.appender.age).to eq("daily")
+    expect(config.logging.appender.keep).to eq(100)
   end
 end
