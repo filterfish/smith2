@@ -1,9 +1,23 @@
 # -*- encoding: utf-8 -*-
 
+require 'pathname'
 require 'spec_helper'
 require 'config'
 
 describe Smith::Config do
+
+  before(:all) do
+    @tmp_dir = Pathname.new(`mktemp -d`.strip)
+    @cwd = Pathname.pwd
+    root = Pathname.new(__FILE__).parent.parent
+    FileUtils.copy_file(root.join('config', 'smithrc'), @tmp_dir.join(".smithrc"))
+    Dir.chdir(@tmp_dir)
+  end
+
+  after(:all) do
+    Dir.chdir(@cwd)
+    @tmp_dir.rmtree
+  end
 
   let(:config) { Smith::Config.get }
 
