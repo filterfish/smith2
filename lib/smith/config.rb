@@ -15,22 +15,26 @@ module Smith
 
   class Config
 
-    CONFIG_FILENAME = '.smithrc'
+    CONFIG_FILENAME = 'smithrc'
 
-    def initialize(filename=CONFIG_FILENAME)
+    SYSTEM_CONFIG_PATHS = ['/etc', "/etc/smith"].map do |p|
+      Pathname.new(p).join(CONFIG_FILENAME)
+    end
+
+    def initialize(filename=".#{CONFIG_FILENAME}")
       @filename = filename
       load_config
     end
 
     def reload
-      @config = Config.new
+      @config = Config.new(@filename)
     end
 
     def path
       @config_file
     end
 
-    def self.get(filename=CONFIG_FILENAME)
+    def self.get(filename=".#{CONFIG_FILENAME}")
       @config ||= Config.new(filename)
     end
 
@@ -78,22 +82,22 @@ module Smith
     #
     # path:       the pathname to find the config file. Defaults to CWD.
     # recursive:  rucures up the path. Defaults to true.
-    def find_config_file(path=Pathname.new(".").expand_path, recursive=true)
-      conf = path.join(CONFIG_FILENAME)
+    def find_config_file(path=to_pathname("."), recursive=true)
+      conf = path.join(@filename)
       if conf.exist?
         return conf
       else
-        if path == Pathname.new(ENV['HOME'])
-          p = Pathname.new("/etc/smithrc")
-          if p.exist?
+        if path == to_pathname(ENV['HOME'])
+          # Can't find the config file in the dir hierachy. Check default dirs
+          p = SYSTEM_CONFIG_PATHS.detect { |p| p.exist? }
+          if p
             return p
           else
-            p = Pathname.new("/etc/smith/config")
-            if p.exist?
-              return p
-            else
-              raise ConfigNotFoundError, "Cannot find a usable config file."
-            end
+            raise ConfigNotFoundError, "Cannot find a config file name: #{@filename}"
+          end
+        else
+          if path.root?
+            raise ConfigNotFoundError, "Cannot find a config file name: #{@filename}"
           end
         end
         find_config_file(path.dirname)

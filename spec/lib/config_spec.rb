@@ -51,6 +51,7 @@ describe Smith::Config do
       expect(config.smith.timeout).to eq(5)
     end
 
+    it "Load from system directory"
   end
 
   context "Default config file" do
