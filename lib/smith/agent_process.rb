@@ -190,7 +190,7 @@ module Smith
 
         bootstrapper = Pathname.new(__FILE__).dirname.join('bootstrap.rb').expand_path
 
-        binary = Smith.config.ruby[agent_process.name]
+        binary = Smith.config.vm[agent_process.name.snake_case.to_sym] || Smith.config.vm.agent_default
         logger.debug { "Launching #{agent_process.name} with: #{binary}" }
         exec(binary, bootstrapper.to_s, agent_process.name, agent_process.uuid)
       end
