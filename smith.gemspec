@@ -13,18 +13,18 @@ Gem::Specification.new do |s|
 
   s.authors = ["Richard Heycock"]
   s.licenses = ['GPL-3']
-  s.add_dependency "amqp", ">= 1.0.2"
-  s.add_dependency "daemons", ">= 1.1.4"
-  s.add_dependency "eventmachine", ">= 1.0.0"
-  s.add_dependency "extlib", ">= 0.9.15"
-  s.add_dependency "logging", ">= 1.6.1"
-  s.add_dependency "protobuf", "= 2.7.7"
-  s.add_dependency "state_machine", "1.1.2"
-  s.add_dependency "trollop", ">= 1.16.2"
-  s.add_dependency "multi_json", ">= 1.3.2"
-  s.add_dependency "ruby_parser", ">= 3.2.2"
-  s.add_dependency "gdbm"
-  s.add_dependency "murmurhash3"
+  s.add_runtime_dependency 'amqp', '~> 1.4'
+  s.add_runtime_dependency 'daemons', '~> 1.1'
+  s.add_runtime_dependency "eventmachine", "~> 1.0"
+  s.add_runtime_dependency "extlib", "0.9.16"
+  s.add_runtime_dependency "logging", "~> 1.8"
+  s.add_runtime_dependency "protobuf", "= 2.7.7"
+  s.add_runtime_dependency "state_machine", "1.1.2"
+  s.add_runtime_dependency "trollop", "~> 2.0"
+  s.add_runtime_dependency "multi_json", "~> 1.10"
+  s.add_runtime_dependency "ruby_parser", "~> 3.6"
+  s.add_runtime_dependency "gdbm", "~> 1.2"
+  s.add_runtime_dependency "murmurhash3", "0.1.4"
 
   binaries = %w{agency smithctl pry-smith}
   libraries = Dir.glob("lib/**/*")
