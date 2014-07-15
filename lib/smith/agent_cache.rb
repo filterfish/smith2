@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-require 'tdb'
+require 'gdbm'
 require 'securerandom'
 
 module Smith
@@ -10,8 +10,7 @@ module Smith
     attr_accessor :path
 
     def initialize(opts={})
-      # @db = LevelDB::DB.make(Smith.cache_path.join('agent_state').to_s, :error_if_exists => false, :create_if_missing => true)
-      @db = TDB.new(Smith.cache_path.join('agent_state.tdb').to_s)
+      @db = GDBM.new(Smith.cache_path.join('agent_state.gdbm').to_s, 0600, GDBM::WRCREAT | GDBM::SYNC)
     end
 
     def create(name)
