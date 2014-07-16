@@ -26,6 +26,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "ruby_parser", "~> 3.6"
   s.add_runtime_dependency "murmurhash3", "0.1.4"
   s.add_runtime_dependency "curses", "1.0.1"
+  s.add_runtime_dependency "toml-rb", "0.1.6"
 
   binaries = %w{agency smithctl pry-smith}
   libraries = `git ls-files lib`.split(/\n/)
