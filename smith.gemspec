@@ -18,7 +18,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "eventmachine", "~> 1.0"
   s.add_runtime_dependency "extlib", "0.9.16"
   s.add_runtime_dependency "logging", "~> 1.8"
-  s.add_runtime_dependency "protobuf", "= 2.7.7"
+  s.add_runtime_dependency "protobuf", "~> 3.0"
   s.add_runtime_dependency "state_machine", "1.1.2"
   s.add_runtime_dependency "trollop", "~> 2.0"
   s.add_runtime_dependency "multi_json", "~> 1.10"

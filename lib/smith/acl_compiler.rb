@@ -1,21 +1,13 @@
 # -*- encoding: utf-8 -*-
-require 'ffi'
 require "tempfile"
 require 'ruby_parser'
+
 require 'smith/messaging/acl_type_cache'
 
 module Smith
   class ACLCompiler
 
     include Logger
-    extend FFI::Library
-
-    def self.find_so
-      $:.map{|p| Pathname.new(p).join("ruby_generator.so")}.detect{|so| so.exist? }
-    end
-
-    ffi_lib(find_so)
-    attach_function(:_rprotoc_extern, [:int, :pointer], :int32)
 
     def initialize
       @acl_type_cache = AclTypeCache.instance
@@ -28,13 +20,13 @@ module Smith
       Smith.acl_path.each do |path|
         $LOAD_PATH << path
 
-        acls_files = path_glob(path)
+        acl_files = path_glob(path)
         out_of_date_acls = path_glob(path).select { |p| should_compile?(p) }
         if out_of_date_acls.size > 0
-          compile_on_path(path, acls_files, out_of_date_acls)
+          compile_on_path(path, acl_files, out_of_date_acls)
         end
 
-        acls_files.each do |acl_file|
+        acl_files.each do |acl_file|
           acl_class_path = acl_compiled_path(acl_file)
           load_acl(acl_class_path)
           add_to_type_cache(acl_class_path)
@@ -49,34 +41,23 @@ module Smith
 
       unless acls.empty?
         Dir.chdir(path) do
-          begin
-            GC.disable
+          cmd = %Q{sh -c 'protoc --ruby_out=#{Smith.acl_cache_path} -I #{path} #{out_of_date_acls.map(&:to_s).join(' ')} 2>&1'}
+          protoc = IO.popen(cmd)
+          output = protoc.read
+          protoc.close
 
-            args = ["rprotoc", "--ruby_out", Smith.acl_cache_path, "--proto_path", path].map {|a| ::FFI::MemoryPointer.from_string(a.to_s.dup) }
-
-            ffi_acls = acls.map do |acl|
-              FFI::MemoryPointer.from_string(acl.to_s.dup)
-            end
-            ffi_acls << nil
-
-            args += ffi_acls
-            argv = FFI::MemoryPointer.new(:pointer, args.size)
-
-            args.each_with_index { |p, index| argv[index].put_pointer(0, p) }
-
-            errors = capture_stderr do
-              self._rprotoc_extern(args.compact.size, argv)
-            end.split("\n")
-
-            errors.each do |error|
-              logger.fatal { "Cannot compile ACLs: #{error}" }
-              raise RuntimeError, error
-            end
-          ensure
-            GC.enable
+          if $?.exitstatus != 0
+            error = parse_protoc_error(output)
+            logger.fatal { "Cannot compile ACLs: #{error[:file]}" }
+            raise RuntimeError, output
           end
         end
       end
+    end
+
+    def parse_protoc_error(s)
+      e = s.split(/:/)
+      {:file => e[0], :line => e[1], :pos => e[2], :error => e[3,-1]}
     end
 
     # Returns true if the .proto file is newer that the .pb.rb file
