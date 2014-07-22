@@ -26,6 +26,9 @@ Priority
   Smith.queue_length("queue name") do |length|
   end
 
+* The message type hash should be on the message type not the entire ACL.
+
+
 Good Ideas
 ~~~~~~~~~~
 
@@ -37,6 +40,8 @@ Good Ideas
 
 Normal
 ~~~~~~
+
+* Fix smithctl push. It should have <queue> in the help message.
 
 * If an agent hasn't started after 20 seconds (ie there are no keepalives)
   set the state to dead.
