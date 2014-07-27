@@ -116,7 +116,7 @@ module Smith
       #             multiple agents are allowed.
       def options(opts)
         opts.each do |k, v|
-          Smith.config.agent.send("#{k}=", v)
+          Smith.config.agent[k] = v
         end
       end
     end
