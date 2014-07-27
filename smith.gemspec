@@ -27,7 +27,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "murmurhash3", "0.1.4"
 
   binaries = %w{agency smithctl pry-smith}
-  libraries = Dir.glob("lib/**/*")
+  libraries = `git ls-files lib`.split(/\n/)
 
   s.executables = binaries
 
