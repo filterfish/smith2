@@ -20,7 +20,7 @@ module Smith
         }
 
         @on_requeue_limit = opts[:on_requeue_limit] || ->(message, count, total_count, cumulative_delay) {
-          logger.info { "Requeue limit reached: #{total_count} for queue: #{@queue.name}, cummulative delay: #{cumulative_delay}s." }
+          logger.info { "Not attempting any more requeues, requeue limit reached: #{total_count} for queue: #{@queue.name}, cummulative delay: #{cumulative_delay}s." }
         }
       end
 
@@ -35,8 +35,8 @@ module Smith
             o[:type] = @metadata.type
           end
 
-          logger.verbose { "Requeuing to: #{@queue.name}. [options]: #{opts}" }
-          logger.verbose { "Requeuing to: #{@queue.name}. [message]: #{@message}" }
+          logger.verbose { "Requeuing to: #{@queue.name} [options]: #{opts}" }
+          logger.verbose { "Requeuing to: #{@queue.name} [message]: #{@message.to_hash}" }
 
           @exchange.publish(@message, opts)
         end
