@@ -19,11 +19,13 @@ module Smith
     AGENCY_NAME = 'agency'
 
     def initialize(opts={})
-
       @options = opts
       options_check
 
       @daemon = Daemon.new(add_vhost(AGENCY_NAME), opts[:daemon], opts[:pid_dir])
+
+      raise AgencyRunning, "The agency is alredy running." if  @daemon.running?
+
       @agency = Agency.new
 
       Smith.shutdown_hook do
@@ -40,29 +42,24 @@ module Smith
     end
 
     def run
-      if @daemon.running?
-        logger.fatal { "The agency is alredy running" }
-      else
-        logger.info { "Using config file: #{Smith.config_path}" }
-        require 'smith/messaging/acl_type_cache'
+      logger.info { "Using config file: #{Smith.config_path}" }
+      require 'smith/messaging/acl_type_cache'
 
-        @daemon.daemonise
+      @daemon.daemonise
 
-        Smith.compile_acls
+      Smith.compile_acls
+      Smith.start do
+        # This block is here so the that the shutdown hook added in
+        # Smith.start runs last. Yes I know this is leaky but that's how
+        # it is at the moment.
 
-        Smith.start do
-          # This block is here so the that the shutdown hook added in
-          # Smith.start runs last. Yes I know this is leaky but that's how
-          # it is at the moment.
-
-          Smith.shutdown_hook do
-            @daemon.unlink_pid_file
-          end
-
-          logger.info { "Starting #{File.basename($0)}" }
-          @agency.setup_queues
-          @agency.start_monitoring
+        Smith.shutdown_hook do
+          @daemon.unlink_pid_file
         end
+
+        logger.info { "Starting #{File.basename($0)}" }
+        @agency.setup_queues
+        @agency.start_monitoring
       end
     end
 
@@ -91,5 +88,9 @@ opts = Trollop::with_standard_exception_handling parser do
   parser.parse ARGV
 end
 
-agency_runner = Smith::AgencyRunner.new(opts)
-agency_runner.run
+begin
+  agency_runner = Smith::AgencyRunner.new(opts)
+  agency_runner.run
+rescue Smith::AgencyRunning => e
+  puts e.message
+end

@@ -6,6 +6,8 @@ module Smith
     end
   end
 
+  class AgencyRunning < RuntimeError; end
+
   module Messaging
     class MessageTimeoutError < RuntimeError; end
   end
