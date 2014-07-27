@@ -45,7 +45,7 @@ module Smith
     end
 
     def agent_paths
-      path_to_pathnames(config.agency.agent_path)
+      config.agency.agent_path
     end
 
     # Convenience method to get the hostname
@@ -54,16 +54,16 @@ module Smith
     end
 
     def acl_path
-      path_to_pathnames(config.agency.acl_path)
+      config.agency.acl_path
     end
 
     def cache_path
-      Pathname.new(config.agency.cache_path).expand_path
+      config.agency.cache_path
     end
 
     # Return the acl cache path.
     def acl_cache_path
-      @acl_cache_path = Pathname.new(Smith.config.agency.acl_cache_path).tap do |path|
+      cache_path.join('acl').tap do |path|
         check_path(path, true)
       end
     end
@@ -176,14 +176,6 @@ module Smith
         logger.info { " Setting: %-7s%s" %  [k, v] }
       end
       EM.stop
-    end
-
-    def path_to_pathnames(path)
-      path ||= []
-      path.split(':').map do |path|
-        p = Pathname.new(path)
-        ((p.absolute?) ? p : root_path.join(p)).tap { |path| check_path(path) }
-      end
     end
 
     def broker_identifier(connection)

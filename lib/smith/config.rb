@@ -69,8 +69,8 @@ module Smith
       config.tap do |c|
         c.agency[:pid_dir] = to_pathname(c.agency.pid_dir)
         c.agency[:cache_path] = to_pathname(c.agency.cache_path)
-        c.agency[:agent_path] = to_pathname(c.agency.agent_path)
-        c.agency[:acl_path] = to_pathname(c.agency.acl_path)
+        c.agency[:agent_path] = to_pathnames(Array(c.agency.agent_path))
+        c.agency[:acl_path] = to_pathnames([smith_acl_path] + Array(c.agency.acl_path))
       end
     end
 
@@ -117,6 +117,14 @@ module Smith
 
     def to_pathname(p)
       Pathname.new(p).expand_path
+    end
+
+    def to_pathnames(p)
+      p.map { |p| to_pathname(p) }
+    end
+
+    def smith_acl_path
+      Pathname.new(__FILE__).dirname.join('messaging').join('acl').expand_path
     end
   end
 end
