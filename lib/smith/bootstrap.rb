@@ -92,7 +92,7 @@ module Smith
     private
 
     def write_pid_file
-      @pid = Daemons::PidFile.new(Daemons::Pid.dir(:normal, Dir::tmpdir, nil), ".rubymas-#{@agent_uuid.snake_case}", true)
+      @pid = Daemons::PidFile.new(Daemons::Pid.dir(:normal, Dir::tmpdir, nil), ".smith-#{@agent_uuid}", true)
       @pid.pid = Process.pid
     end
 
