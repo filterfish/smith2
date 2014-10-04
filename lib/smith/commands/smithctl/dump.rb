@@ -1,12 +1,10 @@
 # -*- encoding: utf-8 -*-
-require 'multi_json'
 require 'smith/messaging/queue'
 
 module Smith
   module Commands
     class Dump < CommandBase
       def execute
-        MultiJson.use(:oj)
         dump
       end
 

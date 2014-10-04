@@ -6,6 +6,7 @@ require 'logging'
 require 'pathname'
 require 'protobuf'
 require 'fileutils'
+require 'multi_json'
 require 'securerandom'
 require 'extlib/string'
 require 'extlib/inflection'
@@ -14,6 +15,8 @@ require 'daemons/pidfile'
 require_relative 'smith/config'
 require_relative 'smith/logger'
 require_relative 'smith/acl_compiler'
+
+MultiJson.use(:oj)
 
 module Smith
   include Logger

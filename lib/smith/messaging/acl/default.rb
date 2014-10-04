@@ -1,7 +1,4 @@
 # -*- encoding: utf-8 -*-
-
-require 'multi_json'
-
 module Smith
   module ACL
 

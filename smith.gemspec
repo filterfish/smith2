@@ -13,6 +13,7 @@ Gem::Specification.new do |s|
 
   s.authors = ["Richard Heycock"]
   s.licenses = ['GPL-3']
+  s.add_runtime_dependency 'oj', '~> 2.10'
   s.add_runtime_dependency 'amqp', '~> 1.4'
   s.add_runtime_dependency 'daemons', '~> 1.1'
   s.add_runtime_dependency "eventmachine", "~> 1.0"

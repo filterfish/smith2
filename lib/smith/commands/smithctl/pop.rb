@@ -1,6 +1,4 @@
 # -*- encoding: utf-8 -*-
-require 'yajl'
-
 require 'smith/messaging/queue'
 
 module Smith
