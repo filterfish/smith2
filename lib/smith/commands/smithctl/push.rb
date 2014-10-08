@@ -28,14 +28,24 @@ module Smith
               end
             else
               on_work = ->(message, iter) do
-                begin
-                  sender.publish(json_to_payload(message, options[:type])) do
-                    iter.next
+
+                error_handler = -> (e) do
+                  if options[:no_fail]
+                    logger.error { "#{e} #{message.strip}" }
+                    iter.call
+                  else
+                    blk.call(e.message)
                   end
+                end
+
+                sender.on_serialisation_error do |e, _|
+                  error_handler.call(e)
+                end
+
+                begin
+                  sender.publish(json_to_payload(message, options[:type]), &iter)
                 rescue MultiJson::DecodeError => e
-                  blk.call("Json error: #{e.message}")
-                rescue ACL::Error => e
-                  blk.call(e.message)
+                  error_handler.call(e)
                 end
               end
 
@@ -87,6 +97,7 @@ module Smith
         opt :reply,   "set a reply listener.", :short => :r
         opt :timeout, "timeout when waiting for a reply", :type => :integer, :depends => :reply, :default => Smith.config.smith.timeout
         opt :dynamic, "send message to a dynamic queue", :type => :boolean, :default => false, :short => :d
+        opt :no_fail, "continue to process input data if there is an error", :type => :boolean, :default => false
 
         conflicts :reply, :number, :file
         conflicts :message, :file
