@@ -79,6 +79,13 @@ module Smith
         @timeout = Timeout.new(timeout || Smith.config.smith.timeout, &blk)
       end
 
+      # Called if there is a problem serialising an ACL.
+      # @yield [blk] block to run when there is an error.
+      # @yieldparam [Proc] the publish callback.
+      def on_serialisation_error(&blk)
+        @on_serialisation_error = blk
+      end
+
       # Set up a listener that will receive replies from the published
       # messages. You must publish with intent to reply -- tee he.
       #
@@ -179,7 +186,15 @@ module Smith
         type = @acl_type_cache.get_by_type(message.class)
 
         @exchange_completion.completion do |exchange|
-          exchange.publish(message.to_s, opts.merge(:type => type), &blk)
+          begin
+            exchange.publish(message.to_s, opts.merge(:type => type), &blk)
+          rescue Protobuf::SerializationError => e
+            if @on_serialisation_error
+              @on_serialisation_error.call(e, blk)
+            else
+              raise ACL::Error.new(e)
+            end
+          end
         end
       end
 
