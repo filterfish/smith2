@@ -40,20 +40,19 @@ module Smith
     end
 
     def load_agent
-      @agent_filename = agent_path(@agent_name)
-      logger.debug { "Loading #{@agent_name} from: #{@agent_filename.dirname}" }
-      add_agent_load_path
-      load @agent_filename
-      @agent = Kernel.const_get(@agent_name).new(@agent_uuid)
-    end
+      path = agent_path(@agent_name)
+      logger.debug { "Loading #{@agent_name} from: #{path.dirname}" }
+      add_agent_load_path(path)
+      load path
 
-    def agent_path(name)
-      file_name = "#{name.snake_case}.rb"
-      Smith.agent_paths.each do |path|
-        p = Pathname.new(path).join(file_name)
-        return p if p.exist?
+      begin
+        @agent = class_from_name(@agent_name).new(@agent_uuid)
+      rescue NameError => e
+        # TODO: include the class name from the path.
+        logger.fatal { "Cannot instantiate agent. The class name: #{@agent_name} probably didn't match the path" }
+        terminate!
+        false
       end
-      return nil
     end
 
     def start!
@@ -127,8 +126,8 @@ module Smith
     #
     # This needs to be better thought out.
     # TODO think this through some more.
-    def add_agent_load_path
-      path = @agent_filename.dirname.dirname.join('lib')
+    def add_agent_load_path(path)
+      path = path.dirname.dirname.join('lib')
       # The load path may be a pathname or a string. Change to strings.
       unless $:.detect { |p| p.to_s == path.to_s }
         logger.debug { "Adding #{path} to load path" }
