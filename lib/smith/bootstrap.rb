@@ -156,9 +156,10 @@ bootstrapper = Smith::AgentBootstrap.new(name, uuid)
 # is an exception the reactor is not going going to be running.
 begin
   Smith.start do
-    bootstrapper.load_agent
-    bootstrapper.signal_handlers
-    bootstrapper.start!
+    if bootstrapper.load_agent
+      bootstrapper.signal_handlers
+      bootstrapper.start!
+    end
   end
   bootstrapper.shutdown
 rescue Exception => e
