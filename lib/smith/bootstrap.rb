@@ -15,6 +15,7 @@ module Smith
     attr_reader :agent
 
     include Logger
+    include Utils
 
     def initialize(name, uuid)
       Dir.chdir('/')
@@ -26,7 +27,6 @@ module Smith
       Thread.abort_on_exception = true
       @agent_name = name
       @agent_uuid = uuid
-      @agent_filename = agent_path(name)
     end
 
     def signal_handlers

@@ -9,6 +9,8 @@ module Smith
   class AgentProcess
 
     include Smith::Logger
+    include Utils
+
     extend Forwardable
 
     class AgentState < ::Protobuf::Message
@@ -131,9 +133,7 @@ module Smith
     end
 
     def exists?
-      Smith.agent_paths.detect do |path|
-        Pathname.new(path).join("#{name.snake_case}.rb").exist?
-      end
+      agent_path(name)
     end
 
     def to_s

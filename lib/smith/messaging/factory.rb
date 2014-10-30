@@ -4,6 +4,7 @@ module Smith
   module ACL
     class Factory
       include Logger
+      include Utils
 
       class << self
         def create(type, content=nil, &blk)
@@ -18,10 +19,6 @@ module Smith
               (content.nil?) ? clazz.new : clazz.new(content)
             end
           end
-        end
-
-        def get_clazz(type)
-          type.to_s.split(/::/).inject(Kernel) { |acc, t| acc.const_get(t) }
         end
       end
     end
