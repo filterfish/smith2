@@ -1,3 +1,8 @@
 tags
 *.gem
 .DS_Store
+.smithrc*
+.gems
+.rspec
+.rubocop.yml
+.ruby-version
