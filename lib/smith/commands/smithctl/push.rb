@@ -30,7 +30,7 @@ module Smith
               on_work = ->(message, iter) do
 
                 error_handler = -> (e) do
-                  if options[:no_fail]
+                  if options[:ignore_errors]
                     logger.error { "#{e} #{message.strip}" }
                     iter.call
                   else
@@ -90,14 +90,14 @@ module Smith
       def options_spec
         banner "Send a message to a queue. The ACL can also be specified."
 
-        opt :type,    "message type", :type => :string, :default => 'default', :short => :t
-        opt :message, "the message, as json", :type => :string, :short => :m
-        opt :file,    "read messages from the named file", :type => :string, :short => :f
-        opt :number,  "the number of times to send the message", :type => :integer, :default => 1, :short => :n
-        opt :reply,   "set a reply listener.", :short => :r
-        opt :timeout, "timeout when waiting for a reply", :type => :integer, :depends => :reply, :default => Smith.config.smith.timeout
-        opt :dynamic, "send message to a dynamic queue", :type => :boolean, :default => false, :short => :d
-        opt :no_fail, "continue to process input data if there is an error", :type => :boolean, :default => false
+        opt :type,          "message type", :type => :string, :default => 'default', :short => :t
+        opt :message,       "the message, as json", :type => :string, :short => :m
+        opt :file,          "read messages from the named file", :type => :string, :short => :f
+        opt :number,        "the number of times to send the message", :type => :integer, :default => 1, :short => :n
+        opt :reply,         "set a reply listener.", :short => :r
+        opt :timeout,       "timeout when waiting for a reply", :type => :integer, :depends => :reply, :default => Smith.config.smith.timeout
+        opt :dynamic,       "send message to a dynamic queue", :type => :boolean, :default => false, :short => :d
+        opt :ignore_errors, "continue to process input data if there is an error", :type => :boolean, :default => false
 
         conflicts :reply, :number, :file
         conflicts :message, :file
