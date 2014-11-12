@@ -1,12 +1,23 @@
 # -*- encoding: utf-8 -*-
+
+require_relative '../common'
+
 module Smith
   module Commands
     class List < CommandBase
+
+      include Common
+
       def execute
         if target.size > 0
           selected_agents = agents.find_by_name(target)
         else
           selected_agents = (options[:all]) ? agents.to_a : agents.state(:running)
+        end
+
+        if options[:group]
+          group_names = agent_group(options[:group])
+          selected_agents = selected_agents.select { |a| group_names.include?(a.name) }
         end
 
         responder.succeed((selected_agents.empty?) ? '' : format(selected_agents, options[:long]))
@@ -51,6 +62,7 @@ module Smith
         banner "List the running agents."
 
         opt         :long,       "the number of times to send the message", :short => :l
+        opt         :group,      "list only agents in this group", :type => :string, :short => :g
         opt         :one_column, "the number of times to send the message", :short => :s
         opt         :all,        "show all agents in all states", :short => :a
 
