@@ -1,5 +1,23 @@
                           ~~~~~~~~ TODO  ~~~~~~~~
 
+BUGS
+~~~~
+
+I ran: smithctl logger -l info $(smithctl list)
+
+It produced the following error message:
+
+	Timeout. Is the agency still running?
+
+And the following error message was in the rabbitmq log:
+
+
+	=ERROR REPORT==== 11-Dec-2014::23:48:13 ===
+	connection <0.25024.3767>, channel 8 - soft error:
+	{amqp_error,not_found,
+							"no exchange 'smith.satin.hz.dgvz.net.agency.control.reply' in vhost '/'",
+							'basic.publish'}
+
 Priority
 ~~~~~~~~
 
