@@ -94,6 +94,14 @@ Usage:
   control = SmithControl.new(opts)
 
   Smith.start do
+
+    signal_handler = SelfPipe.new(self)
+    # Setup signal handlers to clean up.
+
+    %w{TERM INT QUIT}.each do |sig|
+      signal_handler.install_signal_handler(sig) { @agency.stop }
+    end
+
     control.send_command(command, args) do |result|
       puts result if result && !result.empty?
       Smith.stop(true)

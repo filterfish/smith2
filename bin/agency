@@ -32,13 +32,6 @@ module Smith
         logger.info { "Shutting down" }
       end
 
-      # Setup signal handlers to clean up.
-      %w{TERM INT QUIT}.each do |sig|
-        trap sig, proc {
-          logger.info { "Shutting down" }
-          @agency.stop
-        }
-      end
     end
 
     def run
@@ -49,6 +42,14 @@ module Smith
 
       Smith.compile_acls
       Smith.start do
+
+        signal_handler = SelfPipe.new(self)
+        # Setup signal handlers to clean up.
+
+        %w{TERM INT QUIT}.each do |sig|
+          signal_handler.install_signal_handler(sig) { @agency.stop }
+        end
+
         # This block is here so the that the shutdown hook added in
         # Smith.start runs last. Yes I know this is leaky but that's how
         # it is at the moment.

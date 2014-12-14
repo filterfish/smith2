@@ -209,6 +209,7 @@ module Smith
 end
 
 require 'smith/utils'
+require 'smith/self_pipe'
 require 'smith/amqp_errors'
 require 'smith/object_count'
 require 'smith/cache'
