@@ -61,6 +61,16 @@ module Smith
       Pathname.new(config.agency.cache_path).expand_path
     end
 
+    def configure_squash
+      if config.squash.enabled
+        Squash::Ruby.configure(
+          :api_key => config.squash.api_key,
+          :api_host => config.squash.api_host,
+          :environment => Smith.env.to_s
+        )
+      end
+    end
+
     # Return the acl cache path.
     def acl_cache_path
       @acl_cache_path = Pathname.new(Smith.config.agency.acl_cache_path).tap do |path|
@@ -78,6 +88,7 @@ module Smith
     end
 
     def start(opts={}, &block)
+      configure_squash
 
       if EM.epoll? && Smith.config.eventmachine.epoll
         logger.debug { "Using epoll for I/O event notification." }
