@@ -45,3 +45,8 @@ logging_date_pattern  %Y/%m/%d %H:%M:%S.%3N
 logging_appender_type         stderr
 # logging_appender_type         file
 # logging_appender_filename     /var/log/smith/smith.log
+
+# Add the following if you want to have your agent exceptions sent to squash
+enable_squash       true
+squash_api_key      some_key
+squash_api_host     http://squash.somesquash.squash

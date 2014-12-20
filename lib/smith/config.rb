@@ -11,7 +11,7 @@ module Smith
 
     CONFIG_FILENAME = '.smithrc'
 
-    attr_accessor :agent, :agency, :amqp, :logging, :smith, :eventmachine, :smith, :ruby
+    attr_accessor :agent, :agency, :amqp, :logging, :smith, :eventmachine, :smith, :ruby, :squash
 
     to_hash = proc do
       def to_hash
@@ -37,6 +37,7 @@ module Smith
     Struct.new("Amqp", :broker, :exchange, :queue, :publish, :subscribe, :pop, &to_hash)
     Struct.new("Appender", :type, :filename, &to_hash)
     Struct.new("Logging", :trace, :level, :default_pattern, :default_date_pattern, :appender, :filetype, :vhost, &to_hash)
+    Struct.new("Squash", :enabled, :api_key, :api_host)
     Struct.new("Smith", :namespace, :timeout, &to_hash)
     Struct.new("Eventmachine", :file_descriptors, :epoll, :kqueue, &to_hash)
 
@@ -110,6 +111,7 @@ module Smith
       @amqp = Struct::Amqp.new(broker, amqp_opts, amqp_opts, Struct::Publish.new({}), Struct::Subscribe.new(true), Struct::Pop.new(true))
       @eventmachine = Struct::Eventmachine.new(set_as_integer(config, :file_descriptors, 1024), set_as_boolean(config, :epoll, true), set_as_boolean(config, :kqueue, true))
       @logging = Struct::Logging.new(config[:logging_trace], config[:logging_level], config[:logging_pattern], config[:logging_date_pattern], appender)
+      @squash = Struct::Squash.new(set_as_boolean(config, :enable_squash, false), config[:squash_api_key], config[:squash_api_host])
       @smith = Struct::Smith.new(config[:smith_namespace], set_as_integer(config, :smith_timeout))
 
       # Set the default ruby runtime. This will use the ruby that is in the path.
