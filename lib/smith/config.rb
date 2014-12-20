@@ -111,7 +111,7 @@ module Smith
       @amqp = Struct::Amqp.new(broker, amqp_opts, amqp_opts, Struct::Publish.new({}), Struct::Subscribe.new(true), Struct::Pop.new(true))
       @eventmachine = Struct::Eventmachine.new(set_as_integer(config, :file_descriptors, 1024), set_as_boolean(config, :epoll, true), set_as_boolean(config, :kqueue, true))
       @logging = Struct::Logging.new(config[:logging_trace], config[:logging_level], config[:logging_pattern], config[:logging_date_pattern], appender)
-      @squash = Struct::Squash.new(set_as_boolean(config, :enable_squash), config[:squash_api_key], config[:squash_api_host])
+      @squash = Struct::Squash.new(set_as_boolean(config, :enable_squash, false), config[:squash_api_key], config[:squash_api_host])
       @smith = Struct::Smith.new(config[:smith_namespace], set_as_integer(config, :smith_timeout))
 
       # Set the default ruby runtime. This will use the ruby that is in the path.
