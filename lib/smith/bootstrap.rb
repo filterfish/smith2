@@ -65,6 +65,7 @@ module Smith
     # be running. So it must be restarted and then shutdown again
     # See the note at the in main.
     def terminate!(exception=nil)
+      @agent.exception_handler.call(exception)
       logger.error { format_exception(exception) } if exception
       logger.error { "Terminating: #{@agent_uuid}." }
 
