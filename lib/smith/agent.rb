@@ -26,6 +26,7 @@ module Smith
       @on_stopping = proc {|completion| completion.succeed }
       @on_starting = proc {|completion| completion.succeed }
       @on_running = proc {|completion| completion.succeed }
+      @on_exceptiion = proc {}
 
       @on_starting_completion = EM::Completion.new.tap do |c|
         c.completion do |completion|
@@ -66,6 +67,20 @@ module Smith
 
     def on_running(&blk)
       @on_running = blk
+    end
+
+    # The agent may hook into this if they want to do something on exception.
+    # It should be noted that, since an exception occured, the reactor will not
+    # be running at this point. Even if we restarted the reactor before calling
+    # this it would be a different reactor than existed when assigning the
+    # block so this would potentially lead to confusion. If the agent really
+    # needs the reactor to do something it can always restart the reactor
+    # itself.
+    #
+    # @param blk [Block] This block will be passed the exception as an
+    #   argument.
+    def on_exception(&blk)
+      @on_exceptiion = blk
     end
 
     # Override this method to implement your own agent.
