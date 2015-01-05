@@ -26,7 +26,7 @@ module Smith
       @on_stopping = proc {|completion| completion.succeed }
       @on_starting = proc {|completion| completion.succeed }
       @on_running = proc {|completion| completion.succeed }
-      @on_exceptiion = proc {}
+      @on_exception = proc {}
 
       @on_starting_completion = EM::Completion.new.tap do |c|
         c.completion do |completion|
@@ -80,7 +80,7 @@ module Smith
     # @param blk [Block] This block will be passed the exception as an
     #   argument.
     def on_exception(&blk)
-      @on_exceptiion = blk
+      @on_exception = blk
     end
 
     # Override this method to implement your own agent.
@@ -217,6 +217,10 @@ module Smith
 
     def control_queue_def
       @control_queue_def ||= QueueDefinitions::Agent_control.call(uuid)
+    end
+
+    def __exception_handler(exception)
+      @on_exception.call(exception)
     end
   end
 end
