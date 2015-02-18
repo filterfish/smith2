@@ -66,7 +66,7 @@ module Smith
     # See the note at the in main.
     def terminate!(exception=nil)
 
-      @agent.__send__(:__exception_handler, exception)
+      @agent.__send__(:__exception_handler, exception) if @agent
       logger.error { format_exception(exception) }
       logger.error { "Terminating: #{@agent_uuid}." }
 
