@@ -29,8 +29,8 @@ module Smith
         a = (target.empty?) ? a : a.select {|z| target.detect {|y| z.name == y } }.flatten
         if options[:long_given]
           tabulate(long_format(a), :header => "total #{a.count}")
-        elsif options[:one_column_given]
-          short_format(a, "\n")
+        elsif options[:name_only]
+          name_only(a, "\n")
         else
           short_format(a)
         end
@@ -44,6 +44,11 @@ module Smith
 
       def short_format(a, sep=' ')
         a.map { |a| [a.uuid] }.join(sep)
+      end
+
+
+      def name_only(a, sep=' ')
+        a.map { |a| [a.name] }.join(sep)
       end
 
       def format_time(t)
@@ -61,12 +66,12 @@ module Smith
       def options_spec
         banner "List the running agents."
 
-        opt         :long,       "the number of times to send the message", :short => :l
+        opt         :long,       "shows full details of running agents", :short => :l
         opt         :group,      "list only agents in this group", :type => :string, :short => :g
-        opt         :one_column, "the number of times to send the message", :short => :s
-        opt         :all,        "show all agents in all states", :short => :a
+        opt         :name_only,  "list on the agents' name", :short => :n
+        opt         :all,        "list all agents in all states", :short => :a
 
-        conflicts   :one_column, :long
+        conflicts   :name_only, :long
       end
     end
   end
