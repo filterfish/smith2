@@ -254,6 +254,17 @@ module Smith
         @metadata.ack(multiple)
       end
 
+      # Make #call invoke ack. This makes the following idiom possible:
+      #
+      # receiver('queue').subscribe do |payload, receiver|
+      #   blah(payload, &receiver)
+      # end
+      #
+      # which will ensure that #ack is called properly.
+      def to_proc
+        proc { |obj| ack(obj) }
+      end
+
       # reject the message. Optionally requeuing it.
       def reject(opts={})
         @metadata.reject(opts)
