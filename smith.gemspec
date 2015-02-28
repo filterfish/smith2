@@ -13,13 +13,13 @@ Gem::Specification.new do |s|
 
   s.authors = ["Richard Heycock"]
   s.licenses = ['GPL-3']
-  s.add_runtime_dependency 'oj', '~> 2.10'
-  s.add_runtime_dependency 'amqp', '~> 1.4'
+  s.add_runtime_dependency 'oj', '~> 2.11', '~> 2.11.4'
+  s.add_runtime_dependency 'amqp', '~> 1.0', '~> 1.5'
   s.add_runtime_dependency 'daemons', '~> 1.1'
   s.add_runtime_dependency "eventmachine", "~> 1.0"
   s.add_runtime_dependency "extlib", "0.9.16"
   s.add_runtime_dependency "logging", "~> 1.8"
-  s.add_runtime_dependency "protobuf", "~> 3.0"
+  s.add_runtime_dependency 'protobuf', '~> 3.4'
   s.add_runtime_dependency "state_machine", "1.1.2"
   s.add_runtime_dependency "trollop", "~> 2.0"
   s.add_runtime_dependency "multi_json", "~> 1.10"
