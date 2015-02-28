@@ -38,7 +38,7 @@ module Smith
     Struct.new("Appender", :type, :filename, &to_hash)
     Struct.new("Logging", :trace, :level, :default_pattern, :default_date_pattern, :appender, :filetype, :vhost, &to_hash)
     Struct.new("Smith", :namespace, :timeout, &to_hash)
-    Struct.new("Eventmachine", :file_descriptors, :epoll, :kqueue, &to_hash)
+    Struct.new("Eventmachine", :epoll, :kqueue, &to_hash)
 
     def initialize
       load_config
@@ -108,7 +108,7 @@ module Smith
       @agent = Struct::Agent.new(set_as_boolean(config, :agent_monitor), set_as_boolean(config, :agent_singleton), '', set_as_integer(config, :agent_prefetch))
       @agency = Struct::Agency.new(cache_path, config[:agent_path], acl_path, cache_path.join('acl'), config[:agency_pid_dir])
       @amqp = Struct::Amqp.new(broker, amqp_opts, amqp_opts, Struct::Publish.new({}), Struct::Subscribe.new(true), Struct::Pop.new(true))
-      @eventmachine = Struct::Eventmachine.new(set_as_integer(config, :file_descriptors, 1024), set_as_boolean(config, :epoll, true), set_as_boolean(config, :kqueue, true))
+      @eventmachine = Struct::Eventmachine.new(set_as_boolean(config, :epoll, true), set_as_boolean(config, :kqueue, true))
       @logging = Struct::Logging.new(config[:logging_trace], config[:logging_level], config[:logging_pattern], config[:logging_date_pattern], appender)
       @smith = Struct::Smith.new(config[:smith_namespace], set_as_integer(config, :smith_timeout))
 

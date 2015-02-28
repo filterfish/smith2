@@ -89,8 +89,6 @@ module Smith
         EM.kqueue
       end
 
-      EM.set_descriptor_table_size(Smith.config.eventmachine.file_descriptors)
-
       connection_settings = config.amqp.broker.merge(
         :on_tcp_connection_failure => method(:tcp_connection_failure_handler),
         :on_possible_authentication_failure => method(:authentication_failure_handler))
