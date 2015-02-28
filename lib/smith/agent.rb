@@ -105,8 +105,8 @@ module Smith
       queues.receiver(queue_name, opts, &blk)
     end
 
-    def sender(queue_name, opts={}, &blk)
-      queues.sender(queue_name, opts, &blk)
+    def sender(queue_names, opts={}, &blk)
+      Array(queue_names).each { |queue_name| queues.sender(queue_name, opts, &blk) }
     end
 
     class << self
