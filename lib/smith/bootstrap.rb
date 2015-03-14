@@ -40,7 +40,7 @@ module Smith
     end
 
     def load_agent
-      path = agent_path(@agent_name)
+      path = agent_directories(@agent_name)
       logger.debug { "Loading #{@agent_name} from: #{path.dirname}" }
       add_agent_load_path(path)
       load path
@@ -92,6 +92,7 @@ module Smith
 
     private
 
+    # FIXME This really should be using Smith::Daemon
     def write_pid_file
       @pid = Daemons::PidFile.new(Daemons::Pid.dir(:normal, Dir::tmpdir, nil), ".smith-#{@agent_uuid}", true)
       @pid.pid = Process.pid

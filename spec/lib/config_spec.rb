@@ -118,10 +118,10 @@ describe Smith::Config do
     end
 
     it 'agency' do
-      expect(config.agency.pid_dir).to eq(Pathname.new("/run/smith"))
-      expect(config.agency.cache_path).to eq(Pathname.new("/var/cache/smith/lmdb"))
-      expect(config.agency.agent_path).to eq(Pathname.new("/home/rgh/dev/ruby/smith2/agents"))
-      expect(config.agency.acl_path).to eq(Pathname.new("/home/rgh/dev/ruby/smith2/lib/acl"))
+      expect(config.agency.pid_directory).to eq(Pathname.new("/run/smith"))
+      expect(config.agency.cache_directory).to eq(Pathname.new("/var/cache/smith/lmdb"))
+      expect(config.agency.agent_directory).to eq(Pathname.new("/home/rgh/dev/ruby/smith2/agents"))
+      expect(config.agency.acl_directories).to eq(Pathname.new("/home/rgh/dev/ruby/smith2/lib/acl"))
     end
 
     it 'logging' do

@@ -10,10 +10,10 @@ module Smith
         # FIXME make sure that if the path doesn't exist don't blow up.
         separator = (options[:one_column]) ? "\n" : " "
 
-        Smith.agent_paths.inject([]) do |path_acc,path|
+        Smith.agent_directories.inject([]) do |path_acc, path|
           path_acc.tap do |a|
             if path.exist?
-              a << path.each_child.inject([]) do |agent_acc,p|
+              a << path.each_child.inject([]) do |agent_acc, p|
                 agent_acc.tap do |b|
                   b << Extlib::Inflection.camelize(p.basename('.rb')) if p.file? && p.basename('.rb').to_s.end_with?("agent")
                 end

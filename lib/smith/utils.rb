@@ -6,8 +6,8 @@ module Smith
     #
     # @param name [String] the name of the agent.
     # @return [Pathname] the path of the agent.
-    def agent_path(name)
-      Smith.agent_paths.each do |path|
+    def agent_directories(name)
+      Smith.agent_directories.each do |path|
         p = path_from_class(path, name)
         return p if p.exist?
       end

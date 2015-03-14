@@ -3,7 +3,7 @@ module Smith
   module Commands
     module Common
       def agent_group(group)
-        agents = Smith.agent_paths.map do |path|
+        agents = Smith.agent_directories.map do |path|
           group_dir = path.join(group)
           if group_dir.exist? && group_dir.directory?
             agents = Pathname.glob(group_dir.join("*_agent.rb"))

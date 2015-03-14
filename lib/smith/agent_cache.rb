@@ -17,7 +17,7 @@ module Smith
     attr_accessor :path
 
     def initialize(opts={})
-      @db = GDBM.new(Smith.cache_path.join('agent_state.gdbm').to_s, 0600, GDBM::WRCREAT | GDBM::SYNC)
+      @db = GDBM.new(Smith.cache_directory.join('agent_state.gdbm').to_s, 0600, GDBM::WRCREAT | GDBM::SYNC)
     end
 
     def create(name)

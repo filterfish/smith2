@@ -15,9 +15,9 @@ module Smith
     end
 
     def compile
-      $LOAD_PATH << Smith.acl_cache_path
+      $LOAD_PATH << Smith.acl_cache_directory
 
-      Smith.acl_path.each do |path|
+      Smith.acl_directories.each do |path|
         $LOAD_PATH << path
 
         acl_files = path_glob(path)
@@ -41,7 +41,7 @@ module Smith
 
       unless acls.empty?
         Dir.chdir(path) do
-          cmd = %Q{sh -c 'protoc --ruby_out=#{Smith.acl_cache_path} -I #{path} #{out_of_date_acls.map(&:to_s).join(' ')} 2>&1'}
+          cmd = %Q{sh -c 'protoc --ruby_out=#{Smith.acl_cache_directory} -I #{path} #{out_of_date_acls.map(&:to_s).join(' ')} 2>&1'}
           protoc = IO.popen(cmd)
           output = protoc.read
           protoc.close
@@ -62,7 +62,7 @@ module Smith
 
     # Returns true if the .proto file is newer that the .pb.rb file
     def should_compile?(file)
-      cached_file = Smith.acl_cache_path.join(file.basename).sub_ext(".pb.rb")
+      cached_file = Smith.acl_cache_directory.join(file.basename).sub_ext(".pb.rb")
       if cached_file.exist?
         file.mtime > cached_file.mtime
       else
@@ -109,7 +109,7 @@ module Smith
     end
 
     def acl_compiled_path(path)
-      "#{Smith.acl_cache_path.join(path.basename('.proto'))}.pb.rb"
+      "#{Smith.acl_cache_directory.join(path.basename('.proto'))}.pb.rb"
     end
   end
 end

@@ -55,7 +55,7 @@ module Smith
 
     def load_config
       toml = TOML.parse(read_config_file(find_config_file), :symbolize_keys => true)
-      @config = coerce_paths!(ConfigHash.new(default_amqp_opts).deep_merge(toml))
+      @config = coerce_directories!(ConfigHash.new(default_amqp_opts).deep_merge(toml))
     end
 
     # Read the config file
@@ -64,13 +64,16 @@ module Smith
       config_file.read
     end
 
-    # Convert paths to Pathnames's
-    def coerce_paths!(config)
+    # Check appropriate env vars and convert the string representation to Pathname
+    # @param config [ConfigHash] the config.
+    # @return [ConfigHash] the config with coerced paths.
+    def coerce_directories!(config)
       config.tap do |c|
-        c.agency[:pid_dir] = to_pathname(c.agency.pid_dir)
-        c.agency[:cache_path] = to_pathname(c.agency.cache_path)
-        c.agency[:agent_path] = to_pathnames(Array(c.agency.agent_path))
-        c.agency[:acl_path] = to_pathnames([smith_acl_path] + Array(c.agency.acl_path))
+        c.agency[:pid_directory] = path_from_env('SMITH_PID_DIRECTORY', c.agency[:pid_directory])
+        c.agency[:cache_directory] = path_from_env('SMITH_CACHE_DIRECTORY', c.agency[:cache_directory])
+
+        c.agency[:acl_directories] = paths_from_env('SMITH_ACL_DIRECTORIES', c.agency[:acl_directories]) + [smith_acl_directory]
+        c.agency[:agent_directories] = paths_from_env('SMITH_AGENT_DIRECTORIES', c.agency[:agent_directories])
       end
     end
 
@@ -119,11 +122,19 @@ module Smith
       Pathname.new(p).expand_path
     end
 
-    def to_pathnames(p)
-      p.map { |p| to_pathname(p) }
+    def path_from_env(env_var, var)
+      to_pathname((ENV[env_var]) ? ENV[env_var] : var)
     end
 
-    def smith_acl_path
+    def paths_from_env(env_var, vars)
+      split_path(vars).map { |var| path_from_env(env_var, var) }
+    end
+
+    def split_path(paths)
+      paths.split(File::PATH_SEPARATOR)
+    end
+
+    def smith_acl_directory
       Pathname.new(__FILE__).dirname.join('messaging').join('acl').expand_path
     end
   end

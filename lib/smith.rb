@@ -44,8 +44,8 @@ module Smith
       Pathname.new(__FILE__).dirname.parent.expand_path
     end
 
-    def agent_paths
-      config.agency.agent_path
+    def agent_directories
+      config.agency.agent_directories
     end
 
     # Convenience method to get the hostname
@@ -53,17 +53,17 @@ module Smith
       Socket.gethostname
     end
 
-    def acl_path
-      config.agency.acl_path
+    def acl_directories
+      config.agency.acl_directories
     end
 
-    def cache_path
-      config.agency.cache_path
+    def cache_directory
+      config.agency.cache_directory
     end
 
     # Return the acl cache path.
-    def acl_cache_path
-      cache_path.join('acl').tap do |path|
+    def acl_cache_directory
+      cache_directory.join('acl').tap do |path|
         check_path(path, true)
       end
     end

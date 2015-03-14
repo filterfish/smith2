@@ -17,9 +17,9 @@ module Smith
           else
             target.map do |acl|
               if options[:source_given]
-                acls = find_acl(Smith.acl_cache_path, acl, 'pb.rb')
+                acls = find_acl(Smith.acl_cache_directory, acl, 'pb.rb')
               else
-                acls = find_acl(Smith.acl_path, acl, 'proto')
+                acls = find_acl(Smith.acl_directories, acl, 'proto')
               end
 
               case acls.length
@@ -37,7 +37,7 @@ module Smith
             end.join("\n")
           end
         elsif options[:clean_given]
-          Pathname.glob(Smith.acl_cache_path.join("*.pb.rb")).each {|p| p.unlink}
+          Pathname.glob(Smith.acl_cache_directory.join("*.pb.rb")).each {|p| p.unlink}
           ""
         elsif options[:compile_given]
           Pathname.glob(Smith.compile_acls)
@@ -46,7 +46,7 @@ module Smith
           join_string = (options[:long]) ? "\n" : " "
           acl_type_cache.dump_types.keys.map(&:to_s).sort.join(join_string)
 
-          # Pathname.glob(Smith.acl_path.map {|p| "#{p}#{File::SEPARATOR}*"}).map do |p|
+          # Pathname.glob(Smith.acl_directories.map {|p| "#{p}#{File::SEPARATOR}*"}).map do |p|
           #   p.basename(".proto")
           # end.sort.join(join_string)
         end
@@ -54,10 +54,10 @@ module Smith
 
       private
 
-      def find_acl(path, acl, ext)
-        [path].flatten.inject([]) do |a,path|
+      def find_acl(directories, acl, ext)
+        [directories].flatten.inject([]) do |a, directory|
           a.tap do |acc|
-            acl_file = path.join("#{acl.snake_case}.#{ext}")
+            acl_file =  directory.join("#{acl.snake_case}.#{ext}")
             acc << acl_file if acl_file.exist?
           end
         end

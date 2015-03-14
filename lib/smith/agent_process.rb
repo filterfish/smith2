@@ -133,7 +133,7 @@ module Smith
     end
 
     def exists?
-      agent_path(name)
+      agent_directories(name)
     end
 
     def to_s

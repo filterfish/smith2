@@ -11,7 +11,7 @@ module Smith
     def initialize(name, daemonise, dir=nil)
       @name = name
       @daemonise = daemonise
-      @pid = Daemons::PidFile.new(pid_dir(dir), @name)
+      @pid = Daemons::PidFile.new(pid_directory(dir), @name)
     end
 
     # Daemonise the process if the daemonise option is true, otherwise do nothing.
@@ -57,7 +57,7 @@ module Smith
     def unlink_pid_file
       p = Pathname.new(@pid.filename)
       if p.exist?
-        logger.verbose { "Removing pid file." }
+        logger.verbose { "Removing pid file: #{p.to_s}" }
         p.unlink
       end
     end
@@ -66,12 +66,12 @@ module Smith
 
     # Get the pid directory. This checks for the command line option,
     # then the config and finally use the tmp directory.
-    def pid_dir(dir)
+    def pid_directory(dir)
       if dir
         dir
       else
-        if Smith.config.agency.to_hash.has_key?(:pid_dir)
-          Smith.config.agency.pid_dir
+        if Smith.config.agency.has_key?(:pid_directory)
+          Smith.config.agency.pid_directory
         else
           Dir.tmpdir
         end
