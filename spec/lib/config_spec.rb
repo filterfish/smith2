@@ -2,7 +2,7 @@
 
 require 'pathname'
 require 'spec_helper'
-require 'config'
+require 'smith/config'
 
 describe Smith::Config do
 
@@ -10,7 +10,9 @@ describe Smith::Config do
     @tmp_dir = Pathname.new(`mktemp -d`.strip)
     @cwd = Pathname.pwd
     @root = Pathname.new(__FILE__).parent.parent
+
     FileUtils.copy_file(@root.join('config', 'smithrc'), @tmp_dir.join('.smithrc'))
+    FileUtils.copy_file(@root.join('config', 'smithrc.1'), @tmp_dir.join('.smithrc.1'))
     FileUtils.copy_file(@root.join('config', 'smithrc.with.amqp'), @tmp_dir.join('smithrc.with.amqp'))
     Dir.chdir(@tmp_dir)
   end
@@ -84,7 +86,7 @@ describe Smith::Config do
     it 'eventmachine' do
       expect(config.eventmachine.epoll).to eq(true)
       expect(config.eventmachine.kqueue).to eq(false)
-      expect(config.eventmachine.file_descriptors).to eq(1024)
+      expect(config.eventmachine.file_descriptors).to eq(131072)
     end
 
     it 'amqp default' do
@@ -113,20 +115,20 @@ describe Smith::Config do
     end
 
     it 'vm' do
-      expect(config.vm.agent_default).to eq('/usr/local/ruby-2.1.0/bin/ruby')
-      expect(config.vm.null_agent).to eq('/usr/local/ruby-2.1.1/bin/ruby')
+      expect(config.vm.agent_default).to eq('ruby')
+      expect(config.vm.null_agent).to eq('/usr/local/ruby-2.1.0/bin/ruby')
     end
 
     it 'agency' do
       expect(config.agency.pid_directory).to eq(Pathname.new("/run/smith"))
-      expect(config.agency.cache_directory).to eq(Pathname.new("/var/cache/smith/lmdb"))
-      expect(config.agency.agent_directory).to eq(Pathname.new("/home/rgh/dev/ruby/smith2/agents"))
-      expect(config.agency.acl_directories).to eq(Pathname.new("/home/rgh/dev/ruby/smith2/lib/acl"))
+      expect(config.agency.cache_directory).to eq(Pathname.new("/var/cache/smith"))
+      expect(config.agency.acl_directories).to eq([Pathname.new("/var/lib/smith/acls"), Smith.root_path.join('lib/smith/messaging/acl')])
+      expect(config.agency.agent_directories).to eq([Pathname.new("/var/lib/smith/agents")])
     end
 
     it 'logging' do
       expect(config.logging.trace).to eq(true)
-      expect(config.logging.level).to eq('verbose')
+      expect(config.logging.level).to eq('debug')
     end
 
     it 'appender' do
@@ -141,7 +143,7 @@ describe Smith::Config do
 
     it "Default file" do
       config = Smith::Config.get
-      expect(config.path).to eq(@tmp_dir.join('.smithrc'))
+      expect(config.path).to eq(Smith.root_path.join('.smithrc'))
       expect(config.smith.timeout).to eq(4)
     end
   end

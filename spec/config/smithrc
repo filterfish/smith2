@@ -10,20 +10,22 @@ prefetch = 2
 
 # Specify the VM that an agent should use.
 [vm]
-agent_default = "/usr/local/ruby-2.1.0/bin/ruby"
-null_agent = "/usr/local/ruby-2.1.1/bin/ruby"
+agent_default = "ruby"
+null_agent = "/usr/local/ruby-2.1.0/bin/ruby"
+
+[eventmachine]
+epoll = true
+kqueue = false
+file_descriptors = 131072
 
 [agency]
 # The the agency pid path. This can be overriden on the command line.
-pid_dir = "/run/smith"
+pid_directory = "/run/smith"
+cache_directory = "/var/cache/smith"
 
-cache_path = "/var/cache/smith/lmdb"
-
-# If this is a relative path then it's relative to Smith.root_path
-agent_path = "/home/rgh/dev/ruby/smith2/agents"
-
-# The path to the raw protocol buffer files.
-acl_path = "/home/rgh/dev/ruby/smith2/lib/acl"
+# Specify multiple paths using the path separator (:)
+acl_directories = "/var/lib/smith/acls"
+agent_directories = "/var/lib/smith/agents"
 
 # Change according to your local broker.
 [amqp.broker]
@@ -33,24 +35,21 @@ user = "guest"
 password = "guest"
 vhost = "/"
 
-# Number of file descriptors a process can open.
-[eventmachine]
-file_descriptors = 1024
-
 # Set the polling method. Defaults to whatever is supported # by the platform.
 epoll = true
 kqueue = false
 
 [logging]
 trace = true
-level = "verbose"
+level = "debug"
 
 # Log pattern. Note you need to escape backslashes.
-default_pattern = "%d [%5p] %7l - %34c:%-3L - %m\\n"
+default_pattern = "%d [%5p] %7l - %34c:%-3L - %m\n"
 default_date_pattern = "%Y/%m/%d %H:%M:%S.%3N"
 
 # This can be either: stderr, stdout, file, rollingfile or syslog
 [logging.appender]
+
 filename = "/var/log/smith/smith.log"
 type      = "RollingFile"
 age       = "daily"
@@ -58,3 +57,5 @@ keep      = 100
 
 # type        syslog
 # facility    128
+
+# vim: ft=toml
