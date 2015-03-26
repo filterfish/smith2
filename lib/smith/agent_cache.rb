@@ -1,5 +1,12 @@
 # -*- encoding: utf-8 -*-
-require 'gdbm'
+
+begin
+  require 'gdbm'
+rescue LoadError => e
+  STDERR.puts "\nYou instance of ruby wasn't compiled with gdbm support.\nSee: https://github.com/filterfish/smith2/wiki/gdbm\n\n"
+  raise
+end
+
 require 'securerandom'
 
 module Smith
