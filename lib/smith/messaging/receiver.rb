@@ -253,6 +253,7 @@ module Smith
       def ack(multiple=false)
         @metadata.ack(multiple)
       end
+      alias :call :ack
 
       # Make #call invoke ack. This makes the following idiom possible:
       #
