@@ -31,7 +31,7 @@ module Smith
     end
 
     def path
-      @config_file
+      @config_path
     end
 
     def self.get(filename=".#{CONFIG_FILENAME}")
@@ -54,14 +54,8 @@ module Smith
     end
 
     def load_config
-      toml = TOML.parse(read_config_file(find_config_file), :symbolize_keys => true)
-      @config = coerce_directories!(ConfigHash.new(default_amqp_opts).deep_merge(toml))
-    end
-
-    # Read the config file
-    def read_config_file(config_file)
-      @config_file = config_file
-      config_file.read
+      @config_path = find_config_file
+      @config = coerce_directories!(ConfigHash.new(load_tomls(default_config_path, @config_path)))
     end
 
     # Check appropriate env vars and convert the string representation to Pathname
@@ -107,17 +101,6 @@ module Smith
       end
     end
 
-    def default_amqp_opts
-      { :amqp => {
-          :exchange => {:durable => true, :auto_delete => false},
-          :queue => {:durable => true, :auto_delete => false},
-          :pop => {:ack => true},
-          :publish => {:headers => {}},
-          :subscribe => {:ack => true}
-        }
-      }
-    end
-
     def to_pathname(p)
       Pathname.new(p).expand_path
     end
@@ -136,6 +119,24 @@ module Smith
 
     def smith_acl_directory
       Pathname.new(__FILE__).dirname.join('messaging').join('acl').expand_path
+    end
+
+    def default_config_path
+      gem_root.join('config', 'smithrc.toml')
+    end
+
+    def load_tomls(default, main)
+      ConfigHash.new(load_toml(default).deep_merge(load_toml(main)))
+    end
+
+    def load_toml(path)
+      TOML.parse(path.read, :symbolize_keys => true)
+    end
+
+    # Returns the gem root. We can't use Smith.root_path here as it hasn't
+    # been initialised yet.
+    def gem_root
+      Pathname.new(__FILE__).dirname.parent.parent.expand_path
     end
   end
 end
