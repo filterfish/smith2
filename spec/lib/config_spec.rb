@@ -26,6 +26,7 @@ describe Smith::Config do
 
     before(:each) do
       FileUtils.copy_file(@root.join('config', 'smithrc'), @tmp_dir.join('.smithrc'))
+      ENV["SMITH_CONFIG"] = @tmp_dir.join('.smithrc').to_s
     end
 
     let(:config) { Smith::Config.new }
@@ -43,14 +44,16 @@ describe Smith::Config do
     end
 
     it "Reload with named file." do
-      FileUtils.copy_file(@root.join('config', 'smithrc'), @tmp_dir.join('.smithrc.named'))
-      config = Smith::Config.new('.smithrc.named')
+      set_env_for_block("SMITH_CONFIG", '.smithrc.named') do
+        FileUtils.copy_file(@root.join('config', 'smithrc'), @tmp_dir.join('.smithrc.named'))
+        config = Smith::Config.new
 
-      expect(config.smith.timeout).to eq(4)
+        expect(config.smith.timeout).to eq(4)
 
-      FileUtils.copy_file(@root.join('config', 'smithrc.1'), @tmp_dir.join('.smithrc.named'))
-      config.reload
-      expect(config.smith.timeout).to eq(5)
+        FileUtils.copy_file(@root.join('config', 'smithrc.1'), @tmp_dir.join('.smithrc.named'))
+        config.reload
+        expect(config.smith.timeout).to eq(5)
+      end
     end
 
     it "Load from system directory"
@@ -60,13 +63,16 @@ describe Smith::Config do
 
     before(:each) do
       FileUtils.copy_file(@root.join('config', 'smithrc'), @tmp_dir.join('.smithrc'))
+      ENV["SMITH_CONFIG"] = @tmp_dir.join('.smithrc').to_s
     end
 
     let(:config) { Smith::Config.new }
 
     it "raise an exception if the config can't be found" do
       expect do
-        Smith::Config.new("smithrc.nonexistent")
+        set_env_for_block("SMITH_CONFIG", '.smithrc.nonexistent') do
+          Smith::Config.new
+        end
       end.to raise_error(Smith::ConfigNotFoundError)
     end
 
@@ -98,12 +104,14 @@ describe Smith::Config do
     end
 
     it 'amqp overriden' do
-      config = Smith::Config.new('smithrc.with.amqp')
-      expect(config.amqp.exchange).to eq({:durable => true, :auto_delete => false})
-      expect(config.amqp.queue).to eq(:durable => true, :auto_delete => false)
-      expect(config.amqp.publish).to eq(:headers => {})
-      expect(config.amqp.subscribe).to eq(:ack => false)
-      expect(config.amqp.pop).to eq({:ack => false})
+      set_env_for_block("SMITH_CONFIG", 'smithrc.with.amqp') do
+        config = Smith::Config.new
+        expect(config.amqp.exchange).to eq({:durable => true, :auto_delete => false})
+        expect(config.amqp.queue).to eq(:durable => true, :auto_delete => false)
+        expect(config.amqp.publish).to eq(:headers => {})
+        expect(config.amqp.subscribe).to eq(:ack => false)
+        expect(config.amqp.pop).to eq({:ack => false})
+      end
     end
 
     it 'amqp.broker' do
@@ -122,7 +130,7 @@ describe Smith::Config do
     it 'agency' do
       expect(config.agency.pid_directory).to eq(Pathname.new("/run/smith"))
       expect(config.agency.cache_directory).to eq(Pathname.new("/var/cache/smith"))
-      expect(config.agency.acl_directories).to eq([Pathname.new("/var/lib/smith/acls"), Smith.root_path.join('lib/smith/messaging/acl')])
+      expect(config.agency.acl_directories).to eq([Pathname.new("/var/lib/smith/acls"), Pathname.new(__dir__).parent.parent.join('lib/smith/messaging/acl')])
       expect(config.agency.agent_directories).to eq([Pathname.new("/var/lib/smith/agents")])
     end
 
@@ -142,9 +150,11 @@ describe Smith::Config do
   context "Load using class method" do
 
     it "Default file" do
-      config = Smith::Config.get
-      expect(config.path).to eq(Smith.root_path.join('.smithrc'))
-      expect(config.smith.timeout).to eq(4)
+      set_env_for_block("SMITH_CONFIG", @tmp_dir.join('.smithrc')) do
+        config = Smith::Config.new
+        expect(config.path).to eq(@tmp_dir.join('.smithrc'))
+        expect(config.smith.timeout).to eq(4)
+      end
     end
   end
 end

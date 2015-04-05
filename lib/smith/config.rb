@@ -2,12 +2,12 @@
 # -*- encoding: utf-8 -*-
 
 require 'toml'
+require 'fileutils'
 require 'pathname'
 require 'hashie/extensions/coercion'
 require 'hashie/extensions/deep_merge'
 require 'hashie/extensions/method_access'
 require 'hashie/extensions/merge_initializer'
-
 
 module Smith
 
@@ -17,29 +17,24 @@ module Smith
 
     CONFIG_FILENAME = 'smithrc'
 
-    SYSTEM_CONFIG_PATHS = ['/etc', "/etc/smith"].map do |p|
-      Pathname.new(p).join(CONFIG_FILENAME)
-    end
-
-    def initialize(filename=".#{CONFIG_FILENAME}")
-      @filename = filename
+    def initialize
       load_config
     end
 
     def reload
-      @config = Config.new(@filename)
+      @config = Config.new
     end
 
     def path
-      @config_path
-    end
-
-    def self.get(filename=".#{CONFIG_FILENAME}")
-      @config ||= Config.new(filename)
+      @config_file
     end
 
     def method_missing(method, *args)
       @config.send(method, *args)
+    end
+
+    def self.get
+      @config ||= Config.new
     end
 
     private
@@ -54,8 +49,8 @@ module Smith
     end
 
     def load_config
-      @config_path = find_config_file
-      @config = coerce_directories!(ConfigHash.new(load_tomls(default_config_path, @config_path)))
+      @config_file = find_config_file
+      @config = coerce_directories!(load_tomls(default_config_file, @config_file))
     end
 
     # Check appropriate env vars and convert the string representation to Pathname
@@ -71,33 +66,27 @@ module Smith
       end
     end
 
-    # Find the config file. If it isn't in the CWD recurse up the file path
-    # until it reaches the user home directory. If it gets to the home
-    # directory without finding a config file it will read /etc/smithrc and
-    # then /etc/smith/config. If that fails give up and raise a
-    # ConfigNotFoundError exception.
+    # Find the config file. This checks the following paths before raising an
+    # exception:
     #
-    # path:       the pathname to find the config file. Defaults to CWD.
-    # recursive:  rucures up the path. Defaults to true.
-    def find_config_file(path=to_pathname("."), recursive=true)
-      conf = path.join(@filename)
-      if conf.exist?
-        return conf
-      else
-        if path == to_pathname(ENV['HOME'])
-          # Can't find the config file in the dir hierachy. Check default dirs
-          p = SYSTEM_CONFIG_PATHS.detect { |p| p.exist? }
-          if p
-            return p
-          else
-            raise ConfigNotFoundError, "Cannot find a config file name: #{@filename}"
-          end
-        else
-          if path.root?
-            raise ConfigNotFoundError, "Cannot find a config file name: #{@filename}"
-          end
+    # * ./.smithrc
+    # * $HOME/.smithrc
+    # * /etc/smithrc
+    # * /etc/smith/smithrc
+    #
+    # @return the config file path
+    #
+    def find_config_file
+      if ENV["SMITH_CONFIG"]
+        to_pathname(ENV["SMITH_CONFIG"]).tap do |path|
+          raise ConfigNotFoundError, "Cannot find a config file name: #{path}" unless path.exist?
         end
-        find_config_file(path.dirname)
+      else
+        user = ["./.#{CONFIG_FILENAME}", "#{ENV['HOME']}/.#{CONFIG_FILENAME}"].map { |p| to_pathname(p) }
+        system = ["/etc/#{CONFIG_FILENAME}", "/etc/smith/#{CONFIG_FILENAME}"].map { |p| to_pathname(p) }
+        default = [default_config_file]
+
+        (user + system + default).detect { |path| path.exist? }
       end
     end
 
@@ -121,16 +110,16 @@ module Smith
       Pathname.new(__FILE__).dirname.join('messaging').join('acl').expand_path
     end
 
-    def default_config_path
+    def default_config_file
       gem_root.join('config', 'smithrc.toml')
     end
 
     def load_tomls(default, main)
-      ConfigHash.new(load_toml(default).deep_merge(load_toml(main)))
+      load_toml(default).deep_merge(load_toml(main))
     end
 
     def load_toml(path)
-      TOML.parse(path.read, :symbolize_keys => true)
+      ConfigHash.new(TOML.parse(path.read, :symbolize_keys => true))
     end
 
     # Returns the gem root. We can't use Smith.root_path here as it hasn't
