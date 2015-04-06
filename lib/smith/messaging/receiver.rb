@@ -81,7 +81,10 @@ module Smith
       # Subscribes to a queue and passes the headers and payload into the
       # block. +subscribe+ will automatically acknowledge the message unless
       # the options sets :ack to false.
-      def subscribe(&blk)
+      def subscribe(handler=nil, &blk)
+
+        blk = handler || blk
+
         @queue_completion.completion do |queue|
           @requeue_options_completion.completion do |requeue_options|
             if !queue.subscribed?
