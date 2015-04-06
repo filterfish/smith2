@@ -1,0 +1,63 @@
+[smith]
+timeout = 5
+namespace = "smith"
+
+[agent]
+monitor = false
+singleton = true
+metadata = ""
+prefetch = 2
+
+# Specify the VM that an agent should use.
+[vm]
+agent_default = "ruby"
+pos_tagger_agent = "/usr/local/src/jruby-1.7.13/bin/ruby"
+dashboard_twitter_ingress_agent = "/usr/local/ruby-2.1.2/bin/ruby"
+
+[eventmachine]
+epoll = true
+kqueue = false
+file_descriptors = 131072
+
+[agency]
+# The the agency pid path. This can be overriden on the command line.
+pid_directory = "/run/smith"
+cache_directory = "/var/cache/smith"
+
+# Specify multiple paths using the path separator (:)
+acl_directories = "~/dev/ruby/acls"
+agent_directories = "~/dev/ruby/smith2/agents"
+
+# Change according to your local broker.
+[amqp.broker]
+host = "localhost"
+port = 5672
+user = "guest"
+password = "guest"
+vhost = "/"
+
+# Set the polling method. Defaults to whatever is supported # by the platform.
+epoll = true
+kqueue = false
+
+[logging]
+trace = true
+level = "debug"
+
+# Log pattern. Note you need to escape backslashes.
+default_pattern = "%d [%5p] %7l - %34c:%-3L - %m\n"
+default_date_pattern = "%Y/%m/%d %H:%M:%S.%3N"
+
+# This can be either: stderr, stdout, file, rollingfile or syslog
+[logging.appender]
+type      = "stderr"
+
+# filename = "/var/log/smith/smith.log"
+# type      = "RollingFile"
+# age       = "daily"
+# keep      = 100
+
+# type        syslog
+# facility    128
+
+# vim: ft=toml

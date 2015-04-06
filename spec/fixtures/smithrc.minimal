@@ -1,0 +1,4 @@
+[agency]
+# Specify multiple paths using the path separator (:)
+acl_directories = "/var/lib/smith/acls"
+agent_directories = "/var/lib/smith/agents"
