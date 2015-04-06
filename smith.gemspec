@@ -30,8 +30,9 @@ Gem::Specification.new do |s|
 
   binaries = %w{agency smithctl pry-smith}
   libraries = `git ls-files lib`.split(/\n/)
+  config = %w{config/smithrc.toml}
 
   s.executables = binaries
 
-  s.files = binaries.map { |b| "bin/#{b}" } + libraries
+  s.files = binaries.map { |b| "bin/#{b}" } + libraries + config
 end
