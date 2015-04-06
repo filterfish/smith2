@@ -12,6 +12,7 @@ require 'hashie/extensions/merge_initializer'
 module Smith
 
   class ConfigNotFoundError < IOError; end
+  class MissingConfigItemError < StandardError; end
 
   class Config
 
@@ -50,20 +51,34 @@ module Smith
 
     def load_config
       @config_file = find_config_file
-      @config = coerce_directories!(load_tomls(default_config_file, @config_file))
+      @config = load_tomls(default_config_file, @config_file)
+      coerce_directories!
+    end
+
+    # Make sure the non-default direcotires are set.
+    # @raise [MissingConfigItemError<Array<String>>] the config items that are not set.
+    def check_directories
+      errors = []
+      errors << "agncy.acl_directories" if @config.agency[:acl_directories].empty?
+      errors << "agncy.agent_directories" if @config.agency[:agent_directories].empty?
+
+      unless errors.empty?
+        raise MissingConfigItemError, errors
+      end
     end
 
     # Check appropriate env vars and convert the string representation to Pathname
-    # @param config [ConfigHash] the config.
     # @return [ConfigHash] the config with coerced paths.
-    def coerce_directories!(config)
-      config.tap do |c|
+    def coerce_directories!
+      @config.tap do |c|
         c.agency[:pid_directory] = path_from_env('SMITH_PID_DIRECTORY', c.agency[:pid_directory])
         c.agency[:cache_directory] = path_from_env('SMITH_CACHE_DIRECTORY', c.agency[:cache_directory])
-
-        c.agency[:acl_directories] = paths_from_env('SMITH_ACL_DIRECTORIES', c.agency[:acl_directories]) + [smith_acl_directory]
+        c.agency[:acl_directories] = paths_from_env('SMITH_ACL_DIRECTORIES', c.agency[:acl_directories])
         c.agency[:agent_directories] = paths_from_env('SMITH_AGENT_DIRECTORIES', c.agency[:agent_directories])
       end
+
+      check_directories
+      @config.agency[:acl_directories] = @config.agency[:acl_directories] + [smith_acl_directory]
     end
 
     # Find the config file. This checks the following paths before raising an
@@ -75,7 +90,6 @@ module Smith
     # * /etc/smith/smithrc
     #
     # @return the config file path
-    #
     def find_config_file
       if ENV["SMITH_CONFIG"]
         to_pathname(ENV["SMITH_CONFIG"]).tap do |path|
@@ -90,34 +104,65 @@ module Smith
       end
     end
 
-    def to_pathname(p)
-      Pathname.new(p).expand_path
+    # Convert a string to a path
+    #
+    # @param path [String] the string to convert
+    # @return [Pathname]
+    def to_pathname(path)
+      Pathname.new(path).expand_path
     end
 
-    def path_from_env(env_var, var)
-      to_pathname((ENV[env_var]) ? ENV[env_var] : var)
+    # Returns a path from the environment variable passed in. If the
+    # environment variable is not set it returns nil.
+    #
+    # @param env_var [String] the name of the environment variable
+    # @param default [String] the value to use if the environment variable is not set
+    # @return [Pathname]
+    def path_from_env(env_var, default)
+      to_pathname(ENV.fetch(env_var, default))
     end
 
-    def paths_from_env(env_var, vars)
-      split_path(vars).map { |var| path_from_env(env_var, var) }
+    # Returns an array of path from the environment variable passed in. If the
+    # environment variable is not set it returns an empty array.
+    #
+    # @param env_var [String] the name of the environment variable
+    # @param default [String] the value to use if the environment variable is not set
+    # @return [Array<Pathnmae>]
+    def paths_from_env(env_var, default)
+      split_paths(ENV.fetch(env_var, default))
     end
 
-    def split_path(paths)
-      paths.split(File::PATH_SEPARATOR)
+    # Splits a string using PATH_SEPARATOR.
+    #
+    # @param paths to split
+    # @return [Array<Pathnmae>]
+    def split_paths(paths)
+      (paths || '').split(File::PATH_SEPARATOR).map { |p| to_pathname(p) }
     end
 
+    # @return [Pathnmae]
     def smith_acl_directory
       Pathname.new(__FILE__).dirname.join('messaging').join('acl').expand_path
     end
 
+    # @return [Pathnmae]
     def default_config_file
       gem_root.join('config', 'smithrc.toml')
     end
 
+    # Loads and merges multiple toml files.
+    #
+    # @params [String] the default toml file
+    # @params [String] the user supplied toml file
+    # @return [ConfigHash] the merge toml files.
     def load_tomls(default, main)
       load_toml(default).deep_merge(load_toml(main))
     end
 
+    # Load the toml file specified
+    #
+    # @param [Pathname] the path of the toml file
+    # @return [ConfigHash] the toml file
     def load_toml(path)
       ConfigHash.new(TOML.parse(path.read, :symbolize_keys => true))
     end

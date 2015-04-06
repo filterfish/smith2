@@ -13,6 +13,7 @@ describe Smith::Config do
 
     FileUtils.copy_file(@root.join('config', 'smithrc'), @tmp_dir.join('.smithrc'))
     FileUtils.copy_file(@root.join('config', 'smithrc.1'), @tmp_dir.join('.smithrc.1'))
+    FileUtils.copy_file(@root.join('config', 'smithrc.minimal'), @tmp_dir.join('.smithrc'))
     FileUtils.copy_file(@root.join('config', 'smithrc.with.amqp'), @tmp_dir.join('smithrc.with.amqp'))
     Dir.chdir(@tmp_dir)
   end
@@ -54,6 +55,15 @@ describe Smith::Config do
         config.reload
         expect(config.smith.timeout).to eq(5)
       end
+    end
+
+    it "work with a minial config file" do
+      FileUtils.copy_file(@root.join('fixtures', 'smithrc.minimal'), @tmp_dir.join('.smithrc'))
+      config.reload
+
+      expect(config.path).to eq(@tmp_dir.join('.smithrc'))
+      expect(config.agency.acl_directories).to eq([Pathname.new("/var/lib/smith/acls"), Pathname.new(__dir__).parent.parent.join('lib/smith/messaging/acl')])
+      expect(config.agency.agent_directories).to eq([Pathname.new("/var/lib/smith/agents")])
     end
 
     it "Load from system directory"
@@ -145,10 +155,17 @@ describe Smith::Config do
       expect(config.logging.appender.age).to eq("daily")
       expect(config.logging.appender.keep).to eq(100)
     end
+
+    it 'raise an error when items are missing' do
+      set_env_for_block('SMITH_CONFIG', Pathname.new(__dir__).parent.parent.join('config/smithrc.toml')) do
+        expect {
+          config = Smith::Config.get
+        }.to raise_error(Smith::MissingConfigItemError)
+      end
+    end
   end
 
   context "Load using class method" do
-
     it "Default file" do
       set_env_for_block("SMITH_CONFIG", @tmp_dir.join('.smithrc')) do
         config = Smith::Config.new

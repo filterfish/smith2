@@ -20,8 +20,6 @@ kqueue = true
 # The the agency pid path. This can be overriden on the command line.
 pid_directory = "~/.smith/run"
 cache_directory = "~/.smith/cache"
-agent_directories = ""
-acl_directories = ""
 
 # It would be better to use inline tables here but there is a bug in
 # toml-rb: https://github.com/emancu/toml-rb/issues/57.
