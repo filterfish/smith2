@@ -11,10 +11,10 @@ describe Smith::Config do
     @cwd = Pathname.pwd
     @root = Pathname.new(__FILE__).parent.parent
 
-    FileUtils.copy_file(@root.join('config', 'smithrc'), @tmp_dir.join('.smithrc'))
-    FileUtils.copy_file(@root.join('config', 'smithrc.1'), @tmp_dir.join('.smithrc.1'))
-    FileUtils.copy_file(@root.join('config', 'smithrc.minimal'), @tmp_dir.join('.smithrc'))
-    FileUtils.copy_file(@root.join('config', 'smithrc.with.amqp'), @tmp_dir.join('smithrc.with.amqp'))
+    FileUtils.copy_file(@root.join('fixtures', 'smithrc'), @tmp_dir.join('.smithrc'))
+    FileUtils.copy_file(@root.join('fixtures', 'smithrc'), @tmp_dir.join('.smithrc'))
+    FileUtils.copy_file(@root.join('fixtures', 'smithrc.1'), @tmp_dir.join('.smithrc.1'))
+    FileUtils.copy_file(@root.join('fixtures', 'smithrc.with.amqp'), @tmp_dir.join('smithrc.with.amqp'))
     Dir.chdir(@tmp_dir)
   end
 
@@ -26,7 +26,7 @@ describe Smith::Config do
   context "General" do
 
     before(:each) do
-      FileUtils.copy_file(@root.join('config', 'smithrc'), @tmp_dir.join('.smithrc'))
+      FileUtils.copy_file(@root.join('fixtures', 'smithrc'), @tmp_dir.join('.smithrc'))
       ENV["SMITH_CONFIG"] = @tmp_dir.join('.smithrc').to_s
     end
 
@@ -39,19 +39,19 @@ describe Smith::Config do
     it "Reload with default file." do
       expect(config.smith.timeout).to eq(4)
 
-      FileUtils.copy_file(@root.join('config', 'smithrc.1'), @tmp_dir.join('.smithrc'))
+      FileUtils.copy_file(@root.join('fixtures', 'smithrc.1'), @tmp_dir.join('.smithrc'))
       config.reload
       expect(config.smith.timeout).to eq(5)
     end
 
     it "Reload with named file." do
       set_env_for_block("SMITH_CONFIG", '.smithrc.named') do
-        FileUtils.copy_file(@root.join('config', 'smithrc'), @tmp_dir.join('.smithrc.named'))
+        FileUtils.copy_file(@root.join('fixtures', 'smithrc'), @tmp_dir.join('.smithrc.named'))
         config = Smith::Config.new
 
         expect(config.smith.timeout).to eq(4)
 
-        FileUtils.copy_file(@root.join('config', 'smithrc.1'), @tmp_dir.join('.smithrc.named'))
+        FileUtils.copy_file(@root.join('fixtures', 'smithrc.1'), @tmp_dir.join('.smithrc.named'))
         config.reload
         expect(config.smith.timeout).to eq(5)
       end
@@ -72,7 +72,7 @@ describe Smith::Config do
   context "Default config file" do
 
     before(:each) do
-      FileUtils.copy_file(@root.join('config', 'smithrc'), @tmp_dir.join('.smithrc'))
+      FileUtils.copy_file(@root.join('fixtures', 'smithrc'), @tmp_dir.join('.smithrc'))
       ENV["SMITH_CONFIG"] = @tmp_dir.join('.smithrc').to_s
     end
 
