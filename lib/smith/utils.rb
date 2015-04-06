@@ -38,5 +38,12 @@ module Smith
     def class_from_name(name)
       name.to_s.split(/::/).inject(Kernel) { |acc, t| acc.const_get(t) }
     end
+
+    def check_and_create_directory(dir)
+      dir.tap do
+        dir.exist? || dir.mkpath
+      end
+    end
+    module_function :check_and_create_directory
   end
 end

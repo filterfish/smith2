@@ -12,9 +12,10 @@ require 'extlib/string'
 require 'extlib/inflection'
 require 'daemons/pidfile'
 
-require_relative 'smith/config'
-require_relative 'smith/logger'
-require_relative 'smith/acl_compiler'
+require 'smith/config'
+require 'smith/utils'
+require 'smith/logger'
+require 'smith/acl_compiler'
 
 MultiJson.use(:oj)
 
@@ -58,7 +59,7 @@ module Smith
     end
 
     def cache_directory
-      config.agency.cache_directory
+      Utils.check_and_create_directory(config.agency.cache_directory)
     end
 
     # Return the acl cache path.
@@ -198,7 +199,6 @@ module Smith
   end
 end
 
-require 'smith/utils'
 require 'smith/self_pipe'
 require 'smith/amqp_errors'
 require 'smith/object_count'

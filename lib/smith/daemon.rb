@@ -3,6 +3,8 @@
 require 'daemons/daemonize'
 require 'daemons/pidfile'
 
+require 'smith/utils'
+
 module Smith
   class Daemon
 
@@ -67,15 +69,7 @@ module Smith
     # Get the pid directory. This checks for the command line option,
     # then the config and finally use the tmp directory.
     def pid_directory(dir)
-      if dir
-        dir
-      else
-        if Smith.config.agency.has_key?(:pid_directory)
-          Smith.config.agency.pid_directory
-        else
-          Dir.tmpdir
-        end
-      end
+      dir || Utils.check_and_create_directory(Smith.config.agency.pid_directory)
     end
   end
 end
