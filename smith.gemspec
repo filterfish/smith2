@@ -16,7 +16,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'oj', '~> 2.11', '~> 2.11.4'
   s.add_runtime_dependency 'amqp', '~> 1.0', '~> 1.5'
   s.add_runtime_dependency 'daemons', '~> 1.1'
-  s.add_runtime_dependency "eventmachine", "~> 1.0"
+  s.add_runtime_dependency "eventmachine-le", "~> 1.1"
   s.add_runtime_dependency "extlib", "0.9.16"
   s.add_runtime_dependency "logging", "~> 1.8"
   s.add_runtime_dependency 'protobuf', '~> 3.4'

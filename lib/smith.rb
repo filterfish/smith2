@@ -1,4 +1,9 @@
 # -*- encoding: utf-8 -*-
+
+$LOAD_PATH.delete_if { |p| p.to_s =~ /eventmachine-\d/ }
+
+require 'eventmachine-le'
+
 require 'amqp'
 require 'tmpdir'
 require "socket"
