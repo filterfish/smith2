@@ -53,10 +53,11 @@ module Smith
         end
       end
 
-      # Delete an queue.
+      # Delete a queue.
       #
-      # @param name [String] name of the queue.
+      # @param queue_name [String] name of the queue.
       # @yield calls the block when the queue has been deleted
+      #
       # @yieldparam [AMQ::Protocol::Channel::Close] the amqp close message
       # FIXME: remove duplication
       def delete_queue(queue_name, &blk)

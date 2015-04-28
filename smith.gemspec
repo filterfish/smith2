@@ -8,7 +8,6 @@ Gem::Specification.new do |s|
   s.email = "rgh@filterfish.org"
   s.homepage = "http://github.com/filterfish/smith2"
   s.description = "Simple multi-agent framework. It uses AMQP for it's messaging layer."
-  s.has_rdoc = false
   s.rubyforge_project = "smith"
 
   s.authors = ["Richard Heycock"]

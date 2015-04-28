@@ -152,16 +152,16 @@ module Smith
 
     # Loads and merges multiple toml files.
     #
-    # @params [String] the default toml file
-    # @params [String] the user supplied toml file
+    # @param default [String] the default toml file
+    # @param secondary [String] the user supplied toml file
     # @return [ConfigHash] the merge toml files.
-    def load_tomls(default, main)
-      load_toml(default).deep_merge(load_toml(main))
+    def load_tomls(default, secondary)
+      load_toml(default).deep_merge(load_toml(secondary))
     end
 
     # Load the toml file specified
     #
-    # @param [Pathname] the path of the toml file
+    # @param path [Pathname] the path of the toml file
     # @return [ConfigHash] the toml file
     def load_toml(path)
       ConfigHash.new(TOML.parse(path.read, :symbolize_keys => true))
