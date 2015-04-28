@@ -1,15 +1,18 @@
-= Smith2
+# @title Smith - A simple Multi Agent System based on AMQP and protobuf.
+# @author Richard Heycock
+
+# Smith2
 Smith is an Multi Agent system that allows agents to be easily controlled by
 sending messages to an agency that does your bidding. It also provides an ACL
 framework so agents can very easily communicate. All communication is done
 over an AMQP message passing layer.
 
-== Getting started
+## Getting started
 
-=== Configuration
+### Configuration
 
-First of you need a config file: `.smithrc`. This can be in the current working directory, $HOME,
-/etc/smithrc or /etc/smith/smithrc. See the examples directory for an example.
+First of you need a config file: `.smithrc`. This can be in the current working directory, `$HOME`,
+`/etc/smithrc` or `/etc/smith/smithrc`. See the examples directory for an example.
 
 A number of config options can also be set using environment variables:
 
@@ -20,7 +23,7 @@ A number of config options can also be set using environment variables:
 
 The pid and cache directories must exist beforehand.
 
-=== The agency
+### The agency
 
 The agency is used to control the agents: start, stop, list runnning agents,
 etc. Once started it simply listens for messages telling it what to do.
@@ -31,10 +34,10 @@ agency
 ```
 
 It will log messages as specified in the `.smithrc`. I suggest for all
-development work you set it stderr.
+development work you set it `stderr`.
 
 
-=== Smithctl
+### Smithctl
 
 `smithctl` is used to control the agency and provide some useful functions
 (such as publishing ACLs to queues)
@@ -48,8 +51,7 @@ smithctl commands [--long]
 The `--long` option will give a brief overview of the command's function.
 
 
-History
--------
+## History
 
 Smith2 is a complete rewrite of Smith. Smith worked, after a fashion,
 but there were lots of problems that made it hard to work with. So this
