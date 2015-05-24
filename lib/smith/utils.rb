@@ -24,12 +24,16 @@ module Smith
       parts[-1] = "#{parts[-1]}.rb"
       Pathname.new(root).join(*parts)
     end
+    module_function :path_from_class
 
-    def class_name_from_path(root, path)
+    # Returns a Constant based on the pathname.
+    def class_name_from_path(path, root=Pathname.new('.'))
       relative_path = path.relative_path_from(root)
-      parts = relative_path.split
+      parts = split_path(relative_path.sub_ext(''))
+
       parts.map { |p| p.to_s.camel_case }.join('::')
     end
+    module_function :class_name_from_path
 
     # Performs a Kernel.const_get on each element of the class.
     #
@@ -38,7 +42,19 @@ module Smith
     def class_from_name(name)
       name.to_s.split(/::/).inject(Kernel) { |acc, t| acc.const_get(t) }
     end
+    module_function :class_from_name
 
+
+    # Slipts a path into it's component parts.
+    #
+    # @param pathname [Pathname] the path to split.
+    def split_path(pathname)
+      pathname.each_filename.inject([]) { |acc, p| acc << p }
+    end
+    module_function :split_path
+
+    # Check for the existance of a directory and create if it doesn't exist.
+    # @param dir [Pathname]
     def check_and_create_directory(dir)
       dir.tap do
         dir.exist? || dir.mkpath

@@ -195,7 +195,6 @@ module Smith
         end
       end
     end
-
   end
 end
 
