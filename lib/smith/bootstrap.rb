@@ -131,10 +131,15 @@ module Smith
     # TODO think this through some more.
     def add_agent_load_path(path)
       path = path.dirname.dirname.join('lib')
-      # The load path may be a pathname or a string. Change to strings.
-      unless $:.detect { |p| p.to_s == path.to_s }
-        logger.debug { "Adding #{path} to load path" }
-        $: << path
+
+      Smith.agent_directories.each do |path|
+        lib_path = path.parent.join('lib')
+        if lib_path.exist?
+          logger.info { "Adding #{lib_path} to load path" }
+          $LOAD_PATH << path
+        else
+          logger.info { "No lib directory for: #{path.parent}." }
+        end
       end
     end
   end
