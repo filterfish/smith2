@@ -41,7 +41,8 @@ module Smith
 
     def load_agent
       path = agent_directories(@agent_name)
-      logger.debug { "Loading #{@agent_name} from: #{path.dirname}" }
+      logger.info { "Loading #{@agent_name}" }
+      logger.debug { "Loading #{@agent_name} from: #{path}" }
       add_agent_load_path(path)
       load path
 
@@ -49,7 +50,7 @@ module Smith
         @agent = class_from_name(@agent_name).new(@agent_uuid)
       rescue NameError => e
         # TODO: include the class name from the path.
-        logger.fatal { "Cannot instantiate agent. The class name: #{@agent_name} probably didn't match the path" }
+        logger.fatal { "Cannot instantiate agent. File #{path} exists but doesn't contain the Class: #{@agent_name}." }
         terminate!
         false
       end
@@ -66,9 +67,7 @@ module Smith
     # See the note at the in main.
     def terminate!(exception=nil)
 
-      @agent.__send__(:__exception_handler, exception) if @agent
-      logger.error { format_exception(exception) }
-      logger.error { "Terminating: #{@agent_uuid}." }
+      run_exception_handler(exception)
 
       if Smith.running?
         send_dead_message
@@ -111,12 +110,23 @@ module Smith
       end
     end
 
-    def format_exception(exception)
-      str = "#{exception.class.to_s}: #{exception.message}\n\t"
-      if exception.backtrace
-        str << exception.backtrace[0..-1].join("\n\t")
+    # Format any excptions
+    # @param e [Exception] the exeption to format
+    # @return [String] formated exception
+    def format_exception(e)
+      "#{e.class.to_s}: #{e.inspect}\n\t".tap do
+        str << e.backtrace[0..-1].join("\n\t") if e.backtrace
       end
-      str
+    end
+
+    # Run the on_exception proc defined in the agent.
+    # @param e [Exception] the exeption to handle
+    def run_exception_handler(exception)
+      if exception && @agent
+        @agent.__send__(:__exception_handler, exception)
+        logger.error { format_exception(exception) }
+        logger.error { "Terminating: #{@agent_uuid}." }
+      end
     end
 
     # Add the ../lib to the load path. This assumes the directory
