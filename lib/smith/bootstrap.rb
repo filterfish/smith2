@@ -67,7 +67,7 @@ module Smith
     # See the note at the in main.
     def terminate!(exception=nil)
 
-      run_exception_handler(exception)
+      handle_excecption(exception)
 
       if Smith.running?
         send_dead_message
@@ -114,19 +114,21 @@ module Smith
     # @param e [Exception] the exeption to format
     # @return [String] formated exception
     def format_exception(e)
-      "#{e.class.to_s}: #{e.inspect}\n\t".tap do
-        str << e.backtrace[0..-1].join("\n\t") if e.backtrace
+      "#{e.class.to_s}: #{e.inspect}\n\t".tap do |exception_string|
+        exception_string << e.backtrace[0..-1].join("\n\t") if e.backtrace
       end
     end
 
-    # Run the on_exception proc defined in the agent.
+    # Handle any exceptions. This will run the on_exception proc defined in the
+    # agent and log the exception.
+    #
     # @param e [Exception] the exeption to handle
-    def run_exception_handler(exception)
-      if exception && @agent
-        @agent.__send__(:__exception_handler, exception)
+    def handle_excecption(exception)
+      if exception
+        @agent.__send__(:__exception_handler, exception) if @agent
         logger.error { format_exception(exception) }
-        logger.error { "Terminating: #{@agent_uuid}." }
       end
+      logger.error { "Terminating: #{@agent_uuid}." }
     end
 
     # Add the ../lib to the load path. This assumes the directory
@@ -140,13 +142,11 @@ module Smith
     # This needs to be better thought out.
     # TODO think this through some more.
     def add_agent_load_path(path)
-      path = path.dirname.dirname.join('lib')
-
       Smith.agent_directories.each do |path|
         lib_path = path.parent.join('lib')
         if lib_path.exist?
           logger.info { "Adding #{lib_path} to load path" }
-          $LOAD_PATH << path
+          $LOAD_PATH << lib_path
         else
           logger.info { "No lib directory for: #{path.parent}." }
         end
