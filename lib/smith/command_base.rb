@@ -28,12 +28,12 @@ module Smith
       end.read
     end
 
-    def banner(banner=nil, opts={})
+    def banner(banner=nil, additional_text=nil, opts={})
       if banner.nil?
         @banner
       else
         @banner = banner
-        @parser.banner((opts[:no_template]) ? banner : banner_template(banner))
+        @parser.banner((opts[:no_template]) ? banner : banner_template(banner, additional_text))
       end
     end
 
@@ -57,16 +57,15 @@ module Smith
 
     private
 
-    def banner_template(text)
-      return <<-EOS
-
+    def banner_template(text, additional_text)
+      return %(
   #{text}
 
   Usage:
-    smithctl #{self.class.to_s.split('::').last.downcase} [Options]
+    smithctl #{self.class.to_s.split('::').last.downcase} [Options]#{(additional_text) ? " #{additional_text}" : ''}
 
 [Options] are:
-      EOS
+    )
     end
   end
 end
