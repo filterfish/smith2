@@ -6,23 +6,17 @@ module Smith
         responder.succeed(_agents)
       end
 
+      # Return the fully qualified class of all avaiable agents
       def _agents
-        # FIXME make sure that if the path doesn't exist don't blow up.
         separator = (options[:one_column]) ? "\n" : " "
 
-        Smith.agent_directories.inject([]) do |path_acc, path|
-          path_acc.tap do |a|
-            if path.exist?
-              a << path.each_child.inject([]) do |agent_acc, p|
-                agent_acc.tap do |b|
-                  b << Extlib::Inflection.camelize(p.basename('.rb')) if p.file? && p.basename('.rb').to_s.end_with?("agent")
-                end
-              end.flatten
-            else
-              return "Agent path doesn't exist: #{path}"
+        Smith.agent_directories.inject([]) do |acc, agent_root_path|
+          Pathname.glob(agent_root_path.join("**/*")).each do |agent_path|
+            if !agent_path.symlink? && !agent_path.directory?
+              acc << Utils.class_name_from_path(agent_path, agent_root_path)
             end
           end
-        end.flatten.sort.join(separator)
+        end.sort.join(separator)
       end
 
       private
