@@ -68,7 +68,7 @@ module Smith
       end
 
       def options_spec
-        banner "List and display acl files."
+        banner "List and display acl files.", "[acl]"
 
         opt    :long,     "format the listing", :short => :l
         opt    :show,     "show the contents of the acl file", :short => :s

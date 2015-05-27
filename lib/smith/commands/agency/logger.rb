@@ -57,7 +57,7 @@ module Smith
       end
 
       def options_spec
-        banner "Change the log and trace level of the agents or the agency."
+        banner "Change the log and trace level of the agents or the agency.", "<uuid[s]>"
 
         opt    :level, "the log level you want to set", :type => :string, :short => :l
         opt    :trace, "turn trace on or off", :type => :boolean, :short => :t

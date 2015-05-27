@@ -63,7 +63,7 @@ module Smith
       end
 
       def options_spec
-        banner "Start an agent/agents or group of agents."
+        banner "Start an agent/agents or group of agents.", "<agent[s]>"
 
         opt    :group, "Start everything in the specified group", :type => :string, :short => :g
       end

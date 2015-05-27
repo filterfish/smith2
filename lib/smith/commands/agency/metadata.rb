@@ -9,7 +9,7 @@ module Smith
       private
 
       def options_spec
-        banner "Display an agent/agents metadata."
+        banner "Display an agent/agents metadata.", "<uuid>"
       end
     end
   end

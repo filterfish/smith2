@@ -98,7 +98,7 @@ module Smith
       end
 
       def options_spec
-        banner "Stop an agent/agents."
+        banner "Stop an agent/agents.", "<uuid[s]>"
 
         opt    :group, "Stop everything in the specified group", :type => :string, :short => :g
         opt    :name,  "Stop an agent(s) by name", :type => :string, :short => :n

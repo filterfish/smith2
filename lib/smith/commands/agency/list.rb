@@ -64,7 +64,7 @@ module Smith
       end
 
       def options_spec
-        banner "List the running agents."
+        banner "List the running agents.", "<agent name[s]>"
 
         opt         :long,       "shows full details of running agents", :short => :l
         opt         :group,      "list only agents in this group", :type => :string, :short => :g

@@ -5,7 +5,11 @@ module Smith
   module Commands
     class Dump < CommandBase
       def execute
-        dump
+        if options[:'yes-i-want-to-remove-all-acls-from-the-queue']
+          dump
+        else
+          responder.succeed("Missing option. You need to supply the ridiculously long anti-fuckup option.")
+        end
       end
 
       def dump
@@ -67,10 +71,10 @@ module Smith
       private
 
       def options_spec
-        banner "Dump a queue to STDOUT.\n\n  This is a very DANGEROUS command in that it removes all messages from a queue."
+        banner "Dump a queue to STDOUT.\n\n  This is a very DANGEROUS command in that it removes all messages from a queue.", "<queue>"
 
-        opt    :'yes-i-want-to-remove-all-messaeges-from-the-queue',  "Remove all messages from the queue and print to stdout", :type => :boolean,  :short => :none
-        opt    :verbose,                                              "print the number of messages backed up.", :type => :boolean,  :short => :v
+        opt    :'yes-i-want-to-remove-all-acls-from-the-queue',  "Remove all acls from the queue and print to stdout", :type => :boolean,  :short => :none
+        opt    :verbose,                                         "Print the number of acls dumped.", :type => :boolean,  :short => :v
       end
     end
   end

@@ -33,7 +33,7 @@ module Smith
       end
 
       def options_spec
-        banner "Kill an agent/agents."
+        banner "Kill an agent/agents.", "<uuid[s]>"
       end
     end
   end

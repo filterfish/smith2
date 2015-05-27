@@ -25,7 +25,7 @@ module Smith
       end
 
       def options_spec
-        banner "Subcribe to the named queue and print and received messages to stdout."
+        banner "Subcribe to the named queue and print and received messages to stdout.", "<queue>"
 
         opt    :durable,     "amqp durable option", :default => false
         opt    :auto_delete, "amqp auto-delete option", :default => false

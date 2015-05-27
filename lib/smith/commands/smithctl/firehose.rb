@@ -26,10 +26,11 @@ module Smith
       end
 
       def options_spec
-        b = ["Listens to the rabbitmq firehose for the named queue and prints decoded message to stdout.",
-             "  Be warned it can produce vast amounts of outpu.\n",
-             "  You _must_ run 'rabbitmqctl trace_on' for this to work."]
-        banner b.join("\n")
+        banner %(Listens on the rabbitmq firehose for the named queue and prints decoded
+  message to stdout.
+
+  Be warned it can produce vast amounts of outpu. You _must_ run 'rabbitmqctl
+  trace_on' for this to work.), "<queue>"
 
         opt    :json,       "return the JSON representation of the message", :short => :j
         opt    :direction,  "Show messages that are leaving the broker [deliver|publish]", :short => :d, :type => :string, :default => 'deliver'

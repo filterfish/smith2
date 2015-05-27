@@ -74,7 +74,7 @@ module Smith
       end
 
       def options_spec
-        banner "Pop messages off the named queue."
+        banner "Pop messages off the named queue.", "<queue>"
 
         opt    :print,  "print the message", :short => :p
         opt    :json ,  "return the JSON representation of the message", :short => :j

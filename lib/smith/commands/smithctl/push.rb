@@ -88,9 +88,9 @@ module Smith
       end
 
       def options_spec
-        banner "Send a message to a queue. The ACL can also be specified."
+        banner "Pushs an ACL on to a queue.", "<queue>"
 
-        opt :type,          "message type", :type => :string, :default => 'default', :short => :t
+        opt :type,          "message type", :type => :string, :required => true, :short => :t
         opt :message,       "the message, as json", :type => :string, :short => :m
         opt :file,          "read messages from the named file", :type => :string, :short => :f
         opt :number,        "the number of times to send the message", :type => :integer, :default => 1, :short => :n
