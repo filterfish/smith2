@@ -14,8 +14,9 @@ module Smith
 
       # Returns the agents in a group.
       def group(&blk)
+        separator = (options[:one_column]) ? "\n" : " "
         begin
-          blk.call(agent_group(target.first).join(' '))
+          blk.call(agent_group(target.first).join(separator))
         rescue RuntimeError => e
           blk.call(e.message)
         end

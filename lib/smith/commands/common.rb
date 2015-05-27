@@ -18,7 +18,7 @@ module Smith
           if group_directory.exist? && group_directory.directory?
             agents = Pathname.glob(group_directory.join("*.rb")).map(&:expand_path)
 
-            agents.each_with_object([]) do |agent, acc|
+            agents.inject([]) do |acc, agent|
               if agent.symlink?
                 expanded_agent_path = resolve_agent_path(group_directory, agent)
                 acc << Utils.class_name_from_path(expanded_agent_path, agent_directory)
