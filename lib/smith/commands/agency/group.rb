@@ -25,7 +25,7 @@ module Smith
       def options_spec
         banner "Lists the agents in a group.", "<group>"
 
-        opt    :one_column, "the number of times to send the message", :short => :s
+        opt    :one_column, "Lists one agent per line", :short => :s
       end
     end
   end

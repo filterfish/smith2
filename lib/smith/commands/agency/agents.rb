@@ -24,7 +24,7 @@ module Smith
       def options_spec
         banner "List all available agents."
 
-        opt    :one_column, "the number of times to send the message", :short => :s
+        opt    :one_column, "List one agent per line", :short => :s
       end
     end
   end
