@@ -35,7 +35,7 @@ module Smith
     def find_by_name(*names)
       inject([]) do |a, agent|
         a.tap do |acc|
-          names.flatten.each do |name|
+          names.flatten.uniq.each do |name|
             acc << agent if name == agent.name
           end
         end
