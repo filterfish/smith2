@@ -25,7 +25,7 @@ module Smith
           begin
             agents_to_start = agent_group(options[:group])
             if agents_to_start.empty?
-              blk.call("Agent group is empty. No agents started: #{options[:group]}")
+              blk.call("Empty group: #{options[:group]}. No agents started")
             else
               start_agents(agents_to_start, &blk)
             end

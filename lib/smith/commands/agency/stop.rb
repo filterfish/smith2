@@ -55,7 +55,7 @@ module Smith
           begin
             agents_to_stop = agents.find_by_name(agent_group(options[:group])).map(&:uuid)
             if agents_to_stop.empty?
-              blk.call("There are no agents in group: #{options[:group]}")
+              blk.call("Empty group: #{options[:group]}. No agents stopped")
             end
           rescue RuntimeError => e
             return blk.call(e.message)
