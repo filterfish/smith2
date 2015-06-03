@@ -97,7 +97,9 @@ module Smith
 
         @timeout ||= Timeout.new(Smith.config.smith.timeout, :queue_name => @queue_def.denormalise)
 
-        queue_def = QueueDefinition.new(opts.delete(:reply_queue_name) || "#{@queue_def.denormalise}.reply", opts.merge(:auto_delete => true, :durable => false))
+        reply_queue = opts.delete(:reply_queue_name) { random("#{@queue_def.denormalise}.") }
+
+        queue_def = QueueDefinition.new(reply_queue, opts.merge(:auto_delete => true, :durable => false))
         logger.debug { "reply queue: #{queue_def.denormalise}" }
 
         @reply_queue_completion ||= EM::Completion.new.tap do |completion|
