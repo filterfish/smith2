@@ -93,7 +93,7 @@ module Smith
     end
 
     def dead(agent_data)
-      agent_exists?(agent_data.uuid, ->{}) do |agent_process|
+      agent_exists?(agent_data.uuid) do |agent_process|
         if agent_process.no_process_running
           logger.fatal { "Agent is dead: #{agent_data.uuid}" }
         end
@@ -111,7 +111,7 @@ module Smith
       end
     end
 
-    def agent_exists?(uuid, error_proc=nil, &blk)
+    def agent_exists?(uuid, error_proc=->{}, &blk)
       agent = @agent_processes[uuid]
       if agent
         blk.call(agent)
