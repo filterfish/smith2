@@ -241,7 +241,7 @@ module Smith
         if @metadata.reply_to
           @reply_queue.publish((blk) ? blk.call : acl, :correlation_id => @metadata.message_id)
         else
-          logger.error { "You are replying to a message that has no reply_to: #{@metadata.exchange}." }
+          logger.error { "Cannot reply to a message that has no reply_to: #{@metadata.exchange}." }
         end
       end
 
