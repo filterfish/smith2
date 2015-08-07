@@ -12,7 +12,6 @@ Gem::Specification.new do |s|
 
   s.authors = ["Richard Heycock"]
   s.licenses = ['GPL-3']
-  s.add_runtime_dependency 'oj', '~> 2.11', '~> 2.11.4'
   s.add_runtime_dependency 'amqp', '~> 1.0', '~> 1.5'
   s.add_runtime_dependency 'daemons', '~> 1.1'
   s.add_runtime_dependency "eventmachine", "~> 1.0"
@@ -25,8 +24,14 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "ruby_parser", "~> 3.6"
   s.add_runtime_dependency "murmurhash3", "0.1.4"
   s.add_runtime_dependency "hashie", "~> 2.1"
-  s.add_runtime_dependency "curses", "1.0.1"
   s.add_runtime_dependency "toml-rb", "~> 0.3"
+
+  if /java/.match(RUBY_PLATFORM)
+    s.platform = 'java'
+  else
+    s.add_runtime_dependency 'oj', '~> 2.11', '~> 2.11.4'
+    s.add_runtime_dependency("curses", "1.0.1")
+  end
 
   binaries = %w{agency smithctl pry-smith}
   libraries = `git ls-files lib`.split(/\n/)
