@@ -29,18 +29,23 @@ module Smith
 
         open_channel(:prefetch => prefetch) do |channel|
           @channel_completion.succeed(channel)
-          channel.direct(@queue_def.normalise, @options.exchange) do |exchange|
+          exchange_type = opts[:fanout] ? :fanout : :direct
+          channel.send(exchange_type, @queue_def.normalise, @options.exchange) do |exchange|
 
             exchange.on_return do |basic_return,metadata,payload|
               logger.error { "#{@acl_type_cache[metadata.type].new.parse_from_string} returned! Exchange: #{reply_code.exchange}, reply_code: #{basic_return.reply_code}, reply_text: #{basic_return.reply_text}" }
               logger.error { "Properties: #{metadata.properties}" }
             end
 
-            channel.queue(@queue_def.normalise, @options.queue) do |queue|
-              queue.bind(exchange, :routing_key => @queue_def.normalise)
-
-              @queue_completion.succeed(queue)
+            if opts[:fanout]
               @exchange_completion.succeed(exchange)
+            else
+              channel.queue(@queue_def.normalise, @options.queue) do |queue|
+                queue.bind(exchange, :routing_key => @queue_def.normalise)
+
+                @queue_completion.succeed(queue)
+                @exchange_completion.succeed(exchange)
+              end
             end
           end
         end

@@ -39,13 +39,26 @@ module Smith
 
         open_channel(:prefetch => prefetch) do |channel|
           @channel_completion.succeed(channel)
-          channel.direct(@queue_def.normalise, @options.exchange) do |exchange|
+          exchange_type = opts[:fanout] ? :fanout : :direct
+          channel.send(exchange_type, @queue_def.normalise, @options.exchange) do |exchange|
             @exchange_completion.succeed(exchange)
           end
         end
 
         open_channel(:prefetch => prefetch) do |channel|
-          channel.queue(@queue_def.normalise, @options.queue) do |queue|
+          extra_opts = {}
+          if opts[:fanout]
+            if opts[:queue_append]
+              queue_name = "#{@queue_def.normalise}.#{opts[:queue_append]}"
+            else
+              extra_opts[:durable] = false
+              extra_opts[:auto_delete] = true
+              queue_name = ""
+            end
+          else
+            queue_name = @queue_def.normalise
+          end
+          channel.queue(queue_name, @options.queue.merge(extra_opts)) do |queue|
             @exchange_completion.completion do |exchange|
               queue.bind(exchange, :routing_key => @queue_def.normalise)
               @queue_completion.succeed(queue)
