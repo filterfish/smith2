@@ -37,6 +37,10 @@ module Smith
 
         @reply_queues = {}
 
+        @fanout = opts[:fanout]
+        @fanout_persist = opts.key?(:fanout_persist) ? true : opts[:fanout_persist]
+        @fanout_queue_suffix = opts[:fanout_queue_suffix]
+
         open_channel(:prefetch => prefetch) do |channel|
           @channel_completion.succeed(channel)
           exchange_type = opts[:fanout] ? :fanout : :direct
@@ -47,9 +51,11 @@ module Smith
 
         open_channel(:prefetch => prefetch) do |channel|
           extra_opts = {}
-          if opts[:fanout]
-            if opts[:queue_append]
-              queue_name = "#{@queue_def.normalise}.#{opts[:queue_append]}"
+          if @fanout
+            if @fanout_persist && @fanout_queue_suffix
+              queue_name = "#{@queue_def.normalise}.#{@fanout_queue_suffix}"
+            elsif @fanout_persist
+              raise "Misconfigured receiver. fanout_queue_suffix must be provided unless fanout_persist is false."
             else
               extra_opts[:durable] = false
               extra_opts[:auto_delete] = true
