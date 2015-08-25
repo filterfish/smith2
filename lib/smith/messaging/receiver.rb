@@ -38,7 +38,7 @@ module Smith
         @reply_queues = {}
 
         @fanout = opts[:fanout]
-        @fanout_persist = opts.key?(:fanout_persist) ? true : opts[:fanout_persist]
+        @fanout_persist = opts.fetch(:fanout_persist, true)
         @fanout_queue_suffix = opts[:fanout_queue_suffix]
 
         open_channel(:prefetch => prefetch) do |channel|
