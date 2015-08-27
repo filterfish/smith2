@@ -21,6 +21,10 @@ module Smith
           :auto_ack => option_or_default(@queue_def.options, :auto_ack, true),
           :threading => option_or_default(@queue_def.options, :threading, false)}
 
+        fanout_options = if opts.delete(:fanout)
+          {:persistence => opts.delete(:fanout_persistence) { true }, :queue_suffix => opts.delete(:fanout_queue_suffix)}
+        end
+
         @payload_type = Array(option_or_default(@queue_def.options, :type, []))
 
         prefetch = option_or_default(@queue_def.options, :prefetch, Smith.config.agent.prefetch)
@@ -37,34 +41,16 @@ module Smith
 
         @reply_queues = {}
 
-        @fanout = opts[:fanout]
-        @fanout_persist = opts.key?(:fanout_persist) ? true : opts[:fanout_persist]
-        @fanout_queue_suffix = opts[:fanout_queue_suffix]
-
         open_channel(:prefetch => prefetch) do |channel|
           @channel_completion.succeed(channel)
-          exchange_type = opts[:fanout] ? :fanout : :direct
+          exchange_type = (fanout_options) ? :fanout : :direct
           channel.send(exchange_type, @queue_def.normalise, @options.exchange) do |exchange|
             @exchange_completion.succeed(exchange)
           end
         end
 
         open_channel(:prefetch => prefetch) do |channel|
-          extra_opts = {}
-          if @fanout
-            if @fanout_persist && @fanout_queue_suffix
-              queue_name = "#{@queue_def.normalise}.#{@fanout_queue_suffix}"
-            elsif @fanout_persist
-              raise "Misconfigured receiver. fanout_queue_suffix must be provided unless fanout_persist is false."
-            else
-              extra_opts[:durable] = false
-              extra_opts[:auto_delete] = true
-              queue_name = ""
-            end
-          else
-            queue_name = @queue_def.normalise
-          end
-          channel.queue(queue_name, @options.queue.merge(extra_opts)) do |queue|
+          channel.queue(*fanout_queue_and_opts(fanout_options)) do |queue|
             @exchange_completion.completion do |exchange|
               queue.bind(exchange, :routing_key => @queue_def.normalise)
               @queue_completion.succeed(queue)
@@ -87,9 +73,9 @@ module Smith
           @exchange_completion.completion do |exchange|
             logger.debug { "Attaching to reply queue: #{reply_queue_name}" }
 
-            queue_def = QueueDefinition.new(reply_queue_name, :auto_delete => true, :immediate => true, :mandatory => true, :durable => false)
+            reply_queue_def = QueueDefinition.new(reply_queue_name, :auto_delete => true, :immediate => true, :mandatory => true, :durable => false)
 
-            Smith::Messaging::Sender.new(queue_def) do |sender|
+            Smith::Messaging::Sender.new(reply_queue_def) do |sender|
               @reply_queues[reply_queue_name] = sender
               blk.call(sender)
             end
@@ -217,6 +203,33 @@ module Smith
       def on_requeue_limit(&blk)
         @requeue_options_completion.completion do |requeue_options|
           requeue_options.merge!(:on_requeue_limit => blk)
+        end
+      end
+
+      private
+
+      # Calculates the queue name and the various queue options based on the
+      # fanout_options and returns them in a form that can be used by the
+      # queue constuctor.
+      #
+      # @param [Hash] fanout_options the various fanout related options
+      #
+      # @raise [ArgumentError] raised if :queue_suffix is given without the :persistence flag
+      #
+      # @return [Array<queue_name, options]
+      def fanout_queue_and_opts(fanout_options)
+        if fanout_options
+          if fanout_options[:persistence]
+            if fanout_options[:queue_suffix]
+              ["#{@queue_def.normalise}.#{fanout_options[:queue_suffix]}", @options.queue]
+            else
+              raise ArgumentError, "Incorrect options. :fanout_queue_suffix must be provided if :fanout_persistence is true."
+            end
+          else
+            ["", @options.queue.merge(:durable => false, :auto_delete => true)]
+          end
+        else
+          [@queue_def.normalise, @options.queue]
         end
       end
     end

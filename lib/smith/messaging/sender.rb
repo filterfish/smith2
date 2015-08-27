@@ -29,12 +29,15 @@ module Smith
 
         open_channel(:prefetch => prefetch) do |channel|
           @channel_completion.succeed(channel)
-          exchange_type = opts[:fanout] ? :fanout : :direct
+          exchange_type = (opts[:fanout]) ? :fanout : :direct
+
           channel.send(exchange_type, @queue_def.normalise, @options.exchange) do |exchange|
 
-            exchange.on_return do |basic_return,metadata,payload|
-              logger.error { "#{@acl_type_cache[metadata.type].new.parse_from_string} returned! Exchange: #{reply_code.exchange}, reply_code: #{basic_return.reply_code}, reply_text: #{basic_return.reply_text}" }
-              logger.error { "Properties: #{metadata.properties}" }
+            exchange.on_return do |basic_return, metadata, payload|
+              logger.error {
+                acl_type = @acl_type_cache.get_by_hash(metadata.properties[:type]).to_s rescue "Unknown ACL type"
+                "Cannot deliver message type: #{acl_type}, from exchange: \"#{basic_return.exchange}\", using routing key: \"#{basic_return.routing_key}\""
+              }
             end
 
             if opts[:fanout]
