@@ -29,7 +29,7 @@ Gem::Specification.new do |s|
   if /java/.match(RUBY_PLATFORM)
     s.platform = 'java'
   else
-    s.add_runtime_dependency 'oj', '~> 2.11', '~> 2.11.4'
+    s.add_runtime_dependency 'oj', '~> 2.11', '>= 2.11.4'
     s.add_runtime_dependency("curses", "1.0.1")
   end
 
