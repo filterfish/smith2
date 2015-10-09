@@ -9,15 +9,18 @@ module Smith
       include Common
 
       def execute
-        if target.size > 0
+        case
+        when target.size > 0
           selected_agents = agents.find_by_name(target)
+        when options[:group] && options[:all]
+          selected_agents = agent_group(options[:group]).map do |agent_name|
+            a = agents.find_by_name(agent_name)
+            (a.empty?) ? AgentProcess.new(nil, :name => agent_name, :uuid => nil_uuid) : a.first
+          end
+        when options[:group]
+          selected_agents = agents.find_by_name(agent_group(options[:group]))
         else
           selected_agents = (options[:all]) ? agents.to_a : agents.state(:running)
-        end
-
-        if options[:group]
-          group_names = agent_group(options[:group])
-          selected_agents = selected_agents.select { |a| group_names.include?(a.name) }
         end
 
         responder.succeed((selected_agents.empty?) ? '' : format(selected_agents, options[:long]))
@@ -61,6 +64,11 @@ module Smith
         a.inject(header) do |acc,e|
           acc << sprintf("#{col_widths.inject("") { |spec,w| spec << "%-#{w + 2}s"}}\n", *e)
         end
+      end
+
+      # Produces a null version 4 UUID.
+      def nil_uuid
+        '00000000-0000-4000-0000-000000000000'
       end
 
       def options_spec
