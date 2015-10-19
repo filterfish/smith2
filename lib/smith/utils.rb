@@ -27,9 +27,9 @@ module Smith
     module_function :path_from_class
 
     # Returns a Constant based on the pathname.
-    def class_name_from_path(path, root=Pathname.new('.'))
+    def class_name_from_path(path, root=Pathname.new('.'), segment_to_remove=nil)
       relative_path = path.relative_path_from(root)
-      parts = split_path(relative_path.sub_ext(''))
+      parts = split_path(relative_path.sub_ext('')).reject { |p| p == segment_to_remove }
 
       parts.map { |p| p.to_s.camel_case }.join('::')
     end

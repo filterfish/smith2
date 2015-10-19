@@ -21,6 +21,9 @@ kqueue = true
 pid_directory = "~/.smith/run"
 cache_directory = "~/.smith/cache"
 
+# This is the directory that will contain the agent groups
+group_directory = "groups"
+
 # It would be better to use inline tables here but there is a bug in
 # toml-rb: https://github.com/emancu/toml-rb/issues/57.
 # TODO: Change these to inline tables when this bug is fixed.
