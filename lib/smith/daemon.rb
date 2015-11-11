@@ -2,6 +2,7 @@
 
 require 'daemons/daemonize'
 require 'daemons/pidfile'
+require 'sys/proctable'
 
 require 'smith/utils'
 
@@ -52,8 +53,14 @@ module Smith
         false
       else
         pid = File.read(pid_files.first).to_i
-        pid > 0 && Daemons::Pid.running?(pid)
+        pid > 0 && Daemons::Pid.running?(pid) && process_names_match?(@name, pid)
       end
+    end
+
+    # Return the pid of the process
+    # @return the pid or nil if not set.
+    def pid
+      @pid.pid
     end
 
     def unlink_pid_file
@@ -65,6 +72,18 @@ module Smith
     end
 
     private
+
+    # Checks to see if running process that matches the pid in the pid matches
+    # the name.
+    # @param name [String] the name of the process
+    #
+    # @param pid [Integer] the pid of the process
+    #
+    # @return true if the running process matches the name
+    def process_names_match?(name, pid)
+      proc_table = Sys::ProcTable.ps(pid)
+      proc_table && proc_table.cmdline == name
+    end
 
     # Get the pid directory. This checks for the command line option,
     # then the config and finally use the tmp directory.

@@ -24,7 +24,11 @@ module Smith
 
       @daemon = Daemon.new(add_vhost(AGENCY_NAME), opts[:daemon], opts[:pid_dir])
 
-      raise AgencyRunning, "The agency is alredy running." if  @daemon.running?
+      if @daemon.running?
+        msg = "An agency with pid: #{@daemon.pid} is already running"
+        logger.fatal { msg}
+        raise AgencyRunning, msg
+      end
 
       @agency = Agency.new
 
