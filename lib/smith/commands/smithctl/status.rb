@@ -12,7 +12,7 @@ module Smith
       end
 
       def status(&blk)
-        Messaging::Queue.number_of_consumers(QueueDefinitions::Agency_control) do |consumers_count|
+        Messaging::Queue.number_of_consumers(QueueDefinitions::Agency_control.call) do |consumers_count|
           blk.call(consumers_count > 0)
         end
       end
@@ -20,7 +20,7 @@ module Smith
       private
 
       def options_spec
-        banner "Shows the status of the agency."
+        banner "Shows the status of the agency — ONLY WORKS LOCALLY"
       end
     end
   end

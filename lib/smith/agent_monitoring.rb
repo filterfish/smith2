@@ -36,7 +36,7 @@ module Smith
               logger.info { "Agent is shutting down: #{agent_process.name}" }
             when 'dead'
               logger.info { "Restarting dead agent: #{agent_process.name}" }
-              Messaging::Sender.new(QueueDefinitions::Agency_control) do |sender|
+              Messaging::Sender.new(QueueDefinitions::Agency_control.call) do |sender|
                 sender.on_reply { |p, r| logger.debug { "Agent restart message acknowledged: #{agent_process.name}" } }
                 sender.publish(ACL::AgencyCommand.new(:command => 'start', :args => [agent_process.name]))
               end

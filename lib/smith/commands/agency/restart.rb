@@ -12,7 +12,7 @@ module Smith
       include Common
 
       def execute
-        Messaging::Sender.new(QueueDefinitions::Agency_control) do |sender|
+        Messaging::Sender.new(QueueDefinitions::Agency_control.call) do |sender|
           @sender = sender
 
           # agent is a method and as such I cannot pass it into the block.

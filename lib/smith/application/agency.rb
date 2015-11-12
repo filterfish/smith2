@@ -18,7 +18,7 @@ module Smith
     end
 
     def setup_queues
-      Messaging::Receiver.new(QueueDefinitions::Agency_control, :auto_ack => false) do |receiver|
+      Messaging::Receiver.new(QueueDefinitions::Agency_control.call, :auto_ack => false) do |receiver|
         receiver.subscribe do |payload, responder|
 
           completion = EM::Completion.new.tap do |c|

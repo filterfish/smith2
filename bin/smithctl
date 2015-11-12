@@ -20,7 +20,9 @@ module Smith
 
     def initialize(options={})
       log_level((options[:log_level_given]) ? options[:log_level].to_sym : :warn)
+
       @timeout = (options[:timeout_given]) ? options[:timeout] : Smith.config.smith.timeout
+      @node = options[:node]
     end
 
     def send_command(command, args, &blk)
@@ -38,7 +40,7 @@ module Smith
     end
 
     def agency_command(command, args, &blk)
-      Messaging::Sender.new(QueueDefinitions::Agency_control) do |sender|
+      Messaging::Sender.new(QueueDefinitions::Agency_control.call(@node)) do |sender|
         sender.on_timeout(@timeout) { |message_id| blk.call("Timeout. Is the agency still running?") }
 
         sender.on_reply(:auto_ack => true) do |reply_payload, r|
@@ -70,16 +72,21 @@ Usage:
     stop_on Command.commands
     opt :log_level, "Set the log level of smithctl only.", :short => :l, :type => :string
     opt :timeout,   "Specify the timeout when communicating with the agency.", :short => :t, :type => :integer, :default => 60
+    opt :node,      "Specify the agency node to connect to.", :type => :string, :short => :none
   end
 
   opts = Trollop::with_standard_exception_handling parser do
     raise Trollop::HelpNeeded if ARGV.size < 1
-    parser.parse(ARGV).tap do
-      unless Command.commands.include?(ARGV.first)
-        puts "Unknown command: #{ARGV.first}"
-        exit 1
-      end
+    parser.parse(ARGV)
+  end
+
+  if ARGV.size > 0
+    if ! Command.commands.include?(ARGV.first)
+      puts "Unknown command: #{ARGV.first}"
+      exit 1
     end
+  else
+    raise Trollop::HelpNeeded
   end
 
   command = ARGV.shift.dup
