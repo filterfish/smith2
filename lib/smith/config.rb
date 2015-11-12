@@ -4,6 +4,7 @@
 require 'toml'
 require 'fileutils'
 require 'pathname'
+require 'addressable/uri'
 require 'hashie/extensions/coercion'
 require 'hashie/extensions/deep_merge'
 require 'hashie/extensions/method_access'
@@ -53,6 +54,7 @@ module Smith
       @config_file = find_config_file
       @config = load_tomls(default_config_file, @config_file)
       coerce_directories!
+      broker_uri!
     end
 
     # Make sure the non-default direcotires are set.
@@ -79,6 +81,24 @@ module Smith
 
       check_directories
       @config.agency[:acl_directories] = @config.agency[:acl_directories] + [smith_acl_directory]
+    end
+
+    def broker_uri!
+      uri = if @config.amqp.broker[:uri]
+              Addressable::URI.parse(@config.amqp.broker[:uri])
+            else
+              Addressable::URI.new.tap do |u|
+                u.scheme = 'amqp'
+                u.host = @config.amqp.broker.delete(:host)
+                u.port = @config.amqp.broker.delete(:port)
+                u.path = @config.amqp.broker.delete(:vhost)
+                u.user = @config.amqp.broker.delete(:user)
+                u.password = @config.amqp.broker.delete(:password)
+              end
+            end
+
+      @config.amqp.broker[:uri] = uri_from_env('SMITH_BROKER_URI', uri)
+      @config.amqp.broker[:vhost] = @config.amqp.broker[:uri].path
     end
 
     # Find the config file. This checks the following paths before raising an
@@ -122,7 +142,7 @@ module Smith
       to_pathname(ENV.fetch(env_var, default))
     end
 
-    # Returns an array of path from the environment variable passed in. If the
+    # Returns an array of Paths from the environment variable passed in. If the
     # environment variable is not set it returns an empty array.
     #
     # @param env_var [String] the name of the environment variable
@@ -130,6 +150,16 @@ module Smith
     # @return [Array<Pathnmae>]
     def paths_from_env(env_var, default)
       split_paths(ENV.fetch(env_var, default))
+    end
+
+    # Returns a URI from the environment variable passed in. If the
+    # environment variable is not set it returns nil.
+    #
+    # @param env_var [String] the name of the environment variable
+    # @param default [String] the value to use if the environment variable is not set
+    # @return [Addressable::URI]
+    def uri_from_env(env_var, default)
+      Addressable::URI.parse(ENV.fetch(env_var, default))
     end
 
     # Splits a string using PATH_SEPARATOR.

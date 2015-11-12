@@ -90,11 +90,12 @@ module Smith
         EM.kqueue
       end
 
-      connection_settings = config.amqp.broker.merge(
+      connection_settings = {
         :on_tcp_connection_failure => method(:tcp_connection_failure_handler),
-        :on_possible_authentication_failure => method(:authentication_failure_handler))
+        :on_possible_authentication_failure => method(:authentication_failure_handler)
+      }
 
-      AMQP.start(connection_settings) do |connection|
+      AMQP.start(config.amqp.broker.uri.to_s, connection_settings) do |connection|
         @connection = connection
 
         connection.on_connection do
@@ -181,7 +182,7 @@ module Smith
 
     def broker_identifier(connection)
       broker = connection.broker.properties
-      "#{connection.broker_endpoint}, (#{broker['product']}/v#{broker['version']})"
+      "amqp://#{connection.broker_endpoint}, (#{broker['product']}/v#{broker['version']}, #{broker['cluster_name']})"
     end
 
     def check_path(path, create=false)
