@@ -18,7 +18,12 @@ module Smith
             (a.empty?) ? AgentProcess.new(nil, :name => agent_name, :uuid => nil_uuid) : a.first
           end
         when options[:group]
-          selected_agents = agents.find_by_name(agent_group(options[:group]))
+          begin
+            selected_agents = agents.find_by_name(agent_group(options[:group]))
+          rescue RuntimeError => e
+            responder.fail(e.message)
+            return
+          end
         else
           selected_agents = (options[:all]) ? agents.to_a : agents.state(:running)
         end
