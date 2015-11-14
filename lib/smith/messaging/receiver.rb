@@ -218,7 +218,6 @@ module Smith
 
         # TODO add some better error checking/diagnostics.
         clazz = @acl_type_cache.get_by_hash(metadata.type)
-        raise ACL::UnknownError, "Unknown ACL: #{metadata.type}" if clazz.nil?
 
         @message = clazz.new.parse_from_string(data)
 

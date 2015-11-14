@@ -16,5 +16,6 @@ module Smith
     class Error < RuntimeError; end
     class IncorrectTypeError < Error; end
     class UnknownError < Error; end
+    class UnknownTypeFormat < Error; end
   end
 end
