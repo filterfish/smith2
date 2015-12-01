@@ -13,6 +13,9 @@ module Smith
       # @return [Array<Class>] the class of each agent in the group
       def agent_group(group)
         agents = Smith.agent_directories.map do |agent_directory|
+
+          raise RuntimeError, "No group specified." unless group
+
           group_directory(agent_directory, group) do |group_directory, groups_prefix|
 
             if group_directory.exist? && group_directory.directory?
