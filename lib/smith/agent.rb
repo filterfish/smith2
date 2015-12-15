@@ -56,8 +56,6 @@ module Smith
         end
       end
 
-      EM.threadpool_size = 1
-
       @on_starting.call(@on_starting_completion)
     end
 
