@@ -13,6 +13,7 @@ Gem::Specification.new do |s|
   s.authors = ["Richard Heycock"]
   s.licenses = ['GPL-3']
   s.add_runtime_dependency 'amqp', '~> 1.0', '~> 1.5'
+  s.add_runtime_dependency 'addressable', '~> 2.0'
   s.add_runtime_dependency 'daemons', '~> 1.1'
   s.add_runtime_dependency "eventmachine", "~> 1.0"
   s.add_runtime_dependency "extlib", "0.9.16"
