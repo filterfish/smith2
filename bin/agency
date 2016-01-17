@@ -78,7 +78,7 @@ module Smith
 
     def add_vhost(name)
       suffix = Pathname.new(Smith.config.amqp.broker.vhost).basename
-      "%s.%s" % [name, (suffix.root?) ? 'root' : suffix.to_s]
+      "%s.%s" % [name, (suffix.to_s.empty? || suffix.root?) ? 'default' : suffix.to_s]
     end
   end
 end
