@@ -46,13 +46,13 @@ ack = true
 
 # Change according to your local broker.
 [amqp.broker]
-# host = "localhost"
-# port = 5672
-# user = "guest"
-# password = "guest"
-# vhost = "/smith"
+host = "localhost"
+port = 5672
+user = "guest"
+password = "guest"
+vhost = ""
 
-uri = "amqp://guest:guest@basking:5672"
+# uri = "amqp://guest:guest@localhost:5672"
 
 [logging]
 trace = true
