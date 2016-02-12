@@ -4,7 +4,7 @@ module Smith
 
     def self.included(base)
 
-      if !Logging.const_defined?(:MAX_LEVEL_LENGTH)
+      if !Logging.initialized?
         Logging.init([:verbose, :debug, :info, :warn, :error, :fatal])
       end
 
