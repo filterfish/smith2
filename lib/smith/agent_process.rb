@@ -199,8 +199,9 @@ module Smith
       Process.detach(agent_process.pid)
     end
 
+    # FIXME: This doesn't appear to be being called.
     def self.acknowledge_start(agent_process, &blk)
-      logger.info { "Agent started: #{agent_process.uuid}" }
+      logger.info { "Agent started: #{agent_process.name}, UUID: #{agent_process.uuid}, PID: #{agent_process.pid}" }
     end
 
     def self.stop(agent_process)
@@ -209,7 +210,7 @@ module Smith
           if count > 0
             sender.publish(ACL::AgentCommand.new(:command => 'stop'))
           else
-            logger.warn { "Agent is not listening. Setting state to dead." }
+            logger.warn { "Agent is not listening. Setting state to dead: #{agent_process.name}, UUID: #{agent_process.uuid}, PID: #{agent_process.pid}" }
             agent_process.no_process_running
           end
         end
@@ -223,7 +224,7 @@ module Smith
 
     def self.acknowledge_stop(agent_process)
       agent_process.delete
-      logger.info { "Agent stopped: #{agent_process.uuid}" }
+      logger.info { "Agent stopped: #{agent_process.name}, UUID: #{agent_process.uuid}, PID: #{agent_process.pid}" }
     end
 
     # This needs to use the PID class to verify if an agent is still running.
@@ -234,7 +235,8 @@ module Smith
           logger.info { "Agent's pid is 0. The agent probably didn't start correctly. Cleaning up." }
           agent_process.delete
         else
-          logger.info { "Sending kill signal: #{agent_process.pid}: #{agent_process.uuid}" }
+          logger.info { "Sending signal: TERM, #{agent_process.name}, UUID: #{agent_process.uuid}, PID: #{agent_process.pid}" }
+
           begin
             Process.kill('TERM', agent_process.pid)
           rescue

@@ -32,7 +32,7 @@ module Smith
         c.completion do |completion|
           acknowledge_start do
             @on_running.call(@on_running_completion)
-            logger.info { "Agent started: #{name}:[#{pid}]." }
+            logger.info { "Agent started: #{name}, UUID: #{uuid}, PID: #{pid}" }
           end
         end
       end
@@ -49,9 +49,7 @@ module Smith
         c.completion do |completion|
           acknowledge_stop do
             @state = :stopping
-            Smith.stop do
-              logger.info { "Agent stopped: #{name}:[#{pid}]." }
-            end
+            Smith.stop
           end
         end
       end

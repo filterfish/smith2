@@ -36,7 +36,8 @@ module Smith
       logger.debug { "Installing default signal handlers" }
       %w{TERM INT QUIT}.each do |sig|
         @agent.install_signal_handler(sig) do |sig|
-          logger.error { "Agent received: signal #{sig}: #{agent.name} (#{agent.uuid})" }
+          logger.error { "Received signal #{sig}: #{agent.name}, UUID: #{agent.uuid}, PID: #{agent.pid}." }
+
           terminate!
         end
       end
@@ -76,7 +77,6 @@ module Smith
         send_dead_message
         shutdown
       else
-        logger.debug { "Reconnecting to AMQP Broker." }
         Smith.start do
           send_dead_message
           shutdown
@@ -84,7 +84,7 @@ module Smith
       end
     end
 
-    # Clean shutdown of the agent.
+    # Cleanly shutdown of the agent.
     def shutdown
       unlink_pid_file
       Smith.stop if Smith.running?
@@ -129,7 +129,7 @@ module Smith
         @agent.__send__(:__exception_handler, exception) if @agent
         logger.error { format_exception(exception) }
       end
-      logger.error { "Terminating: #{@agent_uuid}." }
+      logger.error { "Terminating: #{@agent_name}, UUID: #{@agent_uuid}, PID: #{@pid.pid}." }
     end
 
     # Add the ../lib to the load path. This assumes the directory
