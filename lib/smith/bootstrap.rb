@@ -25,6 +25,9 @@ module Smith
       # thrown in setup_control_queue, for example, it just kills
       # the agent without it actually raising the exception.
       Thread.abort_on_exception = true
+
+      EventMachine.error_handler { |e| terminate!(e) }
+
       @agent_name = name
       @agent_uuid = uuid
     end
@@ -71,14 +74,12 @@ module Smith
 
       if Smith.running?
         send_dead_message
-        unlink_pid_file
-        Smith.stop
+        shutdown
       else
         logger.debug { "Reconnecting to AMQP Broker." }
         Smith.start do
           send_dead_message
-          unlink_pid_file
-          Smith.stop
+          shutdown
         end
       end
     end
@@ -168,18 +169,9 @@ Smith.compile_acls
 
 bootstrapper = Smith::AgentBootstrap.new(name, uuid)
 
-# I've tried putting the exception handling in the main reactor log
-# but it doesn't do anything. I know there's a reason for this but I
-# don't what it is at the moment. Just beware that whenever there
-# is an exception the reactor is not going going to be running.
-begin
-  Smith.start do
-    if bootstrapper.load_agent
-      bootstrapper.signal_handlers
-      bootstrapper.start!
-    end
+Smith.start do
+  if bootstrapper.load_agent
+    bootstrapper.signal_handlers
+    bootstrapper.start!
   end
-  bootstrapper.shutdown
-rescue Exception => e
-  bootstrapper.terminate!(e)
 end
