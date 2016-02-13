@@ -95,7 +95,7 @@ module Smith
             if !queue.subscribed?
               opts = @options.subscribe
               logger.debug { "Subscribing to: [queue]:#{@queue_def.denormalise} [options]:#{opts}" }
-              queue.subscribe(opts) do |metadata,payload|
+              queue.subscribe(opts) do |metadata, payload|
                 if payload
                   on_message(metadata, payload, requeue_options, &blk)
                 else
