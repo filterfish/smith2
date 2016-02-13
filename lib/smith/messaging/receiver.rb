@@ -18,6 +18,7 @@ module Smith
         @acl_type_cache = AclTypeCache.instance
 
         @foo_options = {
+          :error_queue => opts.delete(:error_queue) { false },
           :auto_ack => option_or_default(@queue_def.options, :auto_ack, true),
           :threading => option_or_default(@queue_def.options, :threading, false)}
 
@@ -234,14 +235,20 @@ module Smith
       end
     end
 
+    # This class gets passed into the receive block and is a representation of
+    # both the message and the message metadata. It also handles requeues and
+    # retries. In short it's very much a convenience class which is why I have
+    # no idea what to call it!
+    #
     class Foo
       include Smith::Logger
 
       attr_accessor :metadata
 
       def initialize(metadata, data, opts={}, requeue_opts, &blk)
+        @opts = opts
         @metadata = metadata
-        @reply_queue = opts[:reply_queue]
+        @reply_queue = @opts[:reply_queue]
         @requeue_opts = requeue_opts
 
         @acl_type_cache = AclTypeCache.instance
@@ -253,14 +260,14 @@ module Smith
 
         @message = clazz.new.parse_from_string(data)
 
-        if opts[:threading]
+        if @opts[:threading]
           EM.defer do
             blk.call(@message, self)
-            ack if opts[:auto_ack]
+            ack if @opts[:auto_ack]
           end
         else
           blk.call(@message, self)
-          ack if opts[:auto_ack]
+          ack if @opts[:auto_ack]
         end
       end
 
@@ -289,6 +296,29 @@ module Smith
       end
       alias :call :ack
 
+      # Publish the ACL to the error queue set up for this queue. This method is only
+      # available if the :error_queue option is set to true. Note this is the
+      # receive queue name which in most cases is the same at the sender name
+      # but if you are using fanout queues it will be different.
+      #
+      # @yieldparam [Fixnum] The number of ACLs on the error queue.
+      #
+      def fail(&blk)
+        if @opts[:error_queue]
+          Sender.new("#{queue_name}.error") do |queue|
+            logger.debug { "Republishing ACL to error queue: \"#{queue.queue_name}\"" }
+              queue.publish(@message) do
+            queue.number_of_messages do |count|
+                @metadata.ack
+                blk && blk && blk.call(count + 1)
+              end
+            end
+          end
+        else
+          raise ArgumentError, "You cannot fail this queue as you haven't specified the :error_queue option"
+        end
+      end
+
       # Make #call invoke ack. This makes the following idiom possible:
       #
       # receiver('queue').subscribe do |payload, receiver|
@@ -308,6 +338,23 @@ module Smith
       # the correlation_id
       def correlation_id
         @metadata.correlation_id
+      end
+
+      # Return the queue_name. Note this is the receive queue name which in
+      # most cases is the same at the sender name but if you are using fanout
+      # queues it will be different.
+      #
+      # @return [String] the name of the queue
+      #
+      def queue_name
+        begin
+          @a561facf ||= @metadata.channel.queues.detect { |queue| queue.bindings.first[:exchange] == @metadata.exchange }.name
+        rescue NoMethodError
+          # If `bingings` is empty then an exception will be raised. I cannot
+          # see how it can possibly happend but if it does raise a slightly
+          # more informative exceptino
+          raise "Missing queue. This cannot happen and probably represents a bug. Exchange: #{@metadata.exchange}"
+        end
       end
     end
   end
