@@ -91,7 +91,10 @@ module Smith
                 u.scheme = 'amqp'
                 u.host = @config.amqp.broker.delete(:host)
                 u.port = @config.amqp.broker.delete(:port)
-                u.path = @config.amqp.broker.delete(:vhost)
+
+                vhost = @config.amqp.broker.delete(:vhost)
+                u.path = (vhost == '/') ? "" : vhost
+
                 u.user = @config.amqp.broker.delete(:user)
                 u.password = @config.amqp.broker.delete(:password)
               end
