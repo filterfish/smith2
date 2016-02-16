@@ -301,15 +301,26 @@ module Smith
       # receive queue name which in most cases is the same at the sender name
       # but if you are using fanout queues it will be different.
       #
+      # @param [ACL] acl Optional ACL. With any options this method will fail the entire
+      #                  ACL. This may not be what you want though. So this opton allows
+      #                  you to fail another ACL. WARNING: there is no type checking at
+      #                  the moment. If you publish an ACL that this agent can't process
+      #                  and republish that ACL at a future date the agent will blow up.
+      #
+      # @param [Hash] opts Options hash. This currently only supports on option:
+      #   :ack. If you publish a different ACL from the one received you will have to
+      #   ack that message yourself and make sure `:ack => nil`
+      #
       # @yieldparam [Fixnum] The number of ACLs on the error queue.
       #
-      def fail(&blk)
+      def fail(acl=nil, opts={:ack => true}, &blk)
         if @opts[:error_queue]
+          message = (acl) ? acl : @message
           Sender.new("#{queue_name}.error") do |queue|
             logger.debug { "Republishing ACL to error queue: \"#{queue.queue_name}\"" }
-              queue.publish(@message) do
-            queue.number_of_messages do |count|
-                @metadata.ack
+            queue.publish(message) do
+              queue.number_of_messages do |count|
+                @metadata.ack if opts[:ack]
                 blk && blk && blk.call(count + 1)
               end
             end
