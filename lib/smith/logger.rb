@@ -69,7 +69,7 @@ module Smith
       end
 
       def __reload
-        @logger = Logging.logger[self.class.to_s || 'main']
+        @logger = Logging.logger[(self.is_a?(Module)) ? name : self.class.name]
         @logger.caller_tracing = @@__trace
         @reload = false
       end
