@@ -359,7 +359,7 @@ module Smith
       #
       def queue_name
         begin
-          @a561facf ||= @metadata.channel.queues.detect { |queue| queue.bindings.first[:exchange] == @metadata.exchange }.name
+          @a561facf ||= @metadata.channel.queues.detect { |queue| queue.bindings.first[:exchange] == @metadata.exchange }.name.gsub(/^#{Smith.config.smith.namespace}\./, '')
         rescue NoMethodError
           # If `bingings` is empty then an exception will be raised. I cannot
           # see how it can possibly happend but if it does raise a slightly
