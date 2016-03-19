@@ -169,9 +169,13 @@ Smith.compile_acls
 
 bootstrapper = Smith::AgentBootstrap.new(name, uuid)
 
-Smith.start do
-  if bootstrapper.load_agent
-    bootstrapper.signal_handlers
-    bootstrapper.start!
+begin
+  Smith.start do
+    if bootstrapper.load_agent
+      bootstrapper.signal_handlers
+      bootstrapper.start!
+    end
   end
+rescue Exception => e
+  bootstrapper.terminate!(e)
 end
