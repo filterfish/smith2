@@ -8,6 +8,7 @@ $:.unshift(Pathname.new(__FILE__).dirname.parent.expand_path)
 
 require 'smith'
 require 'smith/agent'
+require 'smith/synchronous_agent'
 
 module Smith
   class AgentBootstrap
