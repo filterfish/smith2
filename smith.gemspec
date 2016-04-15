@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
   s.rubyforge_project = "smith"
 
   s.authors = ["Richard Heycock"]
-  s.licenses = ['GPL-3']
+  s.licenses = ['GPL-3.0']
   s.add_runtime_dependency 'amqp', '~> 1.0', '~> 1.6'
   s.add_runtime_dependency 'addressable', '~> 2.0'
   s.add_runtime_dependency 'daemons', '~> 1.1'
