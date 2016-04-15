@@ -10,6 +10,7 @@ module Smith
 
   module Messaging
     class MessageTimeoutError < RuntimeError; end
+    class UnknownQueue < RuntimeError; end
   end
 
   module ACL

@@ -358,14 +358,24 @@ module Smith
       # @return [String] the name of the queue
       #
       def queue_name
-        begin
-          @a561facf ||= @metadata.channel.queues.detect { |queue| queue.bindings.first[:exchange] == @metadata.exchange }.name.gsub(/^#{Smith.config.smith.namespace}\./, '')
-        rescue NoMethodError
-          # If `bingings` is empty then an exception will be raised. I cannot
-          # see how it can possibly happend but if it does raise a slightly
-          # more informative exceptino
-          raise "Missing queue. This cannot happen and probably represents a bug. Exchange: #{@metadata.exchange}"
-        end
+        @a561facf ||= begin
+                        queue_name = @metadata.channel.queues.keys.detect { |q| q == @metadata.exchange }
+                        if queue_name
+                          @a561facf = remove_namespace(queue_name)
+                        else
+                          raise UnknownQueue, "Queue not found. You are probably you are using fanout queues: #{remove_namespace(@metadata.exchange)}"
+                        end
+                      end
+      end
+
+      # Remove the Smith namespace prefix (the default is `smith.`)
+      #
+      # @param [String] queue_name The name of the queue
+      #
+      # @param [String] The name of the queue with the namespace prefix.
+      #
+      def remove_namespace(queue_name)
+        queue_name.gsub(/^#{Smith.config.smith.namespace}\./, '')
       end
     end
   end
