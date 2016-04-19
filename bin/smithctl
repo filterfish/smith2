@@ -106,7 +106,7 @@ Usage:
     # Setup signal handlers to clean up.
 
     %w{TERM INT QUIT}.each do |sig|
-      signal_handler.install_signal_handler(sig) { @agency.stop }
+      signal_handler.install_signal_handler(sig) { Smith.stop(true) }
     end
 
     control.send_command(command, args) do |result|
