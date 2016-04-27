@@ -132,24 +132,26 @@ module Smith
       logger.error { "Terminating: #{@agent_name}, UUID: #{@agent_uuid}, PID: #{@pid.pid}." }
     end
 
-    # Add the ../lib to the load path. This assumes the directory
-    # structure is:
+    # Add directories with library code to the load path. This assumes that
+    # the required files reside at the same level as the agent directory.
+    #
+    # Always defaults to `lib` if a `lib_directories` list is not provided
+    # by the configuration.
     #
     # $ROOT_PATH/agents
     #        .../lib
     #
-    # where $ROOT_PATH can be anywhere.
-    #
-    # This needs to be better thought out.
-    # TODO think this through some more.
+    # Where $ROOT_PATH is dependent on the agent directory.
     def add_agent_load_path(path)
       Smith.agent_directories.each do |path|
-        lib_path = path.parent.join('lib')
-        if lib_path.exist?
-          logger.info { "Adding #{lib_path} to load path" }
-          $LOAD_PATH << lib_path
-        else
-          logger.info { "No lib directory for: #{path.parent}." }
+        Smith.lib_directories.each do |lib_dir|
+          lib_path = path.parent.join(lib_dir)
+          if lib_path.exist?
+            logger.info { "Adding #{lib_path} to load path." }
+            $LOAD_PATH << lib_path
+          else
+            logger.info { "#{lib_dir} directory not found in: #{path.parent}." }
+          end
         end
       end
     end
