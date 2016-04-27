@@ -21,6 +21,13 @@ kqueue = true
 pid_directory = "~/.smith/run"
 cache_directory = "~/.smith/cache"
 
+# These directories get added to the Ruby $LOAD_PATH for agents to require code.
+lib_directories = ["lib"]
+# Shared codebase with a basic web app:
+#   lib_directories = ["lib", "app"]
+# Shared codebase with a Rails app:
+#   lib_directories = ["lib", "app/models", "vendor"]
+
 # This is the directory that will contain the agent groups
 group_directory = "groups"
 

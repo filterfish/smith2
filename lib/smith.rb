@@ -45,6 +45,10 @@ module Smith
       Pathname.new(__FILE__).dirname.parent.expand_path
     end
 
+    def lib_directories
+      config.agency.lib_directories
+    end
+
     def agent_directories
       config.agency.agent_directories
     end
