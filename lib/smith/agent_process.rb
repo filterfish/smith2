@@ -170,7 +170,7 @@ module Smith
     # Start an agent. This forks and execs the bootstrapper class
     # which then becomes responsible for managing the agent process.
     def self.start_process(agent_process)
-      fork do
+      pid = fork do
         # Detach from the controlling terminal
         unless Process.setsid
           raise 'Cannot detach from controlling terminal'
@@ -195,8 +195,10 @@ module Smith
         exec(binary, bootstrapper.to_s, agent_process.name, agent_process.uuid)
       end
 
+      logger.info { "Detaching: #{agent_process.name}, UUID: #{agent_process.uuid}, PID: #{pid}" }
+
       # We don't want any zombies.
-      Process.detach(agent_process.pid)
+      Process.detach(pid)
     end
 
     # FIXME: This doesn't appear to be being called.
