@@ -65,12 +65,12 @@ module Smith
     end
 
     # The agent may hook into this if they want to do something on exception.
-    # It should be noted that, since an exception occured, the reactor will not
-    # be running at this point. Even if we restarted the reactor before calling
-    # this it would be a different reactor than existed when assigning the
-    # block so this would potentially lead to confusion. If the agent really
-    # needs the reactor to do something it can always restart the reactor
-    # itself.
+    # It should be noted that, since an exception has occured, the reactor will
+    # not be running at this point. Even if we restarted the reactor before
+    # calling this it would be a different reactor than existed when assigning
+    # the block so this would potentially lead to confusion. If the agent
+    # really needs the reactor to do something it can always restart the
+    # reactor itself.
     #
     # @param blk [Block] This block will be passed the exception as an
     #   argument.
