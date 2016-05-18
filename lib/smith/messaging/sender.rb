@@ -21,7 +21,7 @@ module Smith
         @options = AmqpOptions.new(@queue_def.options)
         @options.routing_key = @queue_def.normalise
 
-        @message_counts = Hash.new(0)
+        @message_counter = MessageCounter.new(@queue_def.denormalise)
 
         @exchange_completion = EM::Completion.new
         @queue_completion = EM::Completion.new
@@ -171,7 +171,7 @@ module Smith
       end
 
       def counter
-        @message_counts[@queue_def.denormalise]
+        @message_counter.counter
       end
 
       # Define a channel error handler.
@@ -191,7 +191,7 @@ module Smith
         logger.verbose { "Publishing to: [queue]: #{@queue_def.denormalise}. [options]: #{opts}" }
         logger.verbose { "ACL content: [queue]: #{@queue_def.denormalise}, [metadata type]: #{message.class}, [message]: #{message.inspect}" }
 
-        increment_counter
+        @message_counter.increment_counter
 
         type = @acl_type_cache.get_by_type(message.class)
 
@@ -206,10 +206,6 @@ module Smith
             end
           end
         end
-      end
-
-      def increment_counter(value=1)
-        @message_counts[@queue_def.denormalise] += value
       end
     end
 
