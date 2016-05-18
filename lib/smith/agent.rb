@@ -39,7 +39,6 @@ module Smith
 
       @on_running_completion = EM::Completion.new.tap do |c|
         c.completion do |completion|
-          start_keep_alive
           setup_stats_queue
           @state = :running
         end
@@ -107,7 +106,6 @@ module Smith
 
     class << self
       # Options supported:
-      # :monitor,   the agency will monitor the agent & if dies restart.
       # :singleton, only every have one agent. If this is set to false
       #             multiple agents are allowed.
       def options(opts)
@@ -187,23 +185,6 @@ module Smith
       Messaging::Sender.new(QueueDefinitions::Agent_lifecycle) do |queue|
         message = {:state => 'acknowledge_stop', :pid => $$, :name => self.class.to_s}
         queue.publish(ACL::AgentAcknowledgeStop.new(:uuid => uuid), &blk)
-      end
-    end
-
-    def start_keep_alive
-      if Smith.config.agent.monitor
-        EventMachine::add_periodic_timer(1) do
-          Messaging::Sender.new(QueueDefinitions::Agent_keepalive) do |queue|
-            message = {:name => self.class.to_s, :uuid => uuid, :time => Time.now.to_i}
-            queue.consumers do |consumers|
-              if consumers > 0
-                queue.publish(ACL::AgentKeepalive, message)
-              end
-            end
-          end
-        end
-      else
-        logger.info { "Not initiating keep alive, agent is not being monitored: #{@name}" }
       end
     end
 

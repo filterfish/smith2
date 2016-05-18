@@ -25,8 +25,8 @@ module Smith
       optional ::Protobuf::Field::BoolField,     :monitor, 9
     end
 
-    def_delegators :@agent_state, :name, :uuid, :pid, :last_keep_alive, :metadata, :monitor, :singleton
-    def_delegators :@agent_state, :name=, :uuid=, :pid=, :last_keep_alive=, :metadata=, :monitor=, :singleton=
+    def_delegators :@agent_state, :name, :uuid, :pid, :metadata, :monitor, :singleton
+    def_delegators :@agent_state, :name=, :uuid=, :pid=, :metadata=, :monitor=, :singleton=
 
     state_machine :initial => lambda {|o| o.send(:_state)}, :action => :save  do
 

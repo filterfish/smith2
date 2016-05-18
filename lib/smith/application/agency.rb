@@ -2,9 +2,8 @@
 
 require 'daemons/pidfile'
 
-require 'smith/agent_process'
-require 'smith/agent_monitoring'
 require 'smith/command'
+require 'smith/agent_process'
 
 module Smith
   class Agency
@@ -58,11 +57,6 @@ module Smith
       end
     end
 
-    def start_monitoring
-      # @agent_monitor = AgentMonitoring.new(@agent_processes)
-      # @agent_monitor.start_monitoring
-    end
-
     # Stop the agency. This will wait for one second to ensure
     # that any messages are flushed.
     def stop(&blk)
@@ -97,17 +91,6 @@ module Smith
         if agent_process.no_process_running
           logger.fatal { "Agent is dead: #{agent_process.name}, UUID: #{agent_process.uuid}, PID: #{agent_process.pid}" }
         end
-      end
-    end
-
-    def keep_alive(agent_data)
-      agent_exists?(agent_data.uuid) do |agent_process|
-        agent_process.last_keep_alive = agent_data.time
-        logger.verbose { "Agent keep alive: #{agent_data.uuid}: #{agent_data.time}" }
-
-        # We need to call save explicitly here as the keep alive is not part of
-        # the state_machine which is the thing that writes the state to disc.
-        agent_process.save
       end
     end
 

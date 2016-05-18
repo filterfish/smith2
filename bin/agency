@@ -64,7 +64,6 @@ module Smith
 
         logger.info { "Starting #{File.basename($0)}" }
         @agency.setup_queues
-        @agency.start_monitoring
       end
     end
 
