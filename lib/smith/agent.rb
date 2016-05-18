@@ -23,9 +23,9 @@ module Smith
 
       @state = :starting
 
-      @on_stopping = proc {|completion| completion.succeed }
-      @on_starting = proc {|completion| completion.succeed }
-      @on_running = proc {|completion| completion.succeed }
+      @on_stopping = proc { |completion| completion.succeed }
+      @on_starting = proc { |completion| completion.succeed }
+      @on_running = proc { |completion| completion.succeed }
       @on_exception = proc {}
 
       @on_starting_completion = EM::Completion.new.tap do |c|
