@@ -1,0 +1,8 @@
+package Smith.ACL;
+
+message QueueStats {
+  required string   name = 1;
+  required string   type = 2;
+  required int32    count = 3;
+}
+

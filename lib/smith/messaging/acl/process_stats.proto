@@ -1,0 +1,17 @@
+package Smith.ACL;
+
+message ProcessStats {
+  required int32    pid = 1;
+  required int32    ppid = 2;
+  optional string   name = 3;
+  optional string   exe = 4;
+  optional int64    uptime = 5;
+  optional string   state = 6;
+  optional int64    vsize = 7;
+  optional int64    rss = 8;
+  optional int32    uid = 9;
+  optional string   user = 10;
+  optional int32    gid = 11;
+  optional string   group = 12;
+  optional int32    threads = 13;
+}

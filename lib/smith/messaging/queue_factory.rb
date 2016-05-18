@@ -2,6 +2,9 @@
 
 module Smith
   class QueueFactory
+
+    include Enumerable
+
     def initialize
       @cache = Cache.new
     end
@@ -17,10 +20,8 @@ module Smith
     end
 
     # Passes each queue to the supplied block.
-    def each_queue
-      @cache.each do |queue|
-        yield queue
-      end
+    def each(&blk)
+      @cache.each { |queue| blk.call(queue) }
     end
 
     # Returns all queues as a hash, with the queue name being the key.

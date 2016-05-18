@@ -207,6 +207,10 @@ module Smith
         end
       end
 
+      def counter
+        @message_counter.counter
+      end
+
       private
 
       # Calculates the queue name and the various queue options based on the

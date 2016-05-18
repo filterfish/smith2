@@ -2,6 +2,8 @@
 require 'state_machine'
 require 'forwardable'
 
+require 'smith/stats/process'
+
 require 'protobuf/message'
 
 module Smith
@@ -12,6 +14,8 @@ module Smith
     include Utils
 
     extend Forwardable
+
+    COLLECTOR_IDENTIFIER = :agency
 
     class AgentState < ::Protobuf::Message
       required ::Protobuf::Field::StringField,   :_state, 0
@@ -129,11 +133,21 @@ module Smith
         @agent_state = AgentState.new(attr)
       end
 
+      @process = Stats::Process.new(@agent_state.pid)
+
       super()
     end
 
     def exists?
       agent_directories(name)
+    end
+
+    def process_stats
+      Stats::Process.new(@agent_state.pid, @agent_state.started_at).stats
+    end
+
+    def environment
+      Stats::Process.new(@agent_state.pid, @agent_state.started_at).environment
     end
 
     def to_s
@@ -195,14 +209,22 @@ module Smith
         exec(binary, bootstrapper.to_s, agent_process.name, agent_process.uuid)
       end
 
-      logger.info { "Detaching: #{agent_process.name}, UUID: #{agent_process.uuid}, PID: #{pid}" }
+      logger.debug { "Detaching: #{agent_process.name}, UUID: #{agent_process.uuid}, PID: #{pid}" }
 
       # We don't want any zombies.
       Process.detach(pid)
     end
 
-    # FIXME: This doesn't appear to be being called.
     def self.acknowledge_start(agent_process, &blk)
+      Events::Collector.instance << ACL::Events::AgentStart.new do |a|
+        a.timestamp = agent_process.started_at.tv_sec
+        a.uuid = agent_process.uuid
+        a.agent_name = agent_process.name
+        a.metadata = agent_process.metadata
+        a.singleton = agent_process.singleton
+        a.env = agent_process.environment.map { |k, v| ACL::Events::Environment::Variable.new({:key => k, :value => v}) }
+      end
+
       logger.info { "Agent started: #{agent_process.name}, UUID: #{agent_process.uuid}, PID: #{agent_process.pid}" }
     end
 
@@ -220,11 +242,13 @@ module Smith
     end
 
     def self.no_process_running(agent_process)
+      Events::Collector.instance << ACL::Events::AgentDead.new(:uuid => agent_process.uuid, :timestamp => Time.now.tv_sec)
       agent_process.delete
     end
 
 
     def self.acknowledge_stop(agent_process)
+      Events::Collector.instance << ACL::Events::AgentStop.new(:uuid => agent_process.uuid, :timestamp => Time.now.tv_sec)
       agent_process.delete
       logger.info { "Agent stopped: #{agent_process.name}, UUID: #{agent_process.uuid}, PID: #{agent_process.pid}" }
     end

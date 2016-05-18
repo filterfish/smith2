@@ -2,7 +2,7 @@
 
 begin
   require 'gdbm'
-rescue LoadError => e
+rescue LoadError
   STDERR.puts "\nYou instance of ruby wasn't compiled with gdbm support.\nSee: https://github.com/filterfish/smith2/wiki/gdbm\n\n"
   raise
 end

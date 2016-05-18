@@ -80,7 +80,7 @@ module Smith
 
     # Override this method to implement your own agent.
     def run
-      raise ArgumentError, "You must override this method"
+      raise ArgumentError, "You must override the run method"
     end
 
     def install_signal_handler(signal, position=:end, &blk)
@@ -106,8 +106,10 @@ module Smith
 
     class << self
       # Options supported:
-      # :singleton, only every have one agent. If this is set to false
-      #             multiple agents are allowed.
+      # :monitor,     the agency will monitor the agent & if dies restart.
+      # :singleton,   only every have one agent. If this is set to false
+      #               multiple agents are allowed.
+      # :statistics,  sends queue details to the agency
       def options(opts)
         opts.each do |k, v|
           Smith.config.agent[k] = v
@@ -134,7 +136,7 @@ module Smith
               level = payload.options.first
               logger.info { "Setting log level to #{level} for: #{name} (#{uuid})" }
               log_level(level)
-            rescue ArgumentError => e
+            rescue ArgumentError
               logger.error { "Incorrect log level: #{level}" }
             end
           else
@@ -144,47 +146,29 @@ module Smith
       end
     end
 
-    def setup_stats_queue
-      Messaging::Sender.new(QueueDefinitions::Agent_stats) do |stats_queue|
-        EventMachine.add_periodic_timer(2) do
-          stats_queue.number_of_consumers do |consumers|
-            if consumers > 0
-              payload = ACL::AgentStats.new.tap do |p|
-                p.uuid = uuid
-                p.agent_name = self.name
-                p.pid = self.pid
-                p.rss = (File.read("/proc/#{pid}/statm").split[1].to_i * 4) / 1024 # This assumes the page size is 4K & is MB
-                p.up_time = (Time.now - @start_time).to_i
-                queues.each_queue do |q|
-                  p.queues << ACL::AgentStats::QueueStats.new(:name => q.name, :type => q.class.to_s, :length => q.counter)
-                end
-              end
-
-              stats_queue.publish(payload)
-            end
-          end
-        end
-      end
-    end
-
     def acknowledge_start(&blk)
       Messaging::Sender.new(QueueDefinitions::Agent_lifecycle) do |queue|
-        payload = ACL::AgentAcknowledgeStart.new.tap do |p|
-          p.uuid = uuid
-          p.pid = $$
-          p.singleton = Smith.config.agent.singleton
-          p.started_at = Time.now.to_i
-          p.metadata = Smith.config.agent.metadata
-          p.monitor = Smith.config.agent.monitor
-        end
-        queue.publish(payload)
+        queue.publish(acknowledge_start_acl, &blk)
       end
     end
 
     def acknowledge_stop(&blk)
       Messaging::Sender.new(QueueDefinitions::Agent_lifecycle) do |queue|
-        message = {:state => 'acknowledge_stop', :pid => $$, :name => self.class.to_s}
-        queue.publish(ACL::AgentAcknowledgeStop.new(:uuid => uuid), &blk)
+        queue.publish(acknowledge_stop_acl, &blk)
+      end
+    end
+
+    def setup_stats_queue
+      if Smith.config.agent.statistics
+        Messaging::Sender.new(QueueDefinitions::Agent_stats) do |stats_queue|
+          EventMachine.add_periodic_timer(2) do
+            stats_queue.number_of_consumers do |consumers|
+              if consumers > 0
+                stats_queue.publish(agent_stats_acl)
+              end
+            end
+          end
+        end
       end
     end
 
@@ -198,6 +182,36 @@ module Smith
 
     def __exception_handler(exception)
       @on_exception.call(exception)
+    end
+
+    def uptime
+      (Time.now - @start_time).to_i
+    end
+
+    def acknowledge_stop_acl
+      ACL::AgentAcknowledgeStop.new(:uuid => uuid)
+    end
+
+    def agent_stats_acl
+      ACL::AgentStats.new do |p|
+        p.timestamp = Time.now.tv_sec
+        p.uuid = uuid
+        p.uptime = uptime
+        queues.each do |q|
+          p.queues << ACL::QueueStats.new(:name => q.queue_name, :type => q.class.to_s, :count => q.counter)
+        end
+      end
+    end
+
+    def acknowledge_start_acl
+      ACL::AgentAcknowledgeStart.new do |p|
+        p.uuid = uuid
+        p.pid = pid
+        p.singleton = Smith.config.agent.singleton
+        p.started_at = Time.now.to_i
+        p.metadata = Smith.config.agent.metadata
+        p.monitor = Smith.config.agent.monitor
+      end
     end
   end
 end

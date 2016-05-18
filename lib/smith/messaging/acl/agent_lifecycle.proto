@@ -16,3 +16,13 @@ message AgentAcknowledgeStop {
 message AgentDead {
   required string   uuid = 1;
 }
+
+message AgentQueueDetail {
+  required string uuid = 1;
+  required string queue_name = 2;
+  required string type = 3;
+}
+
+message AgentQueueDetails {
+  repeated AgentQueueDetail  details = 1;
+}

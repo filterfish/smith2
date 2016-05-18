@@ -2,7 +2,7 @@
 class NullAgent < Smith::Agent
 
   options :singleton => false
-  options :monitor => false
+  options :statistics => false
   options :metadata => "Some sage words about the NullAgent."
 
   def run

@@ -1,0 +1,8 @@
+package Smith.ACL;
+message AgencyStats {
+  required int64  timestamp = 1;
+  required string host = 2;
+  required int32  pid = 3;
+  optional int64  rss = 4;
+  required int64  uptime = 5;
+}

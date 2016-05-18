@@ -23,7 +23,7 @@ module Smith
 
       def format(payload)
         s = ""
-        s << "%s %.12s %5s %5s\n\n" % [payload.agent_name, payload.pid, payload.rss, payload.up_time]
+        s << "%s %.12s %5s %5s\n\n" % [payload.agent_name, payload.pid, payload.rss, payload.uptime]
         s << payload.queues.map do |queue|
           "    %-26s  %d" % [queue.name, queue.length]
         end.join("\n")

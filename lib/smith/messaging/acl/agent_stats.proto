@@ -3,13 +3,11 @@ message AgentStats {
   message QueueStats {
     required string   name = 1;
     required string   type = 2;
-    required int32    length = 3;
+    required int32    count = 3;
   }
 
   required string       uuid = 1;
-  required string       agent_name = 2;
-  required int32        pid = 3;
-  optional int64        rss = 4;
-  required int64        up_time = 5;
+  required int64        timestamp = 2;
+  required int64        uptime = 5;
   repeated QueueStats   queues = 6;
 }

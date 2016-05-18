@@ -1,19 +1,31 @@
 # -*- encoding: utf-8 -*-
 
+require 'securerandom'
 require 'daemons/pidfile'
 
 require 'smith/command'
 require 'smith/agent_process'
+require 'smith/events/collector'
 
 module Smith
   class Agency
 
     include Logger
 
+    COLLECTOR_IDENTIFIER = :agency
+
     attr_reader :agents, :agent_processes
 
     def initialize(opts={})
       @agent_processes = AgentCache.new
+      @agency_stated_at = Time.now
+      @agency_process_stats = Stats::Process.new
+
+      @collector ||= Events::Collector.instance.tap do |c|
+        c.register(COLLECTOR_IDENTIFIER) do |event|
+          stats_queue.publish(event_acl(event))
+        end
+      end
     end
 
     def setup_queues
@@ -29,7 +41,7 @@ module Smith
 
           begin
             Command.run(payload.command, payload.args, :agency => self,  :agents => @agent_processes, :responder => completion)
-          rescue Command::UnknownCommandError => e
+          rescue Command::UnknownCommandError
             responder.reply("Unknown command: #{payload.command}")
           end
         end
@@ -50,10 +62,8 @@ module Smith
         end
       end
 
-      Messaging::Receiver.new(QueueDefinitions::Agent_keepalive) do |receiver|
-        receiver.subscribe do |payload, r|
-          keep_alive(payload)
-        end
+      Messaging::Receiver.new(QueueDefinitions::Agent_stats) do |receiver|
+        receiver.subscribe(method(:agent_stats))
       end
     end
 
@@ -101,6 +111,61 @@ module Smith
       else
         error_proc.call
       end
+    end
+
+    # Forwards all stats to a common queue. All agencies will send to the same
+    # queue and will be collated.
+    #
+    # @param [Smith::ACL::AgentStats] payload ACL from the agent
+    #
+    def agent_stats(payload, receiver)
+      if @agent_processes.exist?(payload.uuid)
+        agent = @agent_processes[payload.uuid]
+
+        logger.verbose { "Got stats from #{agent.name} [#{agent.uuid}]: #{payload.to_json}" }
+
+        collector << ACL::Events::AgentStats.new do |s|
+          s.uuid = payload.uuid
+          s.timestamp = payload.timestamp
+          s.queues = payload.queues
+
+          process_stats = agent.process_stats
+          s.process_stats = process_stats.to_acl
+        end
+      else
+        logger.info { "Got stats from unknown agent: UUID: #{payload.uuid}. Discarding" }
+      end
+    end
+
+    def agency_stats
+      ACL::Events::AgencyStats.new do |m|
+        s = @agency_process_stats.stats
+        m.uuid = agency_uuid
+        m.timestamp = Time.now.tv_sec
+        m.host = Smith.hostname
+        m.uptime = s.uptime
+        m.process_stats = s.to_acl
+      end
+    end
+
+    # Accessor for the events collector.
+    #
+    # @return [Smith::Events::Collector] the eventts collector
+    def collector
+      @collector
+    end
+
+    def event_acl(event)
+      field_name = Utils.name_from_class(event, true).last.snake_case.to_sym
+      ACL::Events::Event.new(:agency_stats => agency_stats, field_name => event)
+    end
+
+    def agency_uuid
+      @eb24bc ||= SecureRandom.uuid
+    end
+
+    def stats_queue(&blk)
+      @bd8472 ||= Messaging::Sender.new(QueueDefinitions::Cluster_stats)
     end
   end
 end

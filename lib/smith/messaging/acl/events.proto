@@ -1,0 +1,64 @@
+import "queue_stats.proto";
+import "process_stats.proto";
+
+package Smith.ACL.Events;
+
+message Environment {
+  message Variable {
+    required string   key = 1;
+    optional string   value = 2;
+  }
+}
+
+message AgentStart {
+  required string                 uuid = 1;
+  required int64                  timestamp = 2;
+  required string                 agent_name = 3;
+  optional string                 metadata = 4;
+  optional bool                   singleton = 5;
+  repeated Environment.Variable   env = 6;
+}
+
+message AgentStop {
+  required string   uuid = 1;
+  required int64    timestamp = 2;
+}
+
+message AgentDead {
+  required string   uuid = 1;
+  required int64    timestamp = 2;
+}
+
+message AgentRunning {
+  required string   uuid = 1;
+  required int64    timestamp = 2;
+}
+
+message AgentStats {
+  required string       uuid = 1;
+  required int64        timestamp = 2;
+  optional ProcessStats process_stats = 3;
+  repeated QueueStats   queues = 4;
+}
+
+message AgencyStats {
+  required string       uuid = 1;
+  required int64        timestamp = 2;
+  required string       host = 4;
+  required int64        uptime = 5;
+  optional ProcessStats process_stats = 3;
+}
+
+// WARNING: The field names MUST be the snake case representation
+// of the type. This is due to some metaprogramming in the code.
+message Event {
+  required AgencyStats agency_stats = 1;
+
+  oneof event {
+    AgentStart agent_start = 2;
+    AgentRunning agent_running = 3;
+    AgentStop agent_stop = 4;
+    AgentDead agent_dead = 5;
+    AgentStats agent_stats = 6;
+  }
+}

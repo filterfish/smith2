@@ -34,8 +34,8 @@ module Smith
 
     def signal_handlers
       logger.debug { "Installing default signal handlers" }
-      %w{TERM INT QUIT}.each do |sig|
-        @agent.install_signal_handler(sig) do |sig|
+      %w{TERM INT QUIT}.each do |signal|
+        @agent.install_signal_handler(signal) do |sig|
           logger.error { "Received signal #{sig}: #{agent.name}, UUID: #{agent.uuid}, PID: #{agent.pid}." }
 
           terminate!
@@ -86,8 +86,8 @@ module Smith
 
     # FIXME This really should be using Smith::Daemon
     def write_pid_file
-      @pid = Daemons::PidFile.new(Daemons::Pid.dir(:normal, Dir::tmpdir, nil), ".smith-#{@agent_uuid}", true)
-      @pid.pid = Process.pid
+      @pid_file = Daemons::PidFile.new(Daemons::Pid.dir(:normal, Dir::tmpdir, nil), ".smith-#{@agent_uuid}", true)
+      @pid_file.pid = Process.pid
     end
 
     def send_dead_message
@@ -98,8 +98,8 @@ module Smith
     end
 
     def unlink_pid_file
-      if @pid && @pid.exist?
-        logger.debug { "Cleaning up pid file: #{@pid.filename}" }
+      if @pid_file && @pid_file.exist?
+        logger.debug { "Cleaning up pid file: #{@pid_file.filename}" }
       end
     end
 
@@ -121,7 +121,7 @@ module Smith
         @agent.__send__(:__exception_handler, exception) if @agent
         logger.error { format_exception(exception) }
       end
-      logger.error { "Terminating: #{@agent_name}, UUID: #{@agent_uuid}, PID: #{@pid.pid}." }
+      logger.error { "Terminating: #{@agent_name}, UUID: #{@agent_uuid}, PID: #{$$}." }
     end
 
     # Add directories with library code to the load path. This assumes that
@@ -135,14 +135,14 @@ module Smith
     #
     # Where $ROOT_PATH is dependent on the agent directory.
     def add_agent_load_path(path)
-      Smith.agent_directories.each do |path|
+      Smith.agent_directories.each do |p|
         Smith.lib_directories.each do |lib_dir|
-          lib_path = path.parent.join(lib_dir)
+          lib_path = p.parent.join(lib_dir)
           if lib_path.exist?
             logger.info { "Adding #{lib_path} to load path." }
             $LOAD_PATH << lib_path
           else
-            logger.info { "#{lib_dir} directory not found in: #{path.parent}." }
+            logger.info { "#{lib_dir} directory not found in: #{p.parent}." }
           end
         end
       end

@@ -40,9 +40,15 @@ module Smith
     # @param name [String]
     # @return [Class] the agent class
     def class_from_name(name)
-      name.to_s.split(/::/).inject(Kernel) { |acc, t| acc.const_get(t) }
+      name.to_s.split('::').inject(Kernel) { |acc, t| acc.const_get(t) }
     end
     module_function :class_from_name
+
+    def name_from_class(clazz, split=false)
+      s = clazz.class.to_s
+      (split) ? s.split('::') : s
+    end
+    module_function :name_from_class
 
 
     # Slipts a path into it's component parts.
