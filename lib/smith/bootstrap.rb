@@ -45,8 +45,7 @@ module Smith
 
     def load_agent
       path = agent_directories(@agent_name)
-      logger.info { "Loading #{@agent_name}" }
-      logger.debug { "Loading #{@agent_name} from: #{path}" }
+      logger.info { "Loading #{@agent_name} from: #{path}" }
       add_agent_load_path(path)
       load path
 
