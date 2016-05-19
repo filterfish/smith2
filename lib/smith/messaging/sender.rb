@@ -76,7 +76,7 @@ module Smith
             #### the proc from the @reply_container. ####
             #### !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ####
             @reply_container[message_id] = {:reply_proc => @reply_proc, :timeout => @timeout.clone.tap {|t| t.set_timeout(message_id) }}
-            _publish(payload, @options.publish(opts, {:reply_to => reply_queue.queue_name, :message_id => message_id}))
+            _publish(payload, @options.publish(opts, {:reply_to => reply_queue.queue_name, :message_id => message_id}), &blk)
           end
         else
           _publish(payload, @options.publish(opts), &blk)
