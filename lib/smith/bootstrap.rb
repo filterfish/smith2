@@ -50,14 +50,7 @@ module Smith
       add_agent_load_path(path)
       load path
 
-      begin
-        @agent = class_from_name(@agent_name).new(@agent_uuid)
-      rescue NameError => e
-        # TODO: include the class name from the path.
-        logger.fatal { "Cannot instantiate agent. File #{path} exists but doesn't contain the Class: #{@agent_name}." }
-        terminate!
-        false
-      end
+      @agent = class_from_name(@agent_name).new(@agent_uuid)
     end
 
     def start!
