@@ -23,7 +23,7 @@ module Smith
       private
 
       def options_spec
-        banner "Display or remove a message from the named queue.", "<queue>"
+        banner "Remove the named queue. Multiple queues can be given", "<queue[s]>"
 
         opt :force,         "force the removal even if there are messages on the queue", :short => :f
         opt :ignore_errors, "ignore any errors.", :default => false
