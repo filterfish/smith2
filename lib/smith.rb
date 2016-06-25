@@ -102,26 +102,26 @@ module Smith
       AMQP.start(config.amqp.broker.uri.to_s, connection_settings) do |connection|
         @connection = connection
 
-        connection.on_connection do
-          logger.info { "Connected to: AMQP Broker: #{broker_identifier(connection)}" } unless opts[:quiet]
+        @connection.on_connection do
+          logger.info { "Connected to: AMQP Broker: #{broker_identifier(@connection)}" } unless opts[:quiet]
         end
 
         # FIXME This should go in the config.
         reconnection_delay = 5
 
-        connection.on_tcp_connection_loss do |connection, settings|
-          logger.info { "Reconnecting to AMQP Broker: #{broker_identifier(connection)} in #{reconnection_delay}s" }
-          connection.reconnect(false, reconnection_delay)
+        @connection.on_tcp_connection_loss do |conn, settings|
+          logger.info { "Reconnecting to AMQP Broker: #{broker_identifier(conn)} in #{reconnection_delay}s" }
+          conn.reconnect(false, reconnection_delay)
         end
 
-        connection.after_recovery do |connection|
-          logger.info { "Connection with AMQP Broker restored: #{broker_identifier(connection)}" } unless opts[:quiet]
+        @connection.after_recovery do |conn|
+          logger.info { "Connection with AMQP Broker restored: #{broker_identifier(conn)}" } unless opts[:quiet]
         end
 
-        connection.on_error do |connection, connection_close|
+        @connection.on_error do |conn, connection_close|
           # If the broker is gracefully shutdown we get a 320. Log a nice message.
           if connection_close.reply_code == 320
-            logger.warn { "AMQP Broker shutdown: #{broker_identifier(connection)}" }
+            logger.warn { "AMQP Broker shutdown: #{broker_identifier(conn)}" }
           else
             logger.warn {  connection_close.reply_text }
           end
