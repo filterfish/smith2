@@ -41,6 +41,7 @@ module Smith
         c.completion do |completion|
           setup_stats_queue
           @state = :running
+          run
         end
       end
 
