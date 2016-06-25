@@ -45,8 +45,8 @@ module Smith
         end
       end
 
-      Messaging::Receiver.new(QueueDefinitions::Agent_lifecycle) do |receiver|
-        receiver.subscribe do |payload, r|
+      Messaging::Receiver.new(QueueDefinitions::Agent_lifecycle) do |queue|
+        queue.subscribe do |payload|
           case payload
           when Smith::ACL::AgentDead
             dead(payload)
@@ -60,8 +60,8 @@ module Smith
         end
       end
 
-      Messaging::Receiver.new(QueueDefinitions::Agent_stats) do |receiver|
-        receiver.subscribe(method(:agent_stats))
+      Messaging::Receiver.new(QueueDefinitions::Agent_stats) do |queue|
+        queue.subscribe(method(:agent_stats))
       end
     end
 
