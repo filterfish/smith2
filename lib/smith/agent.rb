@@ -42,6 +42,7 @@ module Smith
           start_keep_alive
           setup_stats_queue
           @state = :running
+          run
         end
       end
 
