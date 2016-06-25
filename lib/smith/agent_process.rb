@@ -244,6 +244,7 @@ module Smith
     def self.no_process_running(agent_process)
       Events::Collector.instance << ACL::Events::AgentDead.new(:uuid => agent_process.uuid, :timestamp => Time.now.tv_sec)
       agent_process.delete
+      logger.fatal { "Agent is dead: #{agent_process.name}, UUID: #{agent_process.uuid}, PID: #{agent_process.pid}" }
     end
 
 

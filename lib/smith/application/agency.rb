@@ -9,14 +9,13 @@ require 'smith/events/collector'
 
 module Smith
   class Agency
-
     include Logger
 
     COLLECTOR_IDENTIFIER = :agency
 
     attr_reader :agents, :agent_processes
 
-    def initialize(opts={})
+    def initialize
       @agent_processes = AgentCache.new
       @agency_stated_at = Time.now
       @agency_process_stats = Stats::Process.new
@@ -31,7 +30,6 @@ module Smith
     def setup_queues
       Messaging::Receiver.new(QueueDefinitions::Agency_control.call, :auto_ack => false) do |receiver|
         receiver.subscribe do |payload, responder|
-
           completion = EM::Completion.new.tap do |c|
             c.completion do |value|
               responder.ack
@@ -40,7 +38,7 @@ module Smith
           end
 
           begin
-            Command.run(payload.command, payload.args, :agency => self,  :agents => @agent_processes, :responder => completion)
+            Command.run(payload.command, payload.args, :agency => self, :agents => @agent_processes, :responder => completion)
           rescue Command::UnknownCommandError
             responder.reply("Unknown command: #{payload.command}")
           end
@@ -80,7 +78,7 @@ module Smith
     private
 
     def acknowledge_start(agent_data)
-      agent_exists?(agent_data.uuid) do |agent_process|
+      agent_exists?(agent_data) do |agent_process|
         agent_process.pid = agent_data.pid
         agent_process.started_at = agent_data.started_at
         agent_process.singleton = agent_data.singleton
@@ -91,21 +89,15 @@ module Smith
     end
 
     def acknowledge_stop(agent_data)
-      agent_exists?(agent_data.uuid) do |agent_process|
-        agent_process.acknowledge_stop
-      end
+      agent_exists?(agent_data, &:acknowledge_stop)
     end
 
     def dead(agent_data)
-      agent_exists?(agent_data.uuid) do |agent_process|
-        if agent_process.no_process_running
-          logger.fatal { "Agent is dead: #{agent_process.name}, UUID: #{agent_process.uuid}, PID: #{agent_process.pid}" }
-        end
-      end
+      agent_exists?(agent_data, &:no_process_running)
     end
 
-    def agent_exists?(uuid, error_proc=->{}, &blk)
-      agent = @agent_processes[uuid]
+    def agent_exists?(agent_data, error_proc=-> {}, &blk)
+      agent = @agent_processes[agent_data.uuid]
       if agent
         blk.call(agent)
       else
@@ -118,10 +110,9 @@ module Smith
     #
     # @param [Smith::ACL::AgentStats] payload ACL from the agent
     #
-    def agent_stats(payload, receiver)
+    def agent_stats(payload, _)
       if @agent_processes.exist?(payload.uuid)
         agent = @agent_processes[payload.uuid]
-
         logger.verbose { "Got stats from #{agent.name} [#{agent.uuid}]: #{payload.to_json}" }
 
         collector << ACL::Events::AgentStats.new do |s|
@@ -164,7 +155,7 @@ module Smith
       @eb24bc ||= SecureRandom.uuid
     end
 
-    def stats_queue(&blk)
+    def stats_queue
       @bd8472 ||= Messaging::Sender.new(QueueDefinitions::Cluster_stats)
     end
   end
