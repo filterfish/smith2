@@ -20,7 +20,7 @@ module Smith
       command = command.gsub(/-/, '_')
       load_command(command)
 
-      clazz = Commands.const_get(Extlib::Inflection.camelize(command)).new
+      clazz = Commands.const_get(Inflecto.camelize(command)).new
 
       begin
         clazz.parse_options(args)
@@ -49,7 +49,7 @@ module Smith
     end
 
     def self.instantiate(command)
-      Commands.const_get(Extlib::Inflection.camelize(command)).new
+      Commands.const_get(Inflecto.camelize(command)).new
     end
 
     # What type of command is it?

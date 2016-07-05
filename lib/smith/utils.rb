@@ -20,7 +20,7 @@ module Smith
     # @param clazz [String] the fully qualified class.
     # @@return [Pathname] the path
     def path_from_class(root, clazz)
-      parts = clazz.split(/::/).map(&:snake_case)
+      parts = clazz.split(/::/).map { |part| Inflecto.underscore(part) }
       parts[-1] = "#{parts[-1]}.rb"
       Pathname.new(root).join(*parts)
     end

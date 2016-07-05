@@ -1,7 +1,6 @@
 # -*- encoding: utf-8 -*-
 
 require 'set'
-require 'extlib'
 require 'singleton'
 require 'murmurhash3'
 
@@ -30,7 +29,8 @@ module Smith
           @hashes[format][h] = type
         end
 
-        @legacy_types_by_hash[type.to_s.split(/::/)[-1].snake_case] = type
+        # TODO: would Inflecto::demodulize work here instead?
+        @legacy_types_by_hash[Inflecto.underscore(type.to_s.split(/::/)[-1])] = type
         true
       end
     end

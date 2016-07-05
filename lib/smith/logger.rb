@@ -36,7 +36,7 @@ module Smith
 
       def log_appender
         unless @@appender
-          appender_type = Extlib::Inflection.camelize(Config.get.logging.appender.type)
+          appender_type = Inflecto.camelize(Config.get.logging.appender.type)
           pattern_opts = {
             :pattern => Config.get.logging.default_pattern,
             :date_pattern => Config.get.logging.default_date_pattern}

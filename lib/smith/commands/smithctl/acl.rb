@@ -1,7 +1,5 @@
 # -*- encoding: utf-8 -*-
 
-require 'extlib/string'
-
 module Smith
   module Commands
     class Acl < CommandBase
@@ -57,7 +55,7 @@ module Smith
       def find_acl(directories, acl, ext)
         [directories].flatten.inject([]) do |a, directory|
           a.tap do |acc|
-            acl_file =  directory.join("#{acl.snake_case}.#{ext}")
+            acl_file =  directory.join("#{Inflecto.underscore(acl)}.#{ext}")
             acc << acl_file if acl_file.exist?
           end
         end
