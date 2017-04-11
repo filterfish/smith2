@@ -65,6 +65,13 @@ module Smith
         logger.info { "Starting #{File.basename($0)}" }
         @agency.setup_queues
         @agency.start_monitoring
+
+        agents_group = ENV['SMITH_AGENTS_GROUP']
+        if agents_group
+          @agency.start_agents_group(agents_group) do
+            logger.info { "Agents group #{agents_group} started" }
+          end
+        end
       end
     end
 

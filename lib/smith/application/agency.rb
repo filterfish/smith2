@@ -63,6 +63,11 @@ module Smith
       # @agent_monitor.start_monitoring
     end
 
+    # Start the agents group.
+    def start_agents_group(group_name, &blk)
+      Command.run('start', ['-g', "#{group_name}"], :agency => self, :agents => @agent_processes, :responder => EM::Completion.new.tap { |c| c.completion(blk) })
+    end
+
     # Stop the agency. This will wait for one second to ensure
     # that any messages are flushed.
     def stop(&blk)
