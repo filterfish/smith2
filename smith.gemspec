@@ -27,6 +27,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "hashie", "~> 2.1"
   s.add_runtime_dependency "toml-rb", "~> 0.3"
   s.add_runtime_dependency "sys-proctable", "~> 0.9.0"
+  s.add_runtime_dependency "rollbar"
 
   if /java/.match(RUBY_PLATFORM)
     s.platform = 'java'

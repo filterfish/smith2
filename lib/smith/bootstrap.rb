@@ -8,6 +8,7 @@ $:.unshift(Pathname.new(__FILE__).dirname.parent.expand_path)
 
 require 'smith'
 require 'smith/agent'
+require 'rollbar'
 
 module Smith
   class AgentBootstrap
@@ -43,6 +44,17 @@ module Smith
       end
     end
 
+    def enable_rollbar
+      ::Rollbar.configure do |config|
+        config.access_token = ENV.fetch('ROLLBAR_ACCESS_TOKEN')
+        config.environment = ::Smith.environment
+      end
+
+      @agent.on_exception do |exception|
+        ::Rollbar.error(exception, :class => self.class)
+      end
+    end
+
     def load_agent
       path = agent_directories(@agent_name)
       logger.info { "Loading #{@agent_name}" }
@@ -52,6 +64,7 @@ module Smith
 
       begin
         @agent = class_from_name(@agent_name).new(@agent_uuid)
+
       rescue NameError => e
         # TODO: include the class name from the path.
         logger.fatal { "Cannot instantiate agent. File #{path} exists but doesn't contain the Class: #{@agent_name}." }
@@ -175,6 +188,8 @@ begin
   Smith.start do
     if bootstrapper.load_agent
       bootstrapper.signal_handlers
+      bootstrapper.enable_rollbar
+
       bootstrapper.start!
     end
   end
