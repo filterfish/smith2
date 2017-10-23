@@ -5,7 +5,7 @@ module Smith
     def self.included(base)
 
       if !Logging.initialized?
-        Logging.init([:verbose, :debug, :info, :warn, :error, :fatal])
+        Logging.init([:debug, :info, :warn, :error, :fatal])
       end
 
       base.class_eval do

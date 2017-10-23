@@ -23,19 +23,19 @@ module Smith
 
       def open_channel(opts={}, &blk)
         AMQP::Channel.new(Smith.connection) do |channel,ok|
-          logger.verbose { "Opened channel: #{"%x" % channel.object_id}" }
+          logger.debug { "Opened channel: #{"%x" % channel.object_id}" }
 
           # Set up auto-recovery. This will ensure that amqp will
           # automatically reconnet to the broker if there is an error.
           channel.auto_recovery = true
-          logger.verbose { "Channel auto recovery set to ture" }
+          logger.debug { "Channel auto recovery set to ture" }
 
           # Set up QOS. If you do not do this then any subscribes will get
           # overwhelmed if there are too many messages.
           prefetch = opts[:prefetch] || Smith.config.agent.prefetch
 
           channel.prefetch(prefetch)
-          logger.verbose { "AMQP prefetch set to: #{prefetch}" }
+          logger.debug { "AMQP prefetch set to: #{prefetch}" }
 
           blk.call(channel)
         end

@@ -35,8 +35,8 @@ module Smith
             o[:type] = @metadata.type
           end
 
-          logger.verbose { "Requeuing to: #{@queue.name} [options]: #{opts}" }
-          logger.verbose { "Requeuing to: #{@queue.name} [message]: #{@message.to_hash}" }
+          logger.debug { "Requeuing to: #{@queue.name} [options]: #{opts}" }
+          logger.debug { "Requeuing to: #{@queue.name} [message]: #{@message.to_hash}" }
 
           @exchange.publish(@message, opts)
         end

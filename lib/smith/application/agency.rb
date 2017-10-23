@@ -108,7 +108,7 @@ module Smith
     def keep_alive(agent_data)
       agent_exists?(agent_data.uuid) do |agent_process|
         agent_process.last_keep_alive = agent_data.time
-        logger.verbose { "Agent keep alive: #{agent_data.uuid}: #{agent_data.time}" }
+        logger.debug { "Agent keep alive: #{agent_data.uuid}: #{agent_data.time}" }
 
         # We need to call save explicitly here as the keep alive is not part of
         # the state_machine which is the thing that writes the state to disc.

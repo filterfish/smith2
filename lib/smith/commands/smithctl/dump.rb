@@ -40,7 +40,7 @@ module Smith
                   Messaging::Queue.number_of_messages(queue) do |queue_length|
                     if queue_length == 0
                       t_end = Time.now.to_f
-                      if options[:verbose]
+                      if options[:debug]
                         responder.succeed("dumped #{count} messages in #{t_end - t_start} seconds.")
                       else
                         responder.succeed("")
@@ -74,7 +74,7 @@ module Smith
         banner "Dump a queue to STDOUT.\n\n  This is a very DANGEROUS command in that it removes all messages from a queue.", "<queue>"
 
         opt    :'yes-i-want-to-remove-all-acls-from-the-queue',  "Remove all acls from the queue and print to stdout", :type => :boolean,  :short => :none
-        opt    :verbose,                                         "Print the number of acls dumped.", :type => :boolean,  :short => :v
+        opt    :debug,                                           "Print the number of acls dumped.", :type => :boolean,  :short => :v
       end
     end
   end
