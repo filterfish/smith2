@@ -12,7 +12,7 @@ module Smith
       EventMachine::add_periodic_timer(1) do
         @agent_processes.each do |agent_process|
           if agent_process.monitor
-            logger.verbose { "Agent state for #{agent_process.name}: #{agent_process.state}" }
+            logger.debug { "Agent state for #{agent_process.name}: #{agent_process.state}" }
             case agent_process.state
             when 'running'
               if agent_process.last_keep_alive

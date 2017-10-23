@@ -66,7 +66,7 @@ module Smith
     def unlink_pid_file
       p = Pathname.new(@pid.filename)
       if p.exist?
-        logger.verbose { "Removing pid file: #{p.to_s}" }
+        logger.debug { "Removing pid file: #{p.to_s}" }
         p.unlink
       end
     end

@@ -100,7 +100,7 @@ module Smith
                 if payload
                   on_message(metadata, payload, requeue_options, &blk)
                 else
-                  logger.verbose { "Received null message on: #{@queue_def.denormalise} [options]:#{opts}" }
+                  logger.debug { "Received null message on: #{@queue_def.denormalise} [options]:#{opts}" }
                 end
               end
             else

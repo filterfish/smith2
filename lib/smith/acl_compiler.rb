@@ -92,7 +92,7 @@ module Smith
     end
 
     def load_acl(path)
-      logger.verbose { "Loading ACL: #{path}" }
+      logger.debug { "Loading ACL: #{path}" }
       require path
     end
 

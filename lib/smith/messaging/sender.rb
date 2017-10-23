@@ -69,7 +69,7 @@ module Smith
         if @reply_queue_completion
           @reply_queue_completion.completion do |reply_queue|
             message_id = random
-            logger.verbose { "message_id: #{message_id}" }
+            logger.debug { "message_id: #{message_id}" }
 
             #### !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ####
             #### TODO if there is a timeout delete   ####
@@ -188,8 +188,8 @@ module Smith
       private
 
       def _publish(message, opts, &blk)
-        logger.verbose { "Publishing to: [queue]: #{@queue_def.denormalise}. [options]: #{opts}" }
-        logger.verbose { "ACL content: [queue]: #{@queue_def.denormalise}, [metadata type]: #{message.class}, [message]: #{message.inspect}" }
+        logger.debug { "Publishing to: [queue]: #{@queue_def.denormalise}. [options]: #{opts}" }
+        logger.debug { "ACL content: [queue]: #{@queue_def.denormalise}, [metadata type]: #{message.class}, [message]: #{message.inspect}" }
 
         increment_counter
 

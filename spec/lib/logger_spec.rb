@@ -65,9 +65,6 @@ describe Smith::Logger do
     end
 
     it 'should work for all log levels when logger is invoked as a class method' do
-      Smith::ClassUnderTest.send(:log_level, :verbose)
-      log_output = Smith::ClassUnderTest.capture_stdout { Smith::ClassUnderTest.send(:logger).verbose("class log message") }
-      log_output.should == "VERBOSE - Smith::ClassUnderTest: - class log message\n"
       Smith::ClassUnderTest.send(:log_level, :debug)
       log_output = Smith::ClassUnderTest.capture_stdout { Smith::ClassUnderTest.send(:logger).debug("class log message") }
       log_output.should == "  DEBUG - Smith::ClassUnderTest: - class log message\n"
@@ -86,9 +83,6 @@ describe Smith::Logger do
     end
 
     it 'should work for all log levels when logger is invoked as an instance method' do
-      cut.send(:log_level, :verbose)
-      log_output = Smith::ClassUnderTest.capture_stdout { cut.send(:logger).verbose("instance log message") }
-      log_output.should == "VERBOSE - Smith::ClassUnderTest: - instance log message\n"
       cut.send(:log_level, :debug)
       log_output = Smith::ClassUnderTest.capture_stdout { cut.send(:logger).debug("instance log message") }
       log_output.should == "  DEBUG - Smith::ClassUnderTest: - instance log message\n"
