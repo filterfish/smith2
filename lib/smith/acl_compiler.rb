@@ -64,7 +64,7 @@ module Smith
     def should_compile?(file)
       cached_file = Smith.acl_cache_directory.join(file.basename).sub_ext(".pb.rb")
       if cached_file.exist?
-        file.mtime > cached_file.mtime
+        file.mtime.to_i > cached_file.mtime.to_i
       else
         true
       end
